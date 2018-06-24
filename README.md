@@ -1,8 +1,2 @@
-# flutter_ws
-
-A new Flutter project.
-
-## Getting Started
-
-For help getting started with Flutter, view our online
-[documentation](https://flutter.io/).
+# MediathekViewMobile
+Independent MediathekView port for Android &amp; iOS based on mediathekViewWeb API 
