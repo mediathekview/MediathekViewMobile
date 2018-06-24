@@ -45,6 +45,8 @@ public class VideoCallHandler implements MethodChannel.MethodCallHandler {
 
             Intent intent = new Intent(context, VideoPlayerActivity.class);
             intent.putExtra(FILE_PATH, filePath);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             MainActivity.context.startActivity(intent);
 
 
