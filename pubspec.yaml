@@ -1,5 +1,5 @@
 name: flutter_ws
-description: A mobile Mediathek.
+description: A mobile Mediathek based on the MediathekView Web API.
 
 dependencies:
   path_provider: '^0.4.0'
