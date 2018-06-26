@@ -174,9 +174,12 @@ public class VideoPlayerActivity extends Activity {
 
     private MediaSource buildMediaSource(Uri uri) {
         //Fails for m3u8 urls?
+        Log.i("VideoPlayer", "Mediasource for  url " + uri);
         @C.ContentType int type;
-        if (uri.toString().endsWith("m3u8")){
+        if (uri.toString().contains("m3u8")){
             type = 2;
+            Log.i("VideoPlayer", "Detected live stream");
+
         }else {
             type = Util.inferContentType(uri);
         }
