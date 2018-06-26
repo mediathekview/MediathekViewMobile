@@ -173,7 +173,13 @@ public class VideoPlayerActivity extends Activity {
     // _________________The FOLLOWING IS TAKEN FROM https://github.com/google/ExoPlayer/blob/release-v2/demos/main/src/main/java/com/google/android/exoplayer2/demo/PlayerActivity.java  ------------------
 
     private MediaSource buildMediaSource(Uri uri) {
-        @C.ContentType int type = Util.inferContentType(uri);
+        //Fails for m3u8 urls?
+        @C.ContentType int type;
+        if (uri.toString().endsWith("m3u8")){
+            type = 2;
+        }else {
+            type = Util.inferContentType(uri);
+        }
         switch (type) {
             case C.TYPE_DASH:
 

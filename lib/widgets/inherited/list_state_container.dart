@@ -5,6 +5,7 @@ import 'package:flutter_ws/manager/WebsocketManager.dart';
 import 'package:flutter_ws/manager/databaseManager.dart';
 import 'package:flutter_ws/manager/downloadManager.dart';
 import 'package:flutter_ws/manager/videoPreviewManager.dart';
+import 'package:flutter_ws/model/ChannelFavoriteEntity.dart';
 import 'package:flutter_ws/model/Video.dart';
 import 'package:flutter_ws/model/VideoEntity.dart';
 import 'package:meta/meta.dart';
@@ -19,12 +20,13 @@ class VideoListState {
 }
 
 class AppState {
-  AppState(this.downloadManager, this.databaseManager, this.videoPreviewManager, this.downloadedVideos, this.currentDownloads);
+  AppState(this.downloadManager, this.databaseManager, this.videoPreviewManager, this.downloadedVideos, this.currentDownloads, this.favoritChannels);
   DownloadManager downloadManager;
   DatabaseManager databaseManager;
   VideoPreviewManager videoPreviewManager;
   Map<String, VideoEntity> downloadedVideos;
   Map<String, Video> currentDownloads;
+  Map<String, ChannelFavoriteEntity> favoritChannels;
 }
 
 class _InheritedWidget extends InheritedWidget {
@@ -68,7 +70,7 @@ class AppSharedState extends State<AppSharedStateContainer> {
 
   void initializeState(BuildContext context) {
     if (appState == null){
-      appState = new AppState(new DownloadManager(context), new DatabaseManager(), new VideoPreviewManager(context), new Map(), new Map());
+      appState = new AppState(new DownloadManager(context), new DatabaseManager(), new VideoPreviewManager(context), new Map(), new Map(), new Map());
       getAllDownloadsFromDatabase();
     }
     if (videoListState == null){
@@ -78,9 +80,15 @@ class AppSharedState extends State<AppSharedStateContainer> {
 
   void getAllDownloadsFromDatabase() async {
     await initializeDownloadDb();
+    //VIDEOS
     Set<VideoEntity> videos = await appState.databaseManager.getAllDownloadedVideos();
     print("Currently there are " + videos.length.toString() + " downloaded videos in the database");
     videos.forEach((entity) => appState.downloadedVideos.putIfAbsent(entity.id,() => entity));
+
+    //FAV Channels
+    Set<ChannelFavoriteEntity> channels = await appState.databaseManager.getAllChannelFavorites();
+    print("There are " + channels.length.toString() + " favorited channels in the database");
+    channels.forEach((entity) => appState.favoritChannels.putIfAbsent(entity.name,() => entity));
   }
 
   initializeDownloadDb() async {
