@@ -150,7 +150,12 @@ class HomePageState extends State<MyHomePage>
         onError: onWebsocketError,
         onWebsocketChannelOpenedSuccessfully:
             onWebsocketChannelOpenedSuccessfully);
-    websocketController.initializeWebsocket().then((Void) => _createQuery());
+    websocketController.initializeWebsocket().then((Void) {
+      currentUserQueryInput = widget.searchFieldController.text;
+
+      websocketController.queryEntries(
+          currentUserQueryInput, searchFilters, 0, 10);
+    });
   }
 
   @override
@@ -180,7 +185,6 @@ class HomePageState extends State<MyHomePage>
                 onFilterUpdated: _filterMenuUpdatedCallback,
                 onSingleFilterTapped: _singleFilterTappedCallback)),
       ),
-
       new Flexible(
         child: new RefreshIndicator(
             child: new VideoListView(
@@ -190,14 +194,12 @@ class HomePageState extends State<MyHomePage>
                 queryEntries: onQueryEntries),
             onRefresh: _handleListRefresh),
       ),
-
       new StatusBar(
           key: statusBarKey,
           websocketInitError: websocketInitError,
           videoListIsEmpty: videos.isEmpty,
           lastAmountOfVideosRetrieved: lastAmountOfVideosRetrieved,
           firstAppStartup: lastAmountOfVideosRetrieved < 0),
-
       new IndexingBar(
           key: indexingBarKey,
           indexingError: indexingError,
@@ -235,7 +237,6 @@ class HomePageState extends State<MyHomePage>
               new AboutSection()
             ])));
   }
-
 
   Future<Null> _handleListRefresh() async {
     print("Refreshing video list ...");
@@ -390,6 +391,7 @@ class HomePageState extends State<MyHomePage>
   }
 
   void _createQuery() {
+    print("Clearing video list");
     videos.clear();
     currentUserQueryInput = widget.searchFieldController.text;
 

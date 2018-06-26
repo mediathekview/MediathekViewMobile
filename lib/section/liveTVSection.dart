@@ -71,6 +71,7 @@ class _LiveTVSectionState extends State<LiveTVSection> {
         allChannels.sort((a, b) => a.name.toUpperCase().compareTo(b.name.toUpperCase()));
         childChannels.sort((a, b) => a.name.toUpperCase().compareTo(b.name.toUpperCase()));
         localChannels.sort((a, b) => a.name.toUpperCase().compareTo(b.name.toUpperCase()));
+        newsChannels.sort((a, b) => a.name.toUpperCase().compareTo(b.name.toUpperCase()));
         setState(() {});
       });
     });
