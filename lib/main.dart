@@ -310,35 +310,29 @@ class HomePageState extends State<MyHomePage>
 
       QueryResult queryResult = JSONParser.parseQueryResult(data);
 
+      List<Video> newVideosFromQuery = queryResult.videos;
       print('Received ' +
-          queryResult.videos.length.toString() +
+          newVideosFromQuery.length.toString() +
           ' entries. Amount of videos currently in list ' +
           videos.length.toString());
 
-      lastAmountOfVideosRetrieved = queryResult.videos.length;
+      lastAmountOfVideosRetrieved = newVideosFromQuery.length;
 
-      Set<String> currentIds = videos.map((video) => video.id).toSet();
-      Set<Video> newVideos = queryResult.videos
-          .where((video) => !currentIds.contains(video.id))
-          .toSet();
+      //construct new videos List
+      int newVideosCount = addOnlyNewVideos(newVideosFromQuery);
 
-      if (newVideos.isEmpty && scrolledToEndOfList == false) {
+      print("Added amount of new videos: " + newVideosCount.toString());
+
+      if (newVideosCount == 0 && scrolledToEndOfList == false) {
         print("Scrolled to end of list");
         scrolledToEndOfList = true;
         if (mounted) {
           setState(() {});
         }
         return;
-      }
-
-      if (newVideos != null && !newVideos.isEmpty) {
-        print("Adding " + newVideos.length.toString() + " new  videos");
-        //add queryResult && trigger rerender of list view in the build method
-        lastAmountOfVideosRetrieved = queryResult.videos.length;
+      } else if (newVideosCount != 0) {
+        lastAmountOfVideosRetrieved = newVideosCount;
         scrolledToEndOfList == false;
-
-        videos.addAll(newVideos);
-
         if (mounted) setState(() {});
       }
     } else if (socketIOEventType == WebsocketConnectionTypes.INDEX_STATE) {
@@ -364,6 +358,43 @@ class HomePageState extends State<MyHomePage>
     } else {
       print("Recieved pong. Content: " + data);
     }
+  }
+
+  int addOnlyNewVideos(List<Video> newVideosFromQuery) {
+    int newVideosCount = 0;
+    for (int i = 0; i < newVideosFromQuery.length; i++) {
+      print("I: " + i.toString());
+      Video currentVideo = newVideosFromQuery[i];
+      bool hasDuplicate = false;
+      for (int b = i + 1; b < newVideosFromQuery.length + videos.length; b++) {
+        Video video;
+
+        if (b > newVideosFromQuery.length - 1) {
+          int index = b - newVideosFromQuery.length;
+          video = videos[index];
+        } else {
+          video = newVideosFromQuery[b];
+        }
+        if (video.id == currentVideo.id ||
+            video.title == currentVideo.title &&
+                video.duration == currentVideo.duration) {
+          print("FOund duplicate with title: " +
+              video.title +
+              " and duration: " +
+              video.duration.toString() +
+              " and index: " +
+              b.toString());
+          hasDuplicate = true;
+          break;
+        }
+      }
+      if (hasDuplicate == false) {
+        videos.add(currentVideo);
+        print("Adding video. Length now: " + videos.length.toString());
+        newVideosCount++;
+      }
+    }
+    return newVideosCount;
   }
 
   // ----------CALLBACKS: From List View ----------------

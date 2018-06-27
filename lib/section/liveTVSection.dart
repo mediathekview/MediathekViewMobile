@@ -83,11 +83,9 @@ class _LiveTVSectionState extends State<LiveTVSection> {
 
     appWideState = AppSharedStateContainer.of(context);
     favChannels = appWideState.appState.favoritChannels;
-    print("Amount of Fav channels: " + favChannels.length.toString());
-    favChannels.forEach((string, channel) => print("Saved Key: " + string));
+//    print("Amount of Fav channels: " + favChannels.length.toString());
+//    favChannels.forEach((string, channel) => print("Saved Key: " + string));
     databaseManager = appWideState.appState.databaseManager;
-
-    //TODO build favorite list
 
     Widget allChannelsListView = buildListView(allChannels, itemBuilderAllChannels);
     Widget childChannelsListView  = buildListView(childChannels, itemBuilderChildChannels);
@@ -95,39 +93,46 @@ class _LiveTVSectionState extends State<LiveTVSection> {
     Widget newsChannelsListView  = buildListView(newsChannels, itemBuilderNewsChannels);
     Widget favoriteChannelsListView  = buildListView(favChannels.values.toList(), itemBuilderFavoriteChannels);
 
+    PreferredSize tabbar = new PreferredSize(
+      child: new TabBar(
+      indicatorColor: Colors.white,
+      tabs: <Widget>[
+        new Tab(
+            icon: new Icon(
+              Icons.list,
+            ),
+            text: "Alle"),
+        new Tab(
+            icon: new Icon(
+              Icons.favorite,
+              color: Colors.red[900],
+            ),
+            text: "Meins"),
+        new Tab(
+            icon: new Icon(
+              Icons.location_city,
+            ),
+            text: "Lokal"),
+        new Tab(
+            icon: new Icon(
+              Icons.child_care,
+            ),
+            text: "Kinder"),
+        new Tab(icon: new Icon(Icons.comment), text: "News"),
+      ],
+    ), preferredSize:  new Size.fromHeight(40.0),);
+    
     return new DefaultTabController(
       length: 5,
       child: new Scaffold(
           backgroundColor: Colors.grey[800],
           appBar: new AppBar(
-            title: new Text('LiveTV', style: sectionHeadingTextStyle),
-            backgroundColor: new Color(0xffffbf00),
-            bottom: new TabBar(
-              tabs: <Widget>[
-                new Tab(
-                    icon: new Icon(
-                      Icons.list,
-                    ),
-                    text: "Alle"),
-                new Tab(
-                    icon: new Icon(
-                      Icons.favorite,
-                      color: Colors.red[900],
-                    ),
-                    text: "Meins"),
-                new Tab(
-                    icon: new Icon(
-                      Icons.location_city,
-                    ),
-                    text: "Lokal"),
-                new Tab(
-                    icon: new Icon(
-                      Icons.child_care,
-                    ),
-                    text: "Kinder"),
-                new Tab(icon: new Icon(Icons.comment), text: "News"),
-              ],
-            ),
+            centerTitle: true,
+            title: new Text('Live TV'),
+//            backgroundColor: new Color(0xffffbf00),
+            elevation: 6.0,
+            backgroundColor: Colors.grey[800],
+            bottom: tabbar,
           ),
           body: new TabBarView(
               children: <Widget>[allChannelsListView, favoriteChannelsListView, localChannelsListView, childChannelsListView, newsChannelsListView])),
@@ -158,6 +163,7 @@ class _LiveTVSectionState extends State<LiveTVSection> {
   Widget itemBuilderAllChannels(BuildContext context, int index) {
     Channel channel = allChannels[index];
     print("Item with index " + index.toString() + "  content: " + channel.name);
+    print(channel.name + " : " + channel.logo);
 
     return getListTile(channel);
   }
@@ -166,16 +172,21 @@ class _LiveTVSectionState extends State<LiveTVSection> {
     print("Fav: TOTAlLength: " + favChannels.length.toString() + " Index: " + index.toString());
     ChannelFavoriteEntity channelEntity = favChannels.values.toList()[index];
     Channel channel = new Channel(channelEntity.name, channelEntity.logo, channelEntity.groupname, channelEntity.url);
+    print(channel.name + " : " + channel.logo);
+
     return getListTile(channel);
   }
 
   Widget itemBuilderChildChannels(BuildContext context, int index) {
     Channel channel = childChannels[index];
+    print(channel.name + " : " + channel.logo);
+
     return getListTile(channel);
   }
 
   Widget itemBuilderLocalChannels(BuildContext context, int index) {
     Channel channel = localChannels[index];
+    print(channel.name + " : " + channel.logo);
     return getListTile(channel);
   }
 

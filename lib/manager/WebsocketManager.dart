@@ -28,8 +28,7 @@ class WebsocketController {
       @required this.onError});
 
   Future<void> initializeWebsocket() async {
-
-    if (connectionState == ConnectionState.active){
+    if (connectionState == ConnectionState.active) {
       print("Not re-initializing of Websocket - current is still active");
       return;
     }
@@ -40,7 +39,7 @@ class WebsocketController {
     print("Initially contacting Websocket Endpoint");
     HttpClientResponse response;
     try {
-       response = await WebsocketHandler
+      response = await WebsocketHandler
           .initiallyContactWebsocketEndpoint(initialRequestCookies);
     } catch (e) {
       onError(new FailedToContactWebsocketError(e.toString()));
@@ -131,64 +130,65 @@ class WebsocketController {
     //TODO check if it is a pong -> if yes rememrber for the ping
     wsChannel.stream.listen((data) {
       connectionState = ConnectionState.active;
-      onDataReceived(data);},
-        onError: (error) {
-          connectionState = ConnectionState.done;
-      onError(new FailedToContactWebsocketError(error.toString()));}, onDone: () {
-          connectionState = ConnectionState.done;
-      onDone();});
+      onDataReceived(data);
+    }, onError: (error) {
+      connectionState = ConnectionState.done;
+      onError(new FailedToContactWebsocketError(error.toString()));
+    }, onDone: () {
+      connectionState = ConnectionState.done;
+      onDone();
+    });
   }
 
   //TODO add search model
   void queryEntries(String genericQuery,
       Map<String, SearchFilter> searchFilters, int skip, int amount) {
-    if (wsChannel != null) {
-      List<String> queryFilters = new List();
+    List<String> queryFilters = new List();
 
-      if (searchFilters.containsKey('Titel') &&
-          searchFilters['Titel'].filterValue.isNotEmpty)
-        queryFilters.add('{"fields":["title"],"query":"' +
-            searchFilters['Titel'].filterValue.toLowerCase() +
-            '"}');
+    if (searchFilters.containsKey('Titel') &&
+        searchFilters['Titel'].filterValue.isNotEmpty)
+      queryFilters.add('{"fields":["title"],"query":"' +
+          searchFilters['Titel'].filterValue.toLowerCase() +
+          '"}');
 
-      if (searchFilters.containsKey('Thema') &&
-          searchFilters['Thema'].filterValue.isNotEmpty &&
-          genericQuery != null &&
-          genericQuery.isNotEmpty) {
-        //generics -> title only
-        queryFilters.add('{"fields":["title"],"query":"' +
-            genericQuery.toLowerCase() +
-            '"}');
-      } else if (genericQuery != null && genericQuery.isNotEmpty)
-        queryFilters.add('{"fields":["topic","title"],"query":"' +
-            genericQuery.toLowerCase() +
-            '"}');
+    if (searchFilters.containsKey('Thema') &&
+        searchFilters['Thema'].filterValue.isNotEmpty &&
+        genericQuery != null &&
+        genericQuery.isNotEmpty) {
+      //generics -> title only
+      queryFilters.add(
+          '{"fields":["title"],"query":"' + genericQuery.toLowerCase() + '"}');
+    } else if (genericQuery != null && genericQuery.isNotEmpty)
+      queryFilters.add('{"fields":["topic","title"],"query":"' +
+          genericQuery.toLowerCase() +
+          '"}');
 
-      if (searchFilters.containsKey('Thema') &&
-          searchFilters['Thema'].filterValue.isNotEmpty)
-        queryFilters.add('{"fields":["topic"],"query":"' +
-            searchFilters['Thema'].filterValue.toLowerCase() +
-            '"}');
+    if (searchFilters.containsKey('Thema') &&
+        searchFilters['Thema'].filterValue.isNotEmpty)
+      queryFilters.add('{"fields":["topic"],"query":"' +
+          searchFilters['Thema'].filterValue.toLowerCase() +
+          '"}');
 
-      if (searchFilters.containsKey('Sender'))
-        searchFilters['Sender'].filterValue.split(";").forEach((channel) =>
-            queryFilters.add('{"fields":["channel"],"query":"' +
-                channel.toLowerCase() +
-                '"}'));
+    if (searchFilters.containsKey('Sender'))
+      searchFilters['Sender'].filterValue.split(";").forEach((channel) =>
+          queryFilters.add('{"fields":["channel"],"query":"' +
+              channel.toLowerCase() +
+              '"}'));
 
-      String request = '4211["queryEntries",{"queries":[' +
-          queryFilters.join(',') +
-          '],"sortBy":"timestamp","sortOrder":"desc","future":false,"offset":' +
-          skip.toString() +
-          ',"size":' +
-          amount.toString() +
-          '}]';
+    String request = '4211["queryEntries",{"queries":[' +
+        queryFilters.join(',') +
+        '],"sortBy":"timestamp","sortOrder":"desc","future":false,"offset":' +
+        skip.toString() +
+        ',"size":' +
+        amount.toString() +
+        '}]';
 
-      print("Firing request: " + request);
+    print("Firing request: " + request);
+    if (wsChannel != null && connectionState != ConnectionState.done) {
       wsChannel.sink.add(request);
     } else {
       //Todo: initialize channel again?
-      print("Trying to query entries but channel is null");
+      print("Trying to query entries but channel is null or connection state not active");
     }
   }
 

@@ -111,10 +111,7 @@ class _VideoListViewState extends State<VideoListView> {
     }
 
     if (widget.videos.length > index) {
-      print("Return normal row. Video list length is " +
-          widget.videos.length.toString() +
-          " and index is " +
-          index.toString());
+      print("Sender: " + widget.videos[index].channel);
 
       return  Column(
         mainAxisSize: MainAxisSize.min,

@@ -40,22 +40,25 @@ flutter:
   #  - images/a_dot_ham.jpeg
 
   assets:
-      - assets/img/mars.png
       - assets/img/ic_distance.png
       - assets/img/tatort_background.jpg
-      - assets/img/ARD.png
-      - assets/img/ORF.png
-      - assets/img/ZDF.png
-      - assets/img/WDR.png
-      - assets/img/ARTE.png
-      - assets/img/NDR.png
-      - assets/img/ZDF_NEO.png
-      - assets/img/KABELEINS.png
+      - assets/img/ard.png
+      - assets/img/orf.png
+      - assets/img/zdf.png
+      - assets/img/wdr.png
+      - assets/img/arte.png
+      - assets/img/ndr.png
+      - assets/img/3sat.png
+      - assets/img/swr.png
+      - assets/img/br.png
+      - assets/img/dw.png
+      - assets/img/hr.png
+      - assets/img/kika.png
+      - assets/img/mdr.png
+      - assets/img/rbb.png
+      - assets/img/srf.png
       - assets/img/background.jpg
       - assets/img/MediathekViewLoading.png
-      - assets/imgLiveStream/ARD_LIVE.jpg
-      - assets/imgLiveStream/NDR_LIVE.jpg
-      - assets/imgLiveStream/ZDF_LIVE.png
       - assets/default_live_stream_channels.txt
 
   # An image asset can refer to one or more resolution-specific "variants", see

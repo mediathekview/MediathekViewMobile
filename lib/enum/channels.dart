@@ -4,13 +4,20 @@ class Channels {
   //TODO MDR
   //TODO NDR too small
   static Map<String, String> channelMap = {
-    'ZDF' : 'ZDF.png',
-    'ARD' : 'ARD.png',
-    'NDR' : 'NDR.png',
-    'ORF' : 'ORF.png',
-    'WDR' : 'WDR.png',
-    'Arte' : 'ARTE.png',
-    'ZDF neo' : 'ZDF_NEO.png',
-    'kabel eins' : 'KABELEINS.png'
+    'ZDF' : 'zdf.png',
+    'ARD' : 'ard.png',
+    'NDR' : 'ndr.png',
+    'ORF' : 'orf.png',
+    'WDR' : 'wdr.png',
+    'Arte' : 'arte.png',
+    '3SAT' : '3sat.png',
+    'BR' : 'br.png',
+    'DW' : 'dw.png',
+    'SWR' : 'swr.png',
+    'HR' : 'hr.png',
+    'KIKA' : 'kika.png',
+    'MDR' : 'mdr.png',
+    'RBB' : 'rbb.png',
+    'SRF' : 'srf.png',
   };
 }
