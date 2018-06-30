@@ -76,7 +76,8 @@ class _LiveTVSectionState extends State<LiveTVSection> {
             (a, b) => a.name.toUpperCase().compareTo(b.name.toUpperCase()));
         newsChannels.sort(
             (a, b) => a.name.toUpperCase().compareTo(b.name.toUpperCase()));
-        setState(() {});
+        if (mounted)
+          setState(() {});
       });
     });
   }
@@ -165,14 +166,14 @@ class _LiveTVSectionState extends State<LiveTVSection> {
                 child: new ListView.builder(
                     itemBuilder: builder, itemCount: list.length),
               )
-            : showLoading? new Container(
+            : showLoading? new Center(child: new Container(
                 alignment: Alignment.center,
                 child: new CircularProgressIndicator(
                     valueColor: new AlwaysStoppedAnimation<Color>(
                         new Color(0xffffbf00)),
                     strokeWidth: 5.0,
                     backgroundColor: Colors.white),
-              ): new Container(),
+              ),): new Container(),
       ],
     );
   }

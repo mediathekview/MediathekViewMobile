@@ -34,7 +34,6 @@ class StatusBar extends StatelessWidget {
 //    }
 
     if (websocketInitError) {
-      print("Websocket Channel lost server connection");
       return new CircularProgressWithText(
           new Text("Keine Verbindung", style: connectionLostTextStyle), new Color(0xffffbf00), Colors.white);
     }

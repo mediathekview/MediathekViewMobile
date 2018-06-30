@@ -88,7 +88,7 @@ class HomePageState extends State<MyHomePage>
   bool filterMenuChannelFilterIsOpen;
 
   //Websocket
-  WebsocketController websocketController;
+  static WebsocketController websocketController;
   bool websocketInitError;
   int lastAmountOfVideosRetrieved;
   IndexingInfo indexingInfo;
@@ -104,6 +104,7 @@ class HomePageState extends State<MyHomePage>
 
   //mock
   Timer mockTimer;
+  Timer noConnectionChecker;
 
   //Statusbar
   StatusBar statusBar;
@@ -153,9 +154,37 @@ class HomePageState extends State<MyHomePage>
     websocketController.initializeWebsocket().then((Void) {
       currentUserQueryInput = widget.searchFieldController.text;
 
+      print("Firing query on home page init");
       websocketController.queryEntries(
           currentUserQueryInput, searchFilters, 0, 10);
     });
+
+    Duration duration = new Duration(milliseconds: 5000);
+    noConnectionChecker = new Timer.periodic(
+      duration,
+          (Timer t) {
+            ConnectionState connectionState = websocketController.connectionState;
+
+            if (connectionState == ConnectionState.active){
+              print("Ws connection is fine");
+            }
+            else if (connectionState == ConnectionState.done || connectionState == ConnectionState.none){
+              print("Ws connection is " + connectionState.toString() + " and mounted: " + mounted.toString());
+
+              if (mounted)
+                websocketController.initializeWebsocket().then((initializedSuccessfully) {
+                  if(initializedSuccessfully){
+                    print("WS connection stable again");
+                    if(videos.isEmpty)
+                      _createQuery(0, 10);
+                  } else {
+                    print("WS initialization failed");
+                  }
+                });
+
+            }
+      },
+    );
   }
 
   @override
@@ -243,7 +272,7 @@ class HomePageState extends State<MyHomePage>
     refreshOperationRunning = true;
     //the completer will be completed when there are results & the flag == true
     refreshCompleter = new Completer<Null>();
-    fireQueryOnSearchFilterUpdate();
+    _createQueryWithClearedVideoList(0, 10);
 
     return refreshCompleter.future;
   }
@@ -260,29 +289,13 @@ class HomePageState extends State<MyHomePage>
   //TODO add automatic reopen flag
   onWebsocketDone() {
     print('Received a Done signal from the Websocket');
-    //retry connecting
-    new Timer(new Duration(seconds: 3), () {
-      websocketController.initializeWebsocket().then((Void) {
-        print("Firing initial query after websocket done");
-        _createQuery();
-      });
-    });
   }
 
   void onWebsocketError(FailedToContactWebsocketError error) {
-    print("Ws initialization failed with " + error.toString());
-
     if (this.websocketInitError == false) {
       this.websocketInitError = true;
       if (mounted) setState(() {});
     }
-
-    new Timer(new Duration(seconds: 3), () {
-      websocketController.initializeWebsocket().then((Void) {
-        print("Firing initial query after websocket error");
-        _createQuery();
-      });
-    });
   }
 
   void onWebsocketData(String data) {
@@ -410,26 +423,28 @@ class HomePageState extends State<MyHomePage>
         currentUserQueryInput, searchFilters, skip, top);
   }
 
-  // ----------CALLBACKS: From SEARCH INput ----------------
-
-  void fireQueryOnSearchFilterUpdate() {
-    _createQuery();
-  }
+  // ---------- SEARCH Input ----------------
 
   void handleSearchInput() {
-    if (currentUserQueryInput == widget.searchFieldController.text) return;
-    _createQuery();
+    if (currentUserQueryInput == widget.searchFieldController.text) {
+      print("Current Query Input equals new query input - not querying again!");
+      return;
+    }
+    _createQueryWithClearedVideoList(0, 10);
   }
 
-  void _createQuery() {
-    print("Clearing video list");
-    videos.clear();
+  void _createQuery(int skip, int top) {
     currentUserQueryInput = widget.searchFieldController.text;
 
-    if (mounted) setState(() {});
-
     websocketController.queryEntries(
-        currentUserQueryInput, searchFilters, 0, 10);
+        currentUserQueryInput, searchFilters, skip, top);
+  }
+
+  void _createQueryWithClearedVideoList(int skip, int top) {
+    print("Clearing video list");
+    videos.clear();
+    if (mounted) setState(() {});
+    _createQuery(skip, top);
   }
 
   // ----------CALLBACKS: FILTER MENU----------------
@@ -454,7 +469,7 @@ class HomePageState extends State<MyHomePage>
         if (newFilter.filterValue.isNotEmpty)
           this.searchFilters.putIfAbsent(newFilter.filterId, () => newFilter);
         //updates state internally
-        fireQueryOnSearchFilterUpdate();
+        _createQueryWithClearedVideoList(0, 10);
       }
     } else if (newFilter.filterValue.isNotEmpty) {
       print("New filter with id " +
@@ -465,7 +480,7 @@ class HomePageState extends State<MyHomePage>
       HapticFeedback.mediumImpact();
 
       this.searchFilters.putIfAbsent(newFilter.filterId, () => newFilter);
-      fireQueryOnSearchFilterUpdate();
+      _createQueryWithClearedVideoList(0, 10);
     }
   }
 
@@ -473,7 +488,7 @@ class HomePageState extends State<MyHomePage>
     //remove filter from list and refresh state to retrigger build of app bar and list!
     searchFilters.remove(id);
     HapticFeedback.mediumImpact();
-    fireQueryOnSearchFilterUpdate();
+    _createQueryWithClearedVideoList(0, 10);
   }
 
   // ----------LIFECYCLE----------------

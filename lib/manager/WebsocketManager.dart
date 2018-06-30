@@ -9,7 +9,7 @@ import 'package:meta/meta.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WebsocketController {
-  WebSocketChannel wsChannel;
+  static WebSocketChannel wsChannel;
 
   //callbacks
   var onDataReceived;
@@ -27,7 +27,7 @@ class WebsocketController {
       @required this.onWebsocketChannelOpenedSuccessfully,
       @required this.onError});
 
-  Future<void> initializeWebsocket() async {
+  Future<bool> initializeWebsocket() async {
     if (connectionState == ConnectionState.active) {
       print("Not re-initializing of Websocket - current is still active");
       return;
@@ -43,17 +43,21 @@ class WebsocketController {
           .initiallyContactWebsocketEndpoint(initialRequestCookies);
     } catch (e) {
       onError(new FailedToContactWebsocketError(e.toString()));
+      return false;
     }
 
-    if (response == null)
+    if (response == null || response.statusCode == null) {
       onError(new FailedToContactWebsocketError(
           "Failed to retrieve valid session id from websocket endpoint"));
+      return false;
+    }
 
     if (response.statusCode != HttpStatus.OK) {
       print('Error getting sessionId address:\nHttp status ${response
           .statusCode}');
       onError(new FailedToContactWebsocketError(
           "Failed to retrieve valid session id from websocket endpoint"));
+      return false;
     }
 
     print("Recieved OK when initially contacting the Websocket Endpoint");
@@ -79,7 +83,7 @@ class WebsocketController {
     } catch (e) {
       print("Error connecting to websocket" + e.toString());
       onError(new FailedToContactWebsocketError(e.toString()));
-      return;
+      return false;
     }
 
     listenToWebsocket();
@@ -87,11 +91,13 @@ class WebsocketController {
     //start handshake
     sendSocketStartingSequence();
 
-    print("Sending ping");
+    print("Sending ping during ws init");
     wsChannel.sink.add("2");
 
     //Socket IO hearthbeat
     sendContinoousPing(pingInterval - pingTimeout);
+
+    return true;
   }
 
   void sendSocketStartingSequence() {
@@ -114,13 +120,16 @@ class WebsocketController {
     timer = new Timer.periodic(
       duration,
       (Timer t) {
-        if (wsChannel != null) {
-          print("Sending ping");
-          wsChannel.sink.add("2");
-        } else {
+        if (wsChannel == null) {
           print("ping NOT send. Channel => null");
+          return;
+        } else if (connectionState != ConnectionState.active) {
+          print(
+              "ping NOT send. Connection State: " + connectionState.toString());
+          return;
         }
-        ;
+        print("Sending regular ping");
+        wsChannel.sink.add("2");
       },
     );
   }
@@ -183,12 +192,16 @@ class WebsocketController {
         amount.toString() +
         '}]';
 
-    print("Firing request: " + request);
-    if (wsChannel != null && connectionState != ConnectionState.done) {
+    print("Firing request: " +
+        request +
+        "With connection state: " +
+        connectionState.toString());
+    //&& connectionState != ConnectionState.done
+    if (wsChannel != null) {
       wsChannel.sink.add(request);
     } else {
       //Todo: initialize channel again?
-      print("Trying to query entries but channel is null or connection state not active");
+      print("Trying to query entries but channel is null");
     }
   }
 

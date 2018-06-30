@@ -41,11 +41,13 @@ class VideoPreviewManager {
 
       VideoWidgetState widgetToUpdate = _widgetsWaitingForPreview[videoId];
 
-      if (widgetToUpdate != null && widgetToUpdate.mounted) {
+      if (widgetToUpdate != null) {
         print("Updating image preview for video: " + videoId);
-        widgetToUpdate.setState(() {
-          widgetToUpdate.previewImage = image;
-        });
+        widgetToUpdate.previewImage = image;
+
+        if (widgetToUpdate.mounted)
+          widgetToUpdate.setState(() {
+          });
 
         _widgetsWaitingForPreview.remove(videoId);
       }
