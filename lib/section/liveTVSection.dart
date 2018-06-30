@@ -68,10 +68,14 @@ class _LiveTVSectionState extends State<LiveTVSection> {
             " News: " +
             newsChannels.length.toString());
 
-        allChannels.sort((a, b) => a.name.toUpperCase().compareTo(b.name.toUpperCase()));
-        childChannels.sort((a, b) => a.name.toUpperCase().compareTo(b.name.toUpperCase()));
-        localChannels.sort((a, b) => a.name.toUpperCase().compareTo(b.name.toUpperCase()));
-        newsChannels.sort((a, b) => a.name.toUpperCase().compareTo(b.name.toUpperCase()));
+        allChannels.sort(
+            (a, b) => a.name.toUpperCase().compareTo(b.name.toUpperCase()));
+        childChannels.sort(
+            (a, b) => a.name.toUpperCase().compareTo(b.name.toUpperCase()));
+        localChannels.sort(
+            (a, b) => a.name.toUpperCase().compareTo(b.name.toUpperCase()));
+        newsChannels.sort(
+            (a, b) => a.name.toUpperCase().compareTo(b.name.toUpperCase()));
         setState(() {});
       });
     });
@@ -87,77 +91,90 @@ class _LiveTVSectionState extends State<LiveTVSection> {
 //    favChannels.forEach((string, channel) => print("Saved Key: " + string));
     databaseManager = appWideState.appState.databaseManager;
 
-    Widget allChannelsListView = buildListView(allChannels, itemBuilderAllChannels);
-    Widget childChannelsListView  = buildListView(childChannels, itemBuilderChildChannels);
-    Widget localChannelsListView  = buildListView(localChannels, itemBuilderLocalChannels);
-    Widget newsChannelsListView  = buildListView(newsChannels, itemBuilderNewsChannels);
-    Widget favoriteChannelsListView  = buildListView(favChannels.values.toList(), itemBuilderFavoriteChannels);
+    Widget allChannelsListView =
+        buildListView(allChannels, itemBuilderAllChannels,true);
+    Widget childChannelsListView =
+        buildListView(childChannels, itemBuilderChildChannels,true);
+    Widget localChannelsListView =
+        buildListView(localChannels, itemBuilderLocalChannels,true);
+    Widget newsChannelsListView =
+        buildListView(newsChannels, itemBuilderNewsChannels,true);
+    Widget favoriteChannelsListView =
+        buildListView(favChannels.values.toList(), itemBuilderFavoriteChannels, false);
 
     PreferredSize tabbar = new PreferredSize(
       child: new TabBar(
-      indicatorColor: Colors.white,
-      tabs: <Widget>[
-        new Tab(
-            icon: new Icon(
-              Icons.list,
-            ),
-            text: "Alle"),
-        new Tab(
-            icon: new Icon(
-              Icons.favorite,
-              color: Colors.red[900],
-            ),
-            text: "Meins"),
-        new Tab(
-            icon: new Icon(
-              Icons.location_city,
-            ),
-            text: "Lokal"),
-        new Tab(
-            icon: new Icon(
-              Icons.child_care,
-            ),
-            text: "Kinder"),
-        new Tab(icon: new Icon(Icons.comment), text: "News"),
-      ],
-    ), preferredSize:  new Size.fromHeight(40.0),);
-    
+        indicatorColor: Colors.white,
+        tabs: <Widget>[
+          new Tab(
+              icon: new Icon(
+                Icons.list,
+              ),
+              text: "Alle"),
+          new Tab(
+              icon: new Icon(
+                Icons.favorite,
+                color: Colors.red[900],
+              ),
+              text: "Meins"),
+          new Tab(
+              icon: new Icon(
+                Icons.location_city,
+              ),
+              text: "Lokal"),
+          new Tab(
+              icon: new Icon(
+                Icons.child_care,
+              ),
+              text: "Kinder"),
+          new Tab(icon: new Icon(Icons.comment), text: "News"),
+        ],
+      ),
+      preferredSize: new Size.fromHeight(40.0),
+    );
+
     return new DefaultTabController(
       length: 5,
       child: new Scaffold(
-          backgroundColor: Colors.grey[800],
-          appBar: new AppBar(
-            centerTitle: true,
-            title: new Text('Live TV'),
+        backgroundColor: Colors.grey[800],
+        appBar: new AppBar(
+          centerTitle: true,
+          title: new Text('Live TV'),
 //            backgroundColor: new Color(0xffffbf00),
-            elevation: 6.0,
-            backgroundColor: Colors.grey[800],
-            bottom: tabbar,
-          ),
-          body: new TabBarView(
-              children: <Widget>[allChannelsListView, favoriteChannelsListView, localChannelsListView, childChannelsListView, newsChannelsListView])),
+          elevation: 6.0,
+          backgroundColor: Colors.grey[800],
+          bottom: tabbar,
+        ),
+        body: new TabBarView(children: <Widget>[
+          allChannelsListView,
+          favoriteChannelsListView,
+          localChannelsListView,
+          childChannelsListView,
+          newsChannelsListView
+        ]),
+      ),
     );
   }
 
-  Column buildListView(List list, ItemBuilder builder) {
+  Column buildListView(List list, ItemBuilder builder, bool showLoading) {
+
     return new Column(
-    children: <Widget>[
-      list.isNotEmpty
-          ? new Flexible(
-              child: new ListView.builder(
-                  itemBuilder: builder,
-                  itemCount: list.length),
-            )
-          : new Container(
-              alignment: Alignment.center,
-              child: new CircularProgressIndicator(
-                  valueColor: new AlwaysStoppedAnimation<Color>(
-                      new Color(0xffffbf00)),
-                  strokeWidth: 5.0,
-                  backgroundColor: Colors.white),
-            ),
-    ],
-  );
+      children: <Widget>[
+        list.isNotEmpty
+            ? new Flexible(
+                child: new ListView.builder(
+                    itemBuilder: builder, itemCount: list.length),
+              )
+            : showLoading? new Container(
+                alignment: Alignment.center,
+                child: new CircularProgressIndicator(
+                    valueColor: new AlwaysStoppedAnimation<Color>(
+                        new Color(0xffffbf00)),
+                    strokeWidth: 5.0,
+                    backgroundColor: Colors.white),
+              ): new Container(),
+      ],
+    );
   }
 
   Widget itemBuilderAllChannels(BuildContext context, int index) {
@@ -169,9 +186,13 @@ class _LiveTVSectionState extends State<LiveTVSection> {
   }
 
   Widget itemBuilderFavoriteChannels(BuildContext context, int index) {
-    print("Fav: TOTAlLength: " + favChannels.length.toString() + " Index: " + index.toString());
+    print("Fav: TOTAlLength: " +
+        favChannels.length.toString() +
+        " Index: " +
+        index.toString());
     ChannelFavoriteEntity channelEntity = favChannels.values.toList()[index];
-    Channel channel = new Channel(channelEntity.name, channelEntity.logo, channelEntity.groupname, channelEntity.url);
+    Channel channel = new Channel(channelEntity.name, channelEntity.logo,
+        channelEntity.groupname, channelEntity.url);
     print(channel.name + " : " + channel.logo);
 
     return getListTile(channel);
@@ -197,36 +218,36 @@ class _LiveTVSectionState extends State<LiveTVSection> {
 
   ListTile getListTile(Channel channel) {
     return new ListTile(
-    onTap: () {
-      nativeVideoPlayer.playVideo(channel.url);
-    },
-    trailing: favChannels[channel.name] == null
-        ? new IconButton(
-            icon: new Icon(Icons.favorite_border),
-            onPressed: () {
-              _handleAddFavoriteChannel(channel);
-            })
-        : new IconButton(
-            icon: new Icon(
-              Icons.favorite,
-              color: Colors.red[900],
-            ),
-            onPressed: () {
-              _handleRemoveFavoriteChannel(channel.name);
-            }),
-    leading: new CircleAvatar(
-      backgroundColor: Colors.grey,
-      child: new Image.network(channel.logo),
-    ),
-    title: new Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      mainAxisSize: MainAxisSize.max,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: <Widget>[
-        new Expanded(child: new Text(channel.name, style: body2TextStyle)),
-      ],
-    ),
-  );
+      onTap: () {
+        nativeVideoPlayer.playVideo(channel.url);
+      },
+      trailing: favChannels[channel.name] == null
+          ? new IconButton(
+              icon: const Icon(Icons.favorite_border),
+              onPressed: () {
+                _handleAddFavoriteChannel(channel);
+              })
+          : new IconButton(
+              icon: new Icon(
+                Icons.favorite,
+                color: Colors.red[900],
+              ),
+              onPressed: () {
+                _handleRemoveFavoriteChannel(channel.name);
+              }),
+      leading: new CircleAvatar(
+        backgroundColor: Colors.grey,
+        child: new Image.network(channel.logo),
+      ),
+      title: new Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisSize: MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          new Expanded(child: new Text(channel.name, style: body2TextStyle)),
+        ],
+      ),
+    );
   }
 
   Future<String> getFileData(String path) async {
@@ -259,14 +280,10 @@ class _LiveTVSectionState extends State<LiveTVSection> {
   }
 
   String getM3u8Value(String id, String line) {
-//    print(id);
     int indexOfId = line.indexOf(id);
     int indexEquals = indexOfId + id.length + 2;
     int endIndex = line.indexOf("\"", indexEquals);
-//    print("Index of Id:" + indexOfId.toString() + " Equals:" + indexEquals.toString() + " End" + endIndex.toString());
-    String sub = line.substring(indexEquals, endIndex);
-//    print("Result " + sub);
-    return sub;
+    return line.substring(indexEquals, endIndex);
   }
 
   void _handleAddFavoriteChannel(Channel channel) {
@@ -275,7 +292,6 @@ class _LiveTVSectionState extends State<LiveTVSection> {
         channel.name, channel.logo, channel.group, channel.url);
     databaseManager.insertChannelFavorite(entity).then((dynamic) {
       print("added favorite CHannel to DB");
-      //TODO only trigger reload of sigle tile
       setState(() {
         appWideState.appState.favoritChannels
             .putIfAbsent(channel.name, () => entity);
@@ -287,7 +303,6 @@ class _LiveTVSectionState extends State<LiveTVSection> {
     print("Pressed remove favourite");
     databaseManager.deleteChannelFavorite(senderName).then((dynamic) {
       print("removed favorite Channel from DB");
-      //TODO only trigger reload of sigle tile
       setState(() {
         appWideState.appState.favoritChannels.remove(senderName);
       });
