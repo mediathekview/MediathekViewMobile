@@ -28,3 +28,6 @@ final connectionLostTextStyle = oldStandardBaseTextStyle.copyWith(
 
 final body1TextStyle = oldStandardBaseTextStyle.copyWith(
     color: Colors.grey, fontSize: 14.0, fontWeight: FontWeight.w400);
+
+final aboutSectionTitle = oldStandardBaseTextStyle.copyWith(
+    color: Colors.grey[800], fontSize: 20.0, fontWeight: FontWeight.w400);
