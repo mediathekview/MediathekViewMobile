@@ -24,7 +24,6 @@ import 'package:flutter_ws/widgets/inherited/appBar_state_container.dart';
 import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
 import 'package:flutter_ws/widgets/list/videoListView.dart';
 import 'package:uuid/uuid.dart';
-//custom
 
 void main() => runApp(new AppSharedStateContainer(child: new MyApp()));
 
@@ -109,7 +108,14 @@ class HomePageState extends State<MyHomePage>
   //Statusbar
   StatusBar statusBar;
 
-  TabController bottomNavigationBarController;
+  PageController _pageController;
+
+  /// Indicating the current displayed page
+  /// 0: videoList
+  /// 1: LiveTV
+  /// 2: downloads
+  /// 3: about
+  int _page = 0;
 
   bool scrolledToEndOfList;
 
@@ -143,8 +149,7 @@ class HomePageState extends State<MyHomePage>
     statusBarKey = new Key(uuid.v1());
     indexingBarKey = new Key(uuid.v1());
 
-    bottomNavigationBarController = new TabController(vsync: this, length: 4);
-
+    _pageController = new PageController();
     websocketController = new WebsocketController(
         onDataReceived: onWebsocketData,
         onDone: onWebsocketDone,
@@ -162,35 +167,37 @@ class HomePageState extends State<MyHomePage>
     Duration duration = new Duration(milliseconds: 5000);
     noConnectionChecker = new Timer.periodic(
       duration,
-          (Timer t) {
-            ConnectionState connectionState = websocketController.connectionState;
+      (Timer t) {
+        ConnectionState connectionState = websocketController.connectionState;
 
-            if (connectionState == ConnectionState.active){
-              print("Ws connection is fine");
-            }
-            else if (connectionState == ConnectionState.done || connectionState == ConnectionState.none){
-              print("Ws connection is " + connectionState.toString() + " and mounted: " + mounted.toString());
+        if (connectionState == ConnectionState.active) {
+          print("Ws connection is fine");
+        } else if (connectionState == ConnectionState.done ||
+            connectionState == ConnectionState.none) {
+          print("Ws connection is " +
+              connectionState.toString() +
+              " and mounted: " +
+              mounted.toString());
 
-              if (mounted)
-                websocketController.initializeWebsocket().then((initializedSuccessfully) {
-                  if(initializedSuccessfully){
-                    print("WS connection stable again");
-                    if(videos.isEmpty)
-                      _createQuery(0, 10);
-                  } else {
-                    print("WS initialization failed");
-                  }
-                });
-
-            }
+          if (mounted)
+            websocketController
+                .initializeWebsocket()
+                .then((initializedSuccessfully) {
+              if (initializedSuccessfully) {
+                print("WS connection stable again");
+                if (videos.isEmpty) _createQuery(0, 10);
+              } else {
+                print("WS initialization failed");
+              }
+            });
+        }
       },
     );
   }
 
   @override
   void dispose() {
-    bottomNavigationBarController.dispose();
-
+    _pageController.dispose();
     print("Disposing Home Page & shutting down websocket connection");
 
     websocketController.stopPing();
@@ -236,35 +243,45 @@ class HomePageState extends State<MyHomePage>
     ]);
 
     return new Scaffold(
-        backgroundColor: Colors.grey[100],
-        bottomNavigationBar: new Container(
-            height: 50.0,
-            child: new Material(
-                color: Colors.grey[900],
-                child: new TabBar(
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    indicatorPadding: new EdgeInsets.only(top: 2.0),
-                    indicatorWeight: 2.0,
-                    indicatorColor: new Color(0xffffbf00),
-                    labelStyle: new TextStyle(fontSize: 10.0),
-                    controller: bottomNavigationBarController,
-                    tabs: <Tab>[
-                      new Tab(icon: new Icon(Icons.search), text: "Suche"),
-                      new Tab(icon: new Icon(Icons.live_tv), text: "Live TV"),
-                      new Tab(
-                          icon: new Icon(Icons.file_download),
-                          text: "Downloads"),
-                      new Tab(icon: new Icon(Icons.account_box), text: "About"),
-                    ]))),
-        body: new SafeArea(
-            child: new TabBarView(
-                controller: bottomNavigationBarController,
-                children: <Widget>[
-              videoSearchList,
-              new LiveTVSection(),
-              new DownloadSection(),
-              new AboutSection()
-            ])));
+      backgroundColor: Colors.grey[100],
+      body: new SafeArea(
+        child: new PageView(children: [
+          videoSearchList,
+          new LiveTVSection(),
+          new DownloadSection(),
+          new AboutSection()
+        ], controller: _pageController, onPageChanged: onPageChanged),
+      ),
+      bottomNavigationBar: new Material(color:  Colors.grey[900] ,child: new BottomNavigationBar(
+        type: BottomNavigationBarType.shifting,
+          items: [
+            new BottomNavigationBarItem(
+                icon: new Icon(Icons.search, color: _page != 0? Colors.white : new Color(0xffffbf00)), title: new Text("Suche"), backgroundColor: Colors.grey[900]),
+            new BottomNavigationBarItem(
+                icon: new Icon(Icons.live_tv, color: _page != 1? Colors.white : new Color(0xffffbf00)), title: new Text("Live Tv"),backgroundColor: Colors.grey[900]),
+            new BottomNavigationBarItem(
+                icon: new Icon(Icons.file_download, color: _page != 2? Colors.white : new Color(0xffffbf00)),
+                title: new Text("Downloads"),backgroundColor: Colors.grey[900]),
+            new BottomNavigationBarItem(
+                icon: new Icon(Icons.info_outline, color: _page != 3? Colors.white : new Color(0xffffbf00)), title: new Text("About"),backgroundColor: Colors.grey[900])
+          ],
+          onTap: navigationTapped,
+          currentIndex: _page),),
+    );
+  }
+
+  void onPageChanged(int page) {
+    setState(() {
+      this._page = page;
+    });
+  }
+
+  /// Called when the user presses on of the
+  /// [BottomNavigationBarItem] with corresponding
+  /// page index
+  void navigationTapped(int page) {
+    _pageController.animateToPage(page,
+        duration: const Duration(milliseconds: 300), curve: Curves.ease);
   }
 
   Future<Null> _handleListRefresh() async {
@@ -353,7 +370,6 @@ class HomePageState extends State<MyHomePage>
 
       if (!indexingInfo.done && !indexingInfo.error) {
         setState(() {
-          //add queryResult && trigger rerender of list view in the build method
           this.indexingError = false;
           this.indexingInfo = indexingInfo;
         });
@@ -363,7 +379,6 @@ class HomePageState extends State<MyHomePage>
         });
       } else {
         setState(() {
-          //Setting indexingInfo == null to ensure removal of progress indicator
           this.indexingError = false;
           this.indexingInfo = null;
         });

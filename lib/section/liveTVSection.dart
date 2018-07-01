@@ -140,7 +140,7 @@ class _LiveTVSectionState extends State<LiveTVSection> {
         backgroundColor: Colors.grey[800],
         appBar: new AppBar(
           centerTitle: true,
-          title: new Text('Live TV'),
+          title: new Text('Live Tv'),
 //            backgroundColor: new Color(0xffffbf00),
           elevation: 6.0,
           backgroundColor: Colors.grey[800],
