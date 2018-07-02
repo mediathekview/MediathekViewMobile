@@ -97,7 +97,7 @@ public class VideoStreamHandler implements EventChannel.StreamHandler {
             //events.success(byteArray);
         };
 
-        Log.i(TAG, "Starting executor service to generate preview");
+        Log.i(TAG, "Starting executor service to generate preview for id " + videoId + " url: " + url + " filename: " + fileName);
         previewdExecutorService.execute(task);
     }
 }

@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:typed_data';
-
 /// An example of using the plugin, controlling lifecycle and playback of the
 /// video.
 
@@ -16,18 +14,23 @@ import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
 /// An example of using the plugin, controlling lifecycle and playback of the
 /// video.
 
+/// An example of using the plugin, controlling lifecycle and playback of the
+/// video.
+
 class VideoWidget extends StatefulWidget {
   String videoId;
   String videoUrl;
   String fileName;
   String filePath;
   String mimeType;
+  String defaultImageAssetPath;
   Image previewImage;
   bool showLoadingIndicator;
 
   VideoWidget(this.previewImage, this.videoId,
       {this.videoUrl,
       this.mimeType,
+      this.defaultImageAssetPath,
       this.fileName,
       this.filePath,
       this.showLoadingIndicator});
@@ -43,100 +46,106 @@ class VideoWidgetState extends State<VideoWidget> {
   AppSharedState appWideState;
   Image previewImage;
 
-  VideoWidgetState(Image image){previewImage = image;}
-
+  VideoWidgetState(Image image) {
+    previewImage = image;
+  }
 
   @override
   Widget build(BuildContext context) {
-
     appWideState = AppSharedStateContainer.of(context);
 
     if (previewImage == null) {
-      VideoPreviewManager previewController = appWideState.appState.videoPreviewManager;
+      VideoPreviewManager previewController =
+          appWideState.appState.videoPreviewManager;
       //Manager will update state of this widget!
-      previewController.startPreviewGeneration(this, widget.videoId, widget.videoUrl, widget.fileName);
+      previewController.startPreviewGeneration(
+          this, widget.videoId, widget.videoUrl, widget.fileName);
     }
 
-    double width;
+    final size = MediaQuery.of(context).size;
+    //Always fill full width & calc height accordingly
+
+    double totalWidth = size.width - 36.0; //Intendation: 28 left, 8 right
+    double screenAspectRatio = size.width > size.height ? size.width / size.height : size.height / size.width;
+    print("ASpect ratio: " + screenAspectRatio.toString());
     double height;
 
     if (previewImage != null) {
-      width = previewImage.width;
-      height = previewImage.height;
-    } else {
-      final size = MediaQuery.of(context).size;
-      width = size.width;
-      height = size.height;
-    }
+      double originalWidth = previewImage.width;
+      double originalHeight = previewImage.height;
+      double aspectRatioVideo = originalWidth / originalHeight;
 
-//    child = new Stack(children: <Widget>[
-//      new Container(
-//        width: width, //Wrong when image is loaded
-//        child: new Stack(
-//          fit: StackFit.passthrough,
-//          children: <Widget>[
-//            new Container(color: const Color(0xffffbf00)),
-//            widget.showLoadingIndicator == true
-//                ? new Container(
-//                    constraints: BoxConstraints.tight(Size.square(25.0)),
-//                    alignment: FractionalOffset.topLeft,
-//                    child: widget.previewImage == null
-//                        ? const CircularProgressIndicator(
-//                            valueColor: const AlwaysStoppedAnimation<Color>(
-//                                Colors.white),
-//                            strokeWidth: 4.0,
-//                          )
-//                        : new Container(),
-//                  )
-//                : new Container(),
-//          ],
-//        ),
-//      ),
-//      new AnimatedOpacity(
-//        opacity: widget.previewImage != null ? 1.0 : 0.0,
-//        duration: new Duration(milliseconds: 1500),
-//        child: new Center(child: widget.previewImage),
-//      ),
-//    ]);
+      //calc height
+      double shrinkFactor = totalWidth / originalWidth;
+      height = originalHeight * shrinkFactor;
+      print("Aspect ratio video: "  + aspectRatioVideo.toString() + " Shrink factor: " +
+          shrinkFactor.toString() +
+          " Orig height: " +
+          originalHeight.toString() +
+          " New height: " +
+          height.toString());
+    } else {
+//      final size = MediaQuery.of(context).size;
+//      width = size.width;
+      height = totalWidth / 16 * 9;
+    }
 
     return new GestureDetector(
       child: new AspectRatio(
-        aspectRatio: width > height ? width / height : height / width,
+        aspectRatio:
+            totalWidth > height ? totalWidth / height : height / totalWidth,
         child: new Container(
-          width: width,
+          width: totalWidth,
           child: new Stack(
-              alignment: Alignment.center,
-              fit: StackFit.passthrough,
-              children: <Widget>[
-                new Container(color: const Color(0xffffbf00)),
-                widget.showLoadingIndicator == true
-                    ? new Container(
-                        constraints: BoxConstraints.tight(Size.square(25.0)),
-                        alignment: FractionalOffset.topLeft,
-                        child: widget.previewImage == null
-                            ? const CircularProgressIndicator(
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                    Colors.white),
-                                strokeWidth: 4.0,
-                              )
-                            : new Container(),
-                      )
-                    : new Container(),
-                new AnimatedOpacity(
-                  opacity: previewImage != null ? 1.0 : 0.0,
-                  duration: new Duration(milliseconds: 1500),
-                  curve: Curves.easeInOut,
-                  child: new Center(child: previewImage),
+            alignment: Alignment.center,
+            fit: StackFit.passthrough,
+            children: <Widget>[
+              new AnimatedOpacity(
+                opacity: previewImage == null ? 1.0 : 0.0,
+                duration: new Duration(milliseconds: 750),
+                curve: Curves.easeInOut,
+//                  child: new Center(child: previewImage),
+                child: widget.defaultImageAssetPath != null
+                    ? new Image.asset(
+                        'assets/img/' + widget.defaultImageAssetPath,
+//                        fit: BoxFit.cover,
+                        width: totalWidth,
+                        height: height,
+                        alignment: Alignment.center,
+                        gaplessPlayback: true)
+                    : new Container(color: const Color(0xffffbf00)),
+              ),
+              widget.showLoadingIndicator == true
+                  ? new Container(
+                      constraints: BoxConstraints.tight(Size.square(25.0)),
+                      alignment: FractionalOffset.topLeft,
+                      child: widget.previewImage == null
+                          ? const CircularProgressIndicator(
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Colors.white),
+                              strokeWidth: 4.0,
+                            )
+                          : new Container(),
+                    )
+                  : new Container(),
+              new AnimatedOpacity(
+                opacity: previewImage != null ? 1.0 : 0.0,
+                duration: new Duration(milliseconds: 1500),
+                curve: Curves.easeInOut,
+//                  child: new Center(child: previewImage),
+                child: previewImage,
+              ),
+              new Container(
+                width: totalWidth,
+                alignment: FractionalOffset.center,
+                child: new Opacity(
+                  opacity: 0.7,
+                  child: new Icon(Icons.play_circle_outline,
+                      size: 100.0, color: previewImage == null ? Colors.grey[500]: Colors.white),
                 ),
-                new Container(
-                    width: width,
-                    alignment: FractionalOffset.center,
-                    child: new Opacity(
-                      opacity: 0.7,
-                      child: new Icon(Icons.play_circle_outline,
-                          size: 100.0, color: Colors.white),
-                    )),
-              ]),
+              ),
+            ],
+          ),
         ),
       ),
       onTap: () {

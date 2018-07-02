@@ -102,7 +102,7 @@ class _ListCardState extends State<ListCard> {
               padding: new EdgeInsets.only(left: 40.0, right: 12.0)),
           new Column(key: new Key(uuid.v1()), children: <Widget>[
             isExtendet == true
-                ? new VideoPreviewAdapter(widget.video.id, video: widget.video)
+                ? new VideoPreviewAdapter(widget.video.id, video: widget.video, defaultImageAssetPath: widget.imgPath, showLoadingIndicator: false)
                 : new Container(),
             //ContentRow is always visible but like a sandwich in the middle of the download switch and the progress bar
             new DownloadCardBody(widget.video),

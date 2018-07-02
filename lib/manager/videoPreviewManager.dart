@@ -94,7 +94,7 @@ class VideoPreviewManager {
     int height = frameInfo.image.height;
     int width = frameInfo.image.width;
 
-    return new Image.memory(pictureRaw,
+    return new Image.memory(pictureRaw, fit: BoxFit.cover,
         height: height.toDouble(), width: width.toDouble());
   }
 
