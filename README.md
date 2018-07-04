@@ -1,8 +1,15 @@
-MediathekViewMonil ist eine einfache Mobile Anwendung für Android & iOS(bald) für den Zugriff auf die Filmliste des [MediathekView Projekts](https://mediathekview.de/).
+MediathekViewMobile ist eine mobile Android & iOS Anwendung für den Zugriff auf die Filmliste des [MediathekView Projekts](https://mediathekview.de/) mithilfe der API von [MediathekViewWeb](https://mediathekviewweb.de/)
 
 # Download
 
-Siehe Github Releases
+Android: Siehe Github Releases
+iOS: in Entwicklung
+
+# Features
+
+- Durchsuchen der Mediatheken der öffentlich-rechtlichen Sender
+- Download
+- Live TV von deutschen & internationalen Sendern
 
 # Impressionen
 
@@ -12,10 +19,12 @@ Siehe Github Releases
   <img src="https://user-images.githubusercontent.com/33809186/42282678-92e82800-7fa7-11e8-9296-df7ea3cfad6c.png" width="300">
 </p>
 
-# Verwendete Programme, Bibliotheken etc. (zumindest die wichtigsten, siehe [pubspec.yaml](https://github.com/danielfoehrKn/MediathekViewMobile/blob/master/pubspec.yaml) für mehr)
+# Verwendete Bibliotheken etc. (zumindest die wichtigsten, siehe [pubspec.yaml](https://github.com/danielfoehrKn/MediathekViewMobile/blob/master/pubspec.yaml) für mehr)
 
-- FFMPEG für Android
+- Ffmpeg für Android
 - sqflite flutter plugin
 - device_info flutter plugin
 - url_launcher flutter plugin
 - path_provider flutter plugin
+
+
