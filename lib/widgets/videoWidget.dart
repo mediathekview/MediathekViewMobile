@@ -1,21 +1,13 @@
 // Copyright 2017 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+// found in the LICENSE fi
 
-/// An example of using the plugin, controlling lifecycle and playback of the
-/// video.
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/manager/nativeVideoManager.dart';
 import 'package:flutter_ws/manager/videoPreviewManager.dart';
 import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
-
-/// An example of using the plugin, controlling lifecycle and playback of the
-/// video.
-
-/// An example of using the plugin, controlling lifecycle and playback of the
-/// video.
 
 class VideoWidget extends StatefulWidget {
   String videoId;
@@ -67,7 +59,7 @@ class VideoWidgetState extends State<VideoWidget> {
 
     double totalWidth = size.width - 36.0; //Intendation: 28 left, 8 right
     double screenAspectRatio = size.width > size.height ? size.width / size.height : size.height / size.width;
-    print("ASpect ratio: " + screenAspectRatio.toString());
+    print("Aspect ratio: " + screenAspectRatio.toString());
     double height;
 
     if (previewImage != null) {
@@ -87,7 +79,7 @@ class VideoWidgetState extends State<VideoWidget> {
     } else {
 //      final size = MediaQuery.of(context).size;
 //      width = size.width;
-      height = totalWidth / 16 * 9;
+      height = totalWidth / 16 * 9; //divide by aspect ratio
     }
 
     return new GestureDetector(
@@ -130,7 +122,7 @@ class VideoWidgetState extends State<VideoWidget> {
                   : new Container(),
               new AnimatedOpacity(
                 opacity: previewImage != null ? 1.0 : 0.0,
-                duration: new Duration(milliseconds: 1500),
+                duration: new Duration(milliseconds: 750),
                 curve: Curves.easeInOut,
 //                  child: new Center(child: previewImage),
                 child: previewImage,

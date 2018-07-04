@@ -172,6 +172,10 @@ class HomePageState extends State<MyHomePage>
 
         if (connectionState == ConnectionState.active) {
           print("Ws connection is fine");
+          if (websocketInitError)
+            setState(() {
+              websocketInitError = false;
+            });
         } else if (connectionState == ConnectionState.done ||
             connectionState == ConnectionState.none) {
           print("Ws connection is " +
@@ -252,21 +256,51 @@ class HomePageState extends State<MyHomePage>
           new AboutSection()
         ], controller: _pageController, onPageChanged: onPageChanged),
       ),
-      bottomNavigationBar: new Material(color:  Colors.grey[900] ,child: new BottomNavigationBar(
-        type: BottomNavigationBarType.shifting,
-          items: [
-            new BottomNavigationBarItem(
-                icon: new Icon(Icons.search, color: _page != 0? Colors.white : new Color(0xffffbf00)), title: new Text("Suche"), backgroundColor: Colors.grey[900]),
-            new BottomNavigationBarItem(
-                icon: new Icon(Icons.live_tv, color: _page != 1? Colors.white : new Color(0xffffbf00)), title: new Text("Live Tv"),backgroundColor: Colors.grey[900]),
-            new BottomNavigationBarItem(
-                icon: new Icon(Icons.file_download, color: _page != 2? Colors.white : new Color(0xffffbf00)),
-                title: new Text("Downloads"),backgroundColor: Colors.grey[900]),
-            new BottomNavigationBarItem(
-                icon: new Icon(Icons.info_outline, color: _page != 3? Colors.white : new Color(0xffffbf00)), title: new Text("About"),backgroundColor: Colors.grey[900])
-          ],
-          onTap: navigationTapped,
-          currentIndex: _page),),
+      bottomNavigationBar: new Theme(
+        data: Theme.of(context).copyWith(
+            canvasColor: Colors.grey[900],
+            splashColor: new Color(0xffffbf00),
+//            unselectedWidgetColor: Colors.green,
+            primaryColor: Colors.white,
+            textTheme: Theme
+                .of(context)
+                .textTheme
+                .copyWith(caption: new TextStyle(color: Colors.grey))),
+        child: new BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            items: [
+              new BottomNavigationBarItem(
+                activeIcon:
+                new Icon(Icons.search, color: new Color(0xffffbf00)),
+                icon: new Icon(Icons.search,
+                    color: Colors.white ),
+                title: new Text("Suche"),
+              ),
+              new BottomNavigationBarItem(
+                activeIcon:
+                    new Icon(Icons.live_tv, color: new Color(0xffffbf00)),
+                icon: new Icon(Icons.live_tv,
+                    color: _page != 1 ? Colors.white : new Color(0xffffbf00)),
+                title: new Text("Live Tv"),
+              ),
+              new BottomNavigationBarItem(
+                activeIcon:
+                    new Icon(Icons.file_download, color: new Color(0xffffbf00)),
+                icon: new Icon(Icons.file_download,
+                    color: _page != 2 ? Colors.white : new Color(0xffffbf00)),
+                title: new Text("Downloads"),
+              ),
+              new BottomNavigationBarItem(
+                activeIcon:
+                new Icon(Icons.info_outline, color: new Color(0xffffbf00)),
+                icon: new Icon(Icons.info_outline,
+                    color: Colors.white),
+                title: new Text("About"),
+              )
+            ],
+            onTap: navigationTapped,
+            currentIndex: _page),
+      ),
     );
   }
 

@@ -10,10 +10,9 @@ class ScrollPositionHolder {
 }
 
 class VideoListView extends StatefulWidget {
-
-   final int pageThreshold = 5;
+  final int pageThreshold = 5;
   final int amountOfVideosToFetch = 10;
-   final ScrollPositionHolder offset = new ScrollPositionHolder();
+  final ScrollPositionHolder offset = new ScrollPositionHolder();
 
   List<Video> videos;
   var queryEntries;
@@ -26,34 +25,42 @@ class VideoListView extends StatefulWidget {
     @required this.videos,
   }) : super(key: key);
 
-   double getOffsetMethod() {
-     print("Initial Scroll: " + offset.value.toString());
-     return offset.value;
-   }
+  double getOffsetMethod() {
+    return offset.value;
+  }
 
-   void setOffsetMethod(double val) {
-     offset.value = val;
-   }
+  void setOffsetMethod(double val) {
+    offset.value = val;
+  }
 
   @override
   _VideoListViewState createState() => _VideoListViewState();
 }
 
 class _VideoListViewState extends State<VideoListView> {
-
   ScrollController scrollController;
 
   @override
   void initState() {
     super.initState();
-    scrollController = new ScrollController(
-        initialScrollOffset: widget.getOffsetMethod()
-    );
+
+    if (widget.getOffsetMethod() != null) {
+      print(
+          "Video List View get offset: " + widget.getOffsetMethod().toString());
+      scrollController =
+          new ScrollController(initialScrollOffset: widget.getOffsetMethod());
+    } else {
+      print("Video List View: Not Setting scroll offset -> NULL");
+      scrollController = new ScrollController();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    print("Rendering Main Video List with list length " + widget.videos.length.toString() + " & fetched: " + widget.amountOfVideosFetched.toString());
+    print("Rendering Main Video List with list length " +
+        widget.videos.length.toString() +
+        " & fetched: " +
+        widget.amountOfVideosFetched.toString());
 
     //TODO brauche ein anderes maß -> Rewuest is finished & videos.length == 0 -> dann kein Videos
     //Siehe refresh indicator completer!!
@@ -67,7 +74,7 @@ class _VideoListViewState extends State<VideoListView> {
         alignment: Alignment.center,
         child: new CircularProgressIndicator(
             valueColor:
-            new AlwaysStoppedAnimation<Color>(new Color(0xffffbf00)),
+                new AlwaysStoppedAnimation<Color>(new Color(0xffffbf00)),
             strokeWidth: 5.0,
             backgroundColor: Colors.white),
       );
@@ -77,31 +84,28 @@ class _VideoListViewState extends State<VideoListView> {
         controller: scrollController,
         itemBuilder: itemBuilder,
         itemCount: widget.videos.length);
-//    return new NotificationListener(child:  new ListView.builder(
-//        controller: scrollController,
-//        itemBuilder: itemBuilder,
-//        itemCount: widget.videos.length),
-//      onNotification: (notification) {
-//        if (notification is ScrollNotification) {
-//          widget.setOffsetMethod(notification.metrics.pixels);
-//        }
-//      },
-//    );
   }
 
   Widget itemBuilder(BuildContext context, int index) {
-
-    widget.setOffsetMethod(Scrollable.of(context).position.pixels);
+    if (Scrollable.of(context) != null &&
+        Scrollable.of(context).position != null &&
+        Scrollable.of(context).position.pixels != null)
+      widget.setOffsetMethod(Scrollable.of(context).position.pixels);
+    else
+      print("Man video List View: ERROR: Could not set pixel position");
 
     if (index + widget.pageThreshold > widget.videos.length) {
       widget.queryEntries(index, widget.amountOfVideosToFetch);
     }
 
-    if (widget.videos.length == index + 1 && widget.amountOfVideosToFetch == widget.amountOfVideosFetched) {
+    if (widget.videos.length == index + 1 &&
+        widget.amountOfVideosToFetch == widget.amountOfVideosFetched) {
       print("Return progress indicator. Video list length is " +
           widget.videos.length.toString() +
           " and index is " +
-          index.toString() + " Amount Fetched: " + widget.amountOfVideosFetched.toString());
+          index.toString() +
+          " Amount Fetched: " +
+          widget.amountOfVideosFetched.toString());
       return new Container(
           alignment: Alignment.center,
           width: 20.0,
@@ -113,7 +117,7 @@ class _VideoListViewState extends State<VideoListView> {
     if (widget.videos.length > index) {
       print("Sender: " + widget.videos[index].channel);
 
-      return  Column(
+      return Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           RowAdapter.createRow(widget.videos[index]),
