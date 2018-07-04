@@ -1,4 +1,8 @@
-MediathekViewMonil ist eine einfache Mobile ANwendung für Android & iOS(bald) für den Zugriff auf die Filmliste des [MediathekView Projekts](https://mediathekview.de/).
+MediathekViewMonil ist eine einfache Mobile Anwendung für Android & iOS(bald) für den Zugriff auf die Filmliste des [MediathekView Projekts](https://mediathekview.de/).
+
+# Download
+
+Siehe Github Releases
 
 # Impressionen
 
