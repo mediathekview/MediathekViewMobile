@@ -51,6 +51,9 @@ android {
     }
     buildTypes {
         release {
+            ndk{
+                abiFilters 'armeabi-v7a'
+            }
             signingConfig signingConfigs.release
         }
     }
@@ -65,7 +68,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     implementation 'com.android.support:appcompat-v7:27.1.1'
-    implementation(name:'all-fmmr', ext:'aar')
+    implementation(name:'armv7-fmmr', ext:'aar')
     // full exoplayer library
     compile 'com.google.android.exoplayer:exoplayer:2.8.1'
 }

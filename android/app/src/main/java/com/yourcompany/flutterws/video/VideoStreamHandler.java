@@ -43,11 +43,10 @@ public class VideoStreamHandler implements EventChannel.StreamHandler {
     public void startPreviewTask(String url, String fileName, String videoId) {
 
         Runnable task = () -> {
-
             FFmpegMediaMetadataRetriever mmr = new FFmpegMediaMetadataRetriever();
             Bitmap preview;
 
-            if (fileName != null){
+            if (fileName != null) {
 
                 File file = new File(Environment.getExternalStorageDirectory() + "/MediathekView", fileName);
                 Log.i(TAG, "Starting task: preview video with fileName" + fileName + ". File: Can Read: " + file.canRead() + " Lenght: " + file.length());
@@ -62,8 +61,7 @@ public class VideoStreamHandler implements EventChannel.StreamHandler {
                     events.error(TAG, "File to generate preview from -  does not exist", null);
                     return;
                 }*/
-            }
-            else {
+            } else {
                 Log.i(TAG, "Starting task: preview video with  url : " + url);
                 mmr.setDataSource(url);
 
@@ -75,7 +73,7 @@ public class VideoStreamHandler implements EventChannel.StreamHandler {
             /*preview = mmr.getFrameAtTime(1000000, FFmpegMediaMetadataRetriever.OPTION_NEXT_SYNC); // frame at 2 seconds
             mmr.release();
             */
-            if (preview == null){
+            if (preview == null) {
                 Log.e(TAG, "Could not get preview bitmap");
                 events.error(TAG, "Could not get preview bitmap", null);
                 return;
@@ -89,7 +87,7 @@ public class VideoStreamHandler implements EventChannel.StreamHandler {
             byte[] byteArray = stream.toByteArray();
             preview.recycle();
 
-            Map<String, Object> returnArguments =new HashMap<>();
+            Map<String, Object> returnArguments = new HashMap<>();
             returnArguments.put("image", byteArray);
             returnArguments.put("videoId", videoId);
 
