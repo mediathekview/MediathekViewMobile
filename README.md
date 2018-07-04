@@ -2,8 +2,8 @@ MediathekViewMobile ist eine mobile Android & iOS Anwendung für den Zugriff auf
 
 # Download
 
-Android: Siehe Github Releases
-iOS: in Entwicklung
+- Android: Siehe Github Releases
+- iOS: in Entwicklung
 
 # Features
 
