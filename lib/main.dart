@@ -1,8 +1,11 @@
 import 'dart:async';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_analytics/observer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_ws/analytics/firebaseAnalytics.dart';
 import 'package:flutter_ws/enum/wsEventTypes.dart';
 import 'package:flutter_ws/exceptions/FailedToContactWebsocket.dart';
 import 'package:flutter_ws/manager/WebsocketManager.dart';
@@ -28,6 +31,10 @@ import 'package:uuid/uuid.dart';
 void main() => runApp(new AppSharedStateContainer(child: new MyApp()));
 
 class MyApp extends StatelessWidget {
+  static FirebaseAnalytics analytics = new FirebaseAnalytics();
+  static FirebaseAnalyticsObserver observer =
+      new FirebaseAnalyticsObserver(analytics: analytics);
+
   @override
   Widget build(BuildContext context) {
     AppSharedStateContainer.of(context).initializeState(context);
@@ -53,20 +60,30 @@ class MyApp extends StatelessWidget {
 //          indicatorColor: new Color(0xffffbf00)
       ),
       title: title,
-      home: new MyHomePage(key: new Key(uuid.v1()), title: title),
+      home: new MyHomePage(
+        key: new Key(uuid.v1()),
+        title: title,
+        analytics: analytics,
+        observer: observer,
+      ),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
+  //FirebaseAnalytics
+  final FirebaseAnalytics analytics;
+  final FirebaseAnalyticsObserver observer;
+
   final String title;
   final searchFieldController = new TextEditingController();
 
-  MyHomePage({Key key, @required this.title}) : super(key: key);
+  MyHomePage({Key key, @required this.title, this.analytics, this.observer})
+      : super(key: key);
 
   @override
   State<StatefulWidget> createState() {
-    return new HomePageState();
+    return new HomePageState(this.analytics, this.observer);
   }
 }
 
@@ -118,6 +135,12 @@ class HomePageState extends State<MyHomePage>
   int _page = 0;
 
   bool scrolledToEndOfList;
+
+  //FirebaseAnalytics
+  final FirebaseAnalytics analytics;
+  final FirebaseAnalyticsObserver observer;
+
+  HomePageState(this.analytics, this.observer);
 
   @override
   void initState() {
@@ -197,6 +220,9 @@ class HomePageState extends State<MyHomePage>
         }
       },
     );
+
+    //Track Open
+    Firebase.appOpened(analytics);
   }
 
   @override
@@ -271,9 +297,8 @@ class HomePageState extends State<MyHomePage>
             items: [
               new BottomNavigationBarItem(
                 activeIcon:
-                new Icon(Icons.search, color: new Color(0xffffbf00)),
-                icon: new Icon(Icons.search,
-                    color: Colors.white ),
+                    new Icon(Icons.search, color: new Color(0xffffbf00)),
+                icon: new Icon(Icons.search, color: Colors.white),
                 title: new Text("Suche"),
               ),
               new BottomNavigationBarItem(
@@ -292,9 +317,8 @@ class HomePageState extends State<MyHomePage>
               ),
               new BottomNavigationBarItem(
                 activeIcon:
-                new Icon(Icons.info_outline, color: new Color(0xffffbf00)),
-                icon: new Icon(Icons.info_outline,
-                    color: Colors.white),
+                    new Icon(Icons.info_outline, color: new Color(0xffffbf00)),
+                icon: new Icon(Icons.info_outline, color: Colors.white),
                 title: new Text("About"),
               )
             ],
@@ -316,6 +340,27 @@ class HomePageState extends State<MyHomePage>
   void navigationTapped(int page) {
     _pageController.animateToPage(page,
         duration: const Duration(milliseconds: 300), curve: Curves.ease);
+
+    /// 0: videoList
+    /// 1: LiveTV
+    /// 2: downloads
+    /// 3: about
+    String pageName;
+    switch(page){
+      case 0:
+        pageName = "VideoList";
+        break;
+      case 1:
+        pageName = "LiveTV";
+        break;
+      case 2:
+        pageName = "Downloads";
+        break;
+      case 3:
+        pageName = "About";
+        break;
+    }
+    Firebase.sendCurrentTabToAnalytics(observer, pageName);
   }
 
   Future<Null> _handleListRefresh() async {
@@ -479,6 +524,7 @@ class HomePageState extends State<MyHomePage>
       print("Current Query Input equals new query input - not querying again!");
       return;
     }
+
     _createQueryWithClearedVideoList(0, 10);
   }
 
@@ -492,6 +538,9 @@ class HomePageState extends State<MyHomePage>
   void _createQueryWithClearedVideoList(int skip, int top) {
     print("Clearing video list");
     videos.clear();
+
+    Firebase.logVideoSearch(analytics, widget.searchFieldController.text, searchFilters);
+
     if (mounted) setState(() {});
     _createQuery(skip, top);
   }
