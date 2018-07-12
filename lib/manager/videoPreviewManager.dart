@@ -4,6 +4,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_ws/analytics/firebaseAnalytics.dart';
+import 'package:flutter_ws/util/osChecker.dart';
 import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
 import 'package:flutter_ws/widgets/videoWidget.dart';
 
@@ -66,7 +68,7 @@ class VideoPreviewManager {
   }
 
 
-  Future startPreviewGeneration(VideoWidgetState state, String videoId, String url, String fileName) async {
+  Future startPreviewGeneration(VideoWidgetState state, String videoId, {String url, String fileName}) async {
 
     _widgetsWaitingForPreview.putIfAbsent(videoId, () => state);
 
@@ -84,6 +86,11 @@ class VideoPreviewManager {
           'videoPreviewPicture', requestArguments);
     } on PlatformException catch (e) {
       print("Starting Preview generation failed. Reason " + e.toString());
+
+      OsChecker.getTargetPlatform().then((platform) {
+        Firebase.logPlatformChannelException(
+            'videoPreviewPicture', e.toString(), platform.toString());
+      });
       return;
     }
   }

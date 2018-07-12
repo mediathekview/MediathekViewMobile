@@ -6,13 +6,12 @@ import 'package:flutter_ws/widgets/videoWidget.dart';
 import 'package:uuid/uuid.dart';
 
 class VideoPreviewAdapter extends StatelessWidget {
-  final Video video;
   final String videoId;
+  final Video video;
   final String defaultImageAssetPath;
   final bool showLoadingIndicator;
 
-  VideoPreviewAdapter(this.videoId,
-      {this.video, this.showLoadingIndicator, this.defaultImageAssetPath});
+  VideoPreviewAdapter(this.videoId, {this.video, this.showLoadingIndicator, this.defaultImageAssetPath});
 
   @override
   Widget build(BuildContext context) {
@@ -33,18 +32,15 @@ class VideoPreviewAdapter extends StatelessWidget {
         key: new Key(uuid.v1()),
         padding: new EdgeInsets.only(top: 12.0, bottom: 12.0),
         child: videoEntity == null
-            ? new VideoWidget(previewImage, videoId,
+            ? new VideoWidget(videoId: videoId, previewImage: previewImage, video: video,
                 defaultImageAssetPath: defaultImageAssetPath,
-                videoUrl: video.url_video,
                 showLoadingIndicator:
                     showLoadingIndicator == null ? true : showLoadingIndicator)
             : new VideoWidget(
-                previewImage,
-                videoId,
+                videoId: videoId,
+                previewImage: previewImage,
+                entity: videoEntity,
                 defaultImageAssetPath: defaultImageAssetPath,
-                mimeType: videoEntity.mimeType,
-                fileName: videoEntity.fileName,
-                filePath: videoEntity.filePath,
                 showLoadingIndicator:
                     showLoadingIndicator == null ? true : showLoadingIndicator,
               ),

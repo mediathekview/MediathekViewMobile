@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_ws/analytics/firebaseAnalytics.dart';
 import 'package:flutter_ws/util/textStyles.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -90,7 +91,9 @@ class AboutSection extends StatelessWidget {
                       new FlatButton(
                         color: Colors.blue,
                         child: new Text('Paypal', style: body2TextStyle),
-                        onPressed: () => _launchURL(payPal),
+                        onPressed: () { _launchURL(payPal);
+                          Firebase.logPaypalClicked();
+                        },
                       ),
                     ],
                   ),

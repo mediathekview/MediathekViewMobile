@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_ws/analytics/firebaseAnalytics.dart';
 import 'package:flutter_ws/manager/databaseManager.dart';
 import 'package:flutter_ws/manager/downloadManager.dart';
 import 'package:flutter_ws/manager/nativeVideoManager.dart';
 import 'package:flutter_ws/model/DownloadStatus.dart';
 import 'package:flutter_ws/model/Video.dart';
 import 'package:flutter_ws/model/VideoEntity.dart';
+import 'package:flutter_ws/util/osChecker.dart';
 import 'package:flutter_ws/util/textStyles.dart';
 import 'package:flutter_ws/widgets/filterMenu/downloadProgressBar.dart';
 import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
@@ -218,6 +220,10 @@ class InformationRowBodyState extends State<DownloadCardBody> {
       status = null;
       print("Chanceled download");
     }, onError: (e) {
+      OsChecker.getTargetPlatform().then((platform) {
+        Firebase.logPlatformChannelException(
+            'cancelDownload', e.toString(), platform.toString());
+      });
       showSnackBar(context,"Abbruch des aktiven Downloads ist fehlgeschlagen");
     });
   }
@@ -342,6 +348,12 @@ class InformationRowBodyState extends State<DownloadCardBody> {
           widget.video.title +
           ". Error:  " +
           e.toString());
+
+      OsChecker.getTargetPlatform().then((platform) {
+        Firebase.logPlatformChannelException(
+            'downloadFile', e.toString(), platform.toString());
+      });
+
       setState(() {
         permissionDenied = true;
       });

@@ -220,7 +220,7 @@ class _LiveTVSectionState extends State<LiveTVSection> {
   ListTile getListTile(Channel channel) {
     return new ListTile(
       onTap: () {
-        nativeVideoPlayer.playVideo(channel.url);
+        nativeVideoPlayer.playLiveStream(channel);
       },
       trailing: favChannels[channel.name] == null
           ? new IconButton(

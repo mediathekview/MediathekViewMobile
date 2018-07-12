@@ -5,11 +5,11 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_ws/analytics/firebaseAnalytics.dart';
 import 'package:flutter_ws/model/DownloadStatus.dart';
 import 'package:flutter_ws/model/Video.dart';
 import 'package:flutter_ws/model/VideoEntity.dart';
 import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
-import 'package:path_provider/path_provider.dart';
 
 enum DownloadStatusText {
   STATUS_FAILED,
@@ -93,6 +93,8 @@ class DownloadManager {
         " and url " +
         video.url_video);
 
+    Firebase.logDownloadVideo(video);
+
     return video;
   }
 
@@ -103,16 +105,11 @@ class DownloadManager {
     Map<String, String> requestArguments = getRequestArgument(downloadId);
 
     Map status;
-//    try {
     status =
     await _downloadMethodChannel.invokeMethod('status', requestArguments);
 
     print('Download status received synchronously for video with id ' +
         downloadId.toString());
-//    } on PlatformException catch (e) {
-//      print(e.message);
-//      return null;
-//    }
 
     return parseDownloadEvent(status);
   }
@@ -135,6 +132,9 @@ class DownloadManager {
     print("Successfully Stopped " +
         amountOfRemovedDownloads.toString() +
         " download.");
+
+    Firebase.logCancleDownloadVideo();
+
     return downloadId;
   }
 

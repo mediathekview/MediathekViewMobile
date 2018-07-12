@@ -7,24 +7,23 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/manager/nativeVideoManager.dart';
 import 'package:flutter_ws/manager/videoPreviewManager.dart';
+import 'package:flutter_ws/model/Video.dart';
+import 'package:flutter_ws/model/VideoEntity.dart';
 import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
 
 class VideoWidget extends StatefulWidget {
   String videoId;
-  String videoUrl;
-  String fileName;
-  String filePath;
+  VideoEntity entity;
+  Video video;
   String mimeType;
   String defaultImageAssetPath;
   Image previewImage;
   bool showLoadingIndicator;
 
-  VideoWidget(this.previewImage, this.videoId,
-      {this.videoUrl,
+  VideoWidget({this.videoId, this.previewImage, this.entity, this.video,
       this.mimeType,
       this.defaultImageAssetPath,
-      this.fileName,
-      this.filePath,
+
       this.showLoadingIndicator});
 
   @override
@@ -50,8 +49,14 @@ class VideoWidgetState extends State<VideoWidget> {
       VideoPreviewManager previewController =
           appWideState.appState.videoPreviewManager;
       //Manager will update state of this widget!
-      previewController.startPreviewGeneration(
-          this, widget.videoId, widget.videoUrl, widget.fileName);
+      if (widget.entity == null){
+        previewController.startPreviewGeneration(
+            this, widget.videoId, url: widget.video.url_video);
+      }else {
+        previewController.startPreviewGeneration(
+            this, widget.videoId, fileName: widget.entity.filePath);
+      }
+
     }
 
     final size = MediaQuery.of(context).size;
@@ -144,10 +149,9 @@ class VideoWidgetState extends State<VideoWidget> {
         print("Opening video player");
 
         NativeVideoPlayer nativeVideoPlayer = new NativeVideoPlayer();
-        widget.filePath != null
-            ? nativeVideoPlayer.playVideo(widget.filePath,
-                mimeType: widget.mimeType)
-            : nativeVideoPlayer.playVideo(widget.videoUrl);
+        widget.entity != null
+            ? nativeVideoPlayer.playVideo(entity: widget.entity)
+            : nativeVideoPlayer.playVideo(video: widget.video);
       },
     );
   }

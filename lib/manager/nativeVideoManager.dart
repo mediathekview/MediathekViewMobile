@@ -1,5 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/services.dart';
+import 'package:flutter_ws/analytics/firebaseAnalytics.dart';
+import 'package:flutter_ws/model/Video.dart';
+import 'package:flutter_ws/model/VideoEntity.dart';
+import 'package:flutter_ws/section/liveTVSection.dart';
+import 'package:flutter_ws/util/osChecker.dart';
 import 'package:meta/meta.dart';
 
 class NativeVideoPlayer {
@@ -19,18 +25,42 @@ class NativeVideoPlayer {
   @visibleForTesting
   NativeVideoPlayer.private(this._methodChannel);
 
-  Future<void> playVideo(String filePath, {String mimeType}) async {
+  Future<void> playVideo(
+      {Video video, VideoEntity entity, String mimeType}) async {
+    String path;
+    if (entity != null) {
+      path = entity.filePath;
+      Firebase.logStreamDownloadedVideo(entity);
+    } else {
+      path = video.url_video;
+      Firebase.logStreamVideo(video);
+    }
+
     try {
       Map<String, String> requestArguments = new Map();
-      requestArguments.putIfAbsent("filePath", () => filePath);
-      requestArguments.putIfAbsent("mimeType", () => mimeType);
+      requestArguments.putIfAbsent("filePath", () => path);
+//      requestArguments.putIfAbsent("mimeType", () => mimeType);
 
       await _methodChannel.invokeMethod('playVideo', requestArguments);
     } on PlatformException catch (e) {
-      print("Playing video with path " +
-          filePath +
-          " failed. Reason " +
-          e.toString());
+      OsChecker.getTargetPlatform().then((platform) {
+        Firebase.logPlatformChannelException(
+            'playVideo', e.toString(), platform.toString());
+      });
+    }
+  }
+
+  Future<void> playLiveStream(Channel channel) async {
+    try {
+      Map<String, String> requestArguments = new Map();
+      requestArguments.putIfAbsent("filePath", () => channel.url);
+      await _methodChannel.invokeMethod('playVideo', requestArguments);
+      Firebase.logStreamChannel(channel);
+    } on PlatformException catch (e) {
+      OsChecker.getTargetPlatform().then((platform) {
+        Firebase.logPlatformChannelException(
+            'playLivestreamChannel', e.toString(), platform.toString());
+      });
     }
   }
 
@@ -39,8 +69,16 @@ class NativeVideoPlayer {
     requestArguments.putIfAbsent("fileName", () => fileName);
     print("Deleting video with name " + fileName + " from local storage");
 
-    await _methodChannel.invokeMethod('deleteVideo', requestArguments);
+    try {
+      await _methodChannel.invokeMethod('deleteVideo', requestArguments);
+    } on PlatformException catch (e) {
+      OsChecker.getTargetPlatform().then((platform) {
+        Firebase.logPlatformChannelException(
+            'deleteVideo', e.toString(), platform.toString());
+      });
 
+      return false;
+    }
     return true;
   }
 }

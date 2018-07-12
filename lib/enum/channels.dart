@@ -7,7 +7,7 @@ class Channels {
     'ZDF' : 'zdf.png',
     'ARD' : 'ard.png',
     'NDR' : 'ndr.png',
-    'ORF' : 'orf.png',
+//    'ORF' : 'orf.png',
     'WDR' : 'wdr.png',
     'Arte' : 'arte.png',
     '3SAT' : '3sat.png',

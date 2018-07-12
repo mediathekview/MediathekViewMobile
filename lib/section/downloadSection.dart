@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_ws/analytics/firebaseAnalytics.dart';
 import 'package:flutter_ws/enum/channels.dart';
 import 'package:flutter_ws/manager/nativeVideoManager.dart';
 import 'package:flutter_ws/model/Video.dart';
 import 'package:flutter_ws/model/VideoEntity.dart';
 import 'package:flutter_ws/util/calculator.dart';
+import 'package:flutter_ws/util/osChecker.dart';
 import 'package:flutter_ws/util/textStyles.dart';
 import 'package:flutter_ws/widgets/filterMenu/downloadProgressBar.dart';
 import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
@@ -83,8 +85,7 @@ class DownloadSectionState extends State<DownloadSection> {
         new Stack(
           children: <Widget>[
             new Positioned(
-              child: new VideoPreviewAdapter(entity.id,
-                  video: video, showLoadingIndicator: false),
+              child: new VideoPreviewAdapter(entity.id, showLoadingIndicator: false),
             ),
             new Positioned(
               top: 12.0,
@@ -216,6 +217,10 @@ class DownloadSectionState extends State<DownloadSection> {
           });
         },
         onError: (e) {
+          OsChecker.getTargetPlatform().then((platform) {
+            Firebase.logPlatformChannelException(
+                'cancelDownload', e.toString(), platform.toString());
+          });
           Scaffold.of(context).showSnackBar(
                 new SnackBar(
                   backgroundColor: Colors.red,

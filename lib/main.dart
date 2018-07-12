@@ -16,6 +16,7 @@ import 'package:flutter_ws/section/aboutSection.dart';
 import 'package:flutter_ws/section/downloadSection.dart';
 import 'package:flutter_ws/section/liveTVSection.dart';
 import 'package:flutter_ws/util/jsonParser.dart';
+import 'package:flutter_ws/util/osChecker.dart';
 import 'package:flutter_ws/util/textStyles.dart';
 import 'package:flutter_ws/util/websocket.dart';
 import 'package:flutter_ws/widgets/StatusBar.dart';
@@ -166,6 +167,9 @@ class HomePageState extends State<MyHomePage>
     //register Observer to react to android/ios lifecycle events
     WidgetsBinding.instance.addObserver(this);
 
+    //Firebase
+    Firebase.initFirebase(analytics);
+
     //keys
     Uuid uuid = new Uuid();
     videoListKey = new Key(uuid.v1());
@@ -221,8 +225,8 @@ class HomePageState extends State<MyHomePage>
       },
     );
 
-    //Track Open
-    Firebase.appOpened(analytics);
+    //Track os
+    OsChecker.getTargetPlatform().then((platform) =>  Firebase.logOperatingSystem(platform.toString()));
   }
 
   @override
@@ -496,6 +500,11 @@ class HomePageState extends State<MyHomePage>
         }
       }
       if (hasDuplicate == false) {
+        //TODO exlude ORF atm
+        if (currentVideo.channel == "ORF")
+          continue;
+
+        print("video: " + currentVideo.channel);
         videos.add(currentVideo);
         print("Adding video. Length now: " + videos.length.toString());
         newVideosCount++;
@@ -539,7 +548,7 @@ class HomePageState extends State<MyHomePage>
     print("Clearing video list");
     videos.clear();
 
-    Firebase.logVideoSearch(analytics, widget.searchFieldController.text, searchFilters);
+    Firebase.logVideoSearch(widget.searchFieldController.text, searchFilters);
 
     if (mounted) setState(() {});
     _createQuery(skip, top);
