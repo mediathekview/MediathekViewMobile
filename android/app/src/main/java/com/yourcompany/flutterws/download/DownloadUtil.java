@@ -18,6 +18,8 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+import static android.app.DownloadManager.Request.VISIBILITY_HIDDEN;
+
 
 public class DownloadUtil {
 
@@ -44,7 +46,7 @@ public class DownloadUtil {
         DownloadManager.Request request = new DownloadManager.Request(Uri.parse(uri))
                 .setTitle(filename)
                 .setMimeType(MimeTypeMap.getFileExtensionFromUrl(uri))
-//                .setNotificationVisibility(VISIBILITY_HIDDEN)
+                .setNotificationVisibility(VISIBILITY_HIDDEN)
                 .setDestinationInExternalPublicDir("/MediathekView", filename);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)

@@ -85,7 +85,11 @@ class DownloadSectionState extends State<DownloadSection> {
         new Stack(
           children: <Widget>[
             new Positioned(
-              child: new VideoPreviewAdapter(entity.id, showLoadingIndicator: false),
+              child: (index <= length - 1 && length > 0)
+                  ? new VideoPreviewAdapter(entity.id,
+                      video: video, showLoadingIndicator: false)
+                  : new VideoPreviewAdapter(entity.id,
+                      showLoadingIndicator: false),
             ),
             new Positioned(
               top: 12.0,

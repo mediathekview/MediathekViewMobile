@@ -11,7 +11,7 @@ class ScrollPositionHolder {
 
 class VideoListView extends StatefulWidget {
   final int pageThreshold = 5;
-  final int amountOfVideosToFetch = 10;
+  final int amountOfVideosToFetch = 20;
   final ScrollPositionHolder offset = new ScrollPositionHolder();
 
   List<Video> videos;

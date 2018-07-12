@@ -199,10 +199,10 @@ class HomePageState extends State<MyHomePage>
 
         if (connectionState == ConnectionState.active) {
           print("Ws connection is fine");
-          if (websocketInitError)
-            setState(() {
-              websocketInitError = false;
-            });
+          if (websocketInitError) {
+            websocketInitError = false;
+            if (mounted) setState(() {});
+          }
         } else if (connectionState == ConnectionState.done ||
             connectionState == ConnectionState.none) {
           print("Ws connection is " +
@@ -226,7 +226,9 @@ class HomePageState extends State<MyHomePage>
     );
 
     //Track os
-    OsChecker.getTargetPlatform().then((platform) =>  Firebase.logOperatingSystem(platform.toString()));
+    OsChecker
+        .getTargetPlatform()
+        .then((platform) => Firebase.logOperatingSystem(platform.toString()));
   }
 
   @override
@@ -350,7 +352,7 @@ class HomePageState extends State<MyHomePage>
     /// 2: downloads
     /// 3: about
     String pageName;
-    switch(page){
+    switch (page) {
       case 0:
         pageName = "VideoList";
         break;
@@ -501,8 +503,7 @@ class HomePageState extends State<MyHomePage>
       }
       if (hasDuplicate == false) {
         //TODO exlude ORF atm
-        if (currentVideo.channel == "ORF")
-          continue;
+        if (currentVideo.channel == "ORF") continue;
 
         print("video: " + currentVideo.channel);
         videos.add(currentVideo);

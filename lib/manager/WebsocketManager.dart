@@ -108,7 +108,7 @@ class WebsocketController {
 
   void fireInitialQuery() {
     wsChannel.sink.add(
-        '421["queryEntries",{"queries":[],"sortBy":"timestamp","sortOrder":"desc","future":false,"offset":0,"size":10}]');
+        '421["queryEntries",{"queries":[],"sortBy":"timestamp","sortOrder":"desc","future":false,"offset":0,"size":20}]');
   }
 
   void sendContinoousPing(int websocketHearthbeatInterval) {
