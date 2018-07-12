@@ -54,7 +54,7 @@ class VideoWidgetState extends State<VideoWidget> {
             this, widget.videoId, url: widget.video.url_video);
       }else {
         previewController.startPreviewGeneration(
-            this, widget.videoId, fileName: widget.entity.filePath);
+            this, widget.videoId, fileName: widget.entity.fileName);
       }
 
     }
