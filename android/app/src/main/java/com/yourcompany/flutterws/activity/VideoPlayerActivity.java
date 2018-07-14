@@ -1,59 +1,37 @@
 package com.yourcompany.flutterws.activity;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.TextView;
-
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.SimpleExoPlayer;
-import com.google.android.exoplayer2.Timeline;
-import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
-import com.google.android.exoplayer2.offline.DownloadManager;
-import com.google.android.exoplayer2.offline.DownloaderConstructorHelper;
-import com.google.android.exoplayer2.offline.FilteringManifestParser;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
-import com.google.android.exoplayer2.source.dash.manifest.DashManifestParser;
-import com.google.android.exoplayer2.source.dash.manifest.RepresentationKey;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
-import com.google.android.exoplayer2.source.hls.playlist.HlsPlaylistParser;
 import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource;
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
-import com.google.android.exoplayer2.source.smoothstreaming.manifest.SsManifestParser;
-import com.google.android.exoplayer2.source.smoothstreaming.manifest.StreamKey;
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
+import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
-import com.google.android.exoplayer2.upstream.BandwidthMeter;
-import com.google.android.exoplayer2.upstream.DataSource;
-import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
-import com.google.android.exoplayer2.upstream.FileDataSourceFactory;
-import com.google.android.exoplayer2.upstream.HttpDataSource;
-import com.google.android.exoplayer2.upstream.TransferListener;
-import com.google.android.exoplayer2.upstream.cache.Cache;
-import com.google.android.exoplayer2.upstream.cache.CacheDataSource;
-import com.google.android.exoplayer2.upstream.cache.CacheDataSourceFactory;
-import com.google.android.exoplayer2.upstream.cache.NoOpCacheEvictor;
-import com.google.android.exoplayer2.upstream.cache.SimpleCache;
+import com.google.android.exoplayer2.upstream.*;
+import com.google.android.exoplayer2.upstream.cache.*;
 import com.google.android.exoplayer2.util.Util;
-import com.yourcompany.flutterws.MainActivity;
 import com.yourcompany.flutterws.R;
 import com.yourcompany.flutterws.video.PlayerEventListener;
 import com.yourcompany.flutterws.video.VideoCallHandler;
 
 import java.io.File;
-import java.util.List;
 
 //Based of mainly from  https://github.com/yusufcakmak/ExoPlayerSample
 public class VideoPlayerActivity extends Activity {
@@ -61,7 +39,6 @@ public class VideoPlayerActivity extends Activity {
     private SimpleExoPlayerView simpleExoPlayerView;
     private SimpleExoPlayer player;
 
-    private Timeline.Window window;
     private DataSource.Factory mediaDataSourceFactory;
     private DefaultTrackSelector trackSelector;
     private boolean shouldAutoPlay;
@@ -80,7 +57,23 @@ public class VideoPlayerActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        if (Build.VERSION.SDK_INT < 16) {
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        } else {
+            View decorView = getWindow().getDecorView();
+            // Hide the status bar.
+            int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
+            decorView.setSystemUiVisibility(uiOptions);
+
+            ActionBar actionBar = getActionBar();
+            if (actionBar != null)
+                actionBar.hide();
+        }
+
         setContentView(R.layout.activity_video_player);
+
 
         userAgent = Util.getUserAgent(this, "MediathekView Mobile");
 
@@ -91,7 +84,6 @@ public class VideoPlayerActivity extends Activity {
         shouldAutoPlay = true;
         //bandwidthMeter = new DefaultBandwidthMeter();
         mediaDataSourceFactory = buildDataSourceFactory(true);
-        window = new Timeline.Window();
         ivHideControllerButton = (ImageView) findViewById(R.id.exo_controller);
 
     }
@@ -100,6 +92,8 @@ public class VideoPlayerActivity extends Activity {
 
         simpleExoPlayerView = (SimpleExoPlayerView) findViewById(R.id.player_view);
         simpleExoPlayerView.requestFocus();
+
+//        simpleExoPlayerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
 
         TrackSelection.Factory videoTrackSelectionFactory =
                 new AdaptiveTrackSelection.Factory(BANDWIDTH_METER);
@@ -176,11 +170,11 @@ public class VideoPlayerActivity extends Activity {
         //Fails for m3u8 urls?
         Log.i("VideoPlayer", "Mediasource for  url " + uri);
         @C.ContentType int type;
-        if (uri.toString().contains("m3u8")){
+        if (uri.toString().contains("m3u8")) {
             type = 2;
             Log.i("VideoPlayer", "Detected live stream");
 
-        }else {
+        } else {
             type = Util.inferContentType(uri);
         }
         switch (type) {

@@ -43,6 +43,11 @@ class MyApp extends StatelessWidget {
     print("Rendering Main App");
     final title = 'MediathekView';
 
+    //Track os
+    OsChecker
+        .getTargetPlatform()
+        .then((platform) => Firebase.logOperatingSystem(platform.toString()));
+
     Uuid uuid = new Uuid();
     return new MaterialApp(
       theme: new ThemeData(
@@ -224,11 +229,6 @@ class HomePageState extends State<MyHomePage>
         }
       },
     );
-
-    //Track os
-    OsChecker
-        .getTargetPlatform()
-        .then((platform) => Firebase.logOperatingSystem(platform.toString()));
   }
 
   @override
