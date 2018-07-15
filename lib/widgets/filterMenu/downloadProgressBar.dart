@@ -46,7 +46,7 @@ class DownloadProgressBarState extends State<DownloadProgressBar>{
   @override
   void dispose() {
     super.dispose();
-    print("Called dispose on Progress bar for video " + widget.videoId);
+//    print("Called dispose on Progress bar for video " + widget.videoId);
     subscription.cancel();
   }
 

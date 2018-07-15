@@ -180,35 +180,35 @@ class _LiveTVSectionState extends State<LiveTVSection> {
 
   Widget itemBuilderAllChannels(BuildContext context, int index) {
     Channel channel = allChannels[index];
-    print("Item with index " + index.toString() + "  content: " + channel.name);
-    print(channel.name + " : " + channel.logo);
+//    print("Item with index " + index.toString() + "  content: " + channel.name);
+//    print(channel.name + " : " + channel.logo);
 
     return getListTile(channel);
   }
 
   Widget itemBuilderFavoriteChannels(BuildContext context, int index) {
-    print("Fav: TOTAlLength: " +
-        favChannels.length.toString() +
-        " Index: " +
-        index.toString());
+//    print("Fav: TOTAlLength: " +
+//        favChannels.length.toString() +
+//        " Index: " +
+//        index.toString());
     ChannelFavoriteEntity channelEntity = favChannels.values.toList()[index];
     Channel channel = new Channel(channelEntity.name, channelEntity.logo,
         channelEntity.groupname, channelEntity.url);
-    print(channel.name + " : " + channel.logo);
+//    print(channel.name + " : " + channel.logo);
 
     return getListTile(channel);
   }
 
   Widget itemBuilderChildChannels(BuildContext context, int index) {
     Channel channel = childChannels[index];
-    print(channel.name + " : " + channel.logo);
+//    print(channel.name + " : " + channel.logo);
 
     return getListTile(channel);
   }
 
   Widget itemBuilderLocalChannels(BuildContext context, int index) {
     Channel channel = localChannels[index];
-    print(channel.name + " : " + channel.logo);
+//    print(channel.name + " : " + channel.logo);
     return getListTile(channel);
   }
 

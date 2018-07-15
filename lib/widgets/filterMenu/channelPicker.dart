@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/enum/channels.dart';
 import 'package:flutter_ws/model/channel.dart';
-import 'package:flutter_ws/util/channelPickerUtil.dart';
 import 'package:flutter_ws/util/textStyles.dart';
 import 'package:flutter_ws/widgets/filterMenu/ChannelListTile.dart';
 import 'package:flutter_ws/widgets/filterMenu/searchFilter.dart';

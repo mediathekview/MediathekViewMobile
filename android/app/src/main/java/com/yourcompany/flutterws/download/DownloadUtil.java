@@ -36,11 +36,9 @@ public class DownloadUtil {
                 return -1;
             }
         }
-        //todo ability to set directory of download  & visibility of notificcation
         File direct = new File(Environment.getExternalStorageDirectory()
                 + "/MediathekView");
 
-        direct.getParentFile().mkdirs();
         direct.mkdirs();
 
         DownloadManager.Request request = new DownloadManager.Request(Uri.parse(uri))

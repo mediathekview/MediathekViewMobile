@@ -323,7 +323,7 @@ class InformationRowBodyState extends State<DownloadCardBody> {
 
   @override
   void dispose() {
-    print("Disposing information row body");
+//    print("Disposing information row body");
     super.dispose();
   }
 

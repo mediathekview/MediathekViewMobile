@@ -35,6 +35,8 @@ class MyApp extends StatelessWidget {
   static FirebaseAnalytics analytics = new FirebaseAnalytics();
   static FirebaseAnalyticsObserver observer =
       new FirebaseAnalyticsObserver(analytics: analytics);
+  final PageController pageController = new PageController();
+  final TextEditingController textEditingController = new TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -71,6 +73,8 @@ class MyApp extends StatelessWidget {
         title: title,
         analytics: analytics,
         observer: observer,
+        pageController: pageController,
+        textEditingController: textEditingController,
       ),
     );
   }
@@ -82,14 +86,20 @@ class MyHomePage extends StatefulWidget {
   final FirebaseAnalyticsObserver observer;
 
   final String title;
-  final searchFieldController = new TextEditingController();
+  final TextEditingController textEditingController;
+  final PageController pageController;
 
-  MyHomePage({Key key, @required this.title, this.analytics, this.observer})
+  MyHomePage(
+      {Key key,
+      @required this.title,
+      this.analytics,
+      this.observer,
+      this.pageController, this.textEditingController})
       : super(key: key);
 
   @override
   State<StatefulWidget> createState() {
-    return new HomePageState(this.analytics, this.observer);
+    return new HomePageState(this.analytics, this.observer, this.pageController, this.textEditingController);
   }
 }
 
@@ -131,7 +141,8 @@ class HomePageState extends State<MyHomePage>
   //Statusbar
   StatusBar statusBar;
 
-  PageController _pageController;
+  PageController pageController;
+  TextEditingController searchFieldController;
 
   /// Indicating the current displayed page
   /// 0: videoList
@@ -146,7 +157,7 @@ class HomePageState extends State<MyHomePage>
   final FirebaseAnalytics analytics;
   final FirebaseAnalyticsObserver observer;
 
-  HomePageState(this.analytics, this.observer);
+  HomePageState(this.analytics, this.observer, this.pageController, this.searchFieldController);
 
   @override
   void initState() {
@@ -167,7 +178,7 @@ class HomePageState extends State<MyHomePage>
 
     //search input
     var inputListener = () => handleSearchInput();
-    widget.searchFieldController.addListener(inputListener);
+    searchFieldController.addListener(inputListener);
 
     //register Observer to react to android/ios lifecycle events
     WidgetsBinding.instance.addObserver(this);
@@ -181,7 +192,6 @@ class HomePageState extends State<MyHomePage>
     statusBarKey = new Key(uuid.v1());
     indexingBarKey = new Key(uuid.v1());
 
-    _pageController = new PageController();
     websocketController = new WebsocketController(
         onDataReceived: onWebsocketData,
         onDone: onWebsocketDone,
@@ -189,7 +199,7 @@ class HomePageState extends State<MyHomePage>
         onWebsocketChannelOpenedSuccessfully:
             onWebsocketChannelOpenedSuccessfully);
     websocketController.initializeWebsocket().then((Void) {
-      currentUserQueryInput = widget.searchFieldController.text;
+      currentUserQueryInput = searchFieldController.text;
 
       print("Firing query on home page init");
       websocketController.queryEntries(
@@ -233,7 +243,7 @@ class HomePageState extends State<MyHomePage>
 
   @override
   void dispose() {
-    _pageController.dispose();
+//    _pageController.dispose();
     print("Disposing Home Page & shutting down websocket connection");
 
     websocketController.stopPing();
@@ -251,7 +261,7 @@ class HomePageState extends State<MyHomePage>
     Widget videoSearchList = new Column(children: <Widget>[
       new FilterBarSharedState(
         child: new GradientAppBar(
-            widget.searchFieldController,
+            searchFieldController,
             new FilterMenu(
                 searchFilters: searchFilters,
                 onFilterUpdated: _filterMenuUpdatedCallback,
@@ -286,7 +296,7 @@ class HomePageState extends State<MyHomePage>
           new LiveTVSection(),
           new DownloadSection(),
           new AboutSection()
-        ], controller: _pageController, onPageChanged: onPageChanged),
+        ], controller: pageController, onPageChanged: onPageChanged),
       ),
       bottomNavigationBar: new Theme(
         data: Theme.of(context).copyWith(
@@ -335,6 +345,7 @@ class HomePageState extends State<MyHomePage>
   }
 
   void onPageChanged(int page) {
+    print("On page Changed: ---> Page " + page.toString());
     setState(() {
       this._page = page;
     });
@@ -344,7 +355,8 @@ class HomePageState extends State<MyHomePage>
   /// [BottomNavigationBarItem] with corresponding
   /// page index
   void navigationTapped(int page) {
-    _pageController.animateToPage(page,
+    print("Navigation Tapped: ---> Page " + page.toString());
+    pageController.animateToPage(page,
         duration: const Duration(milliseconds: 300), curve: Curves.ease);
 
     /// 0: videoList
@@ -476,7 +488,6 @@ class HomePageState extends State<MyHomePage>
   int addOnlyNewVideos(List<Video> newVideosFromQuery) {
     int newVideosCount = 0;
     for (int i = 0; i < newVideosFromQuery.length; i++) {
-      print("I: " + i.toString());
       Video currentVideo = newVideosFromQuery[i];
       bool hasDuplicate = false;
       for (int b = i + 1; b < newVideosFromQuery.length + videos.length; b++) {
@@ -491,12 +502,12 @@ class HomePageState extends State<MyHomePage>
         if (video.id == currentVideo.id ||
             video.title == currentVideo.title &&
                 video.duration == currentVideo.duration) {
-          print("FOund duplicate with title: " +
-              video.title +
-              " and duration: " +
-              video.duration.toString() +
-              " and index: " +
-              b.toString());
+//          print("FOund duplicate with title: " +
+//              video.title +
+//              " and duration: " +
+//              video.duration.toString() +
+//              " and index: " +
+//              b.toString());
           hasDuplicate = true;
           break;
         }
@@ -505,9 +516,9 @@ class HomePageState extends State<MyHomePage>
         //TODO exlude ORF atm
         if (currentVideo.channel == "ORF") continue;
 
-        print("video: " + currentVideo.channel);
+//        print("video: " + currentVideo.channel);
         videos.add(currentVideo);
-        print("Adding video. Length now: " + videos.length.toString());
+//        print("Adding video. Length now: " + videos.length.toString());
         newVideosCount++;
       }
     }
@@ -530,7 +541,7 @@ class HomePageState extends State<MyHomePage>
   // ---------- SEARCH Input ----------------
 
   void handleSearchInput() {
-    if (currentUserQueryInput == widget.searchFieldController.text) {
+    if (currentUserQueryInput == searchFieldController.text) {
       print("Current Query Input equals new query input - not querying again!");
       return;
     }
@@ -539,7 +550,7 @@ class HomePageState extends State<MyHomePage>
   }
 
   void _createQuery(int skip, int top) {
-    currentUserQueryInput = widget.searchFieldController.text;
+    currentUserQueryInput = searchFieldController.text;
 
     websocketController.queryEntries(
         currentUserQueryInput, searchFilters, skip, top);
@@ -549,7 +560,7 @@ class HomePageState extends State<MyHomePage>
     print("Clearing video list");
     videos.clear();
 
-    Firebase.logVideoSearch(widget.searchFieldController.text, searchFilters);
+    Firebase.logVideoSearch(searchFieldController.text, searchFilters);
 
     if (mounted) setState(() {});
     _createQuery(skip, top);
@@ -605,6 +616,7 @@ class HomePageState extends State<MyHomePage>
     print("Observed Lifecycle change " + state.toString());
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.suspending) {
+      //TODO maybe dispose Tab controller here
       websocketController.stopPing();
       websocketController.closeWebsocketChannel();
     } else if (state == AppLifecycleState.resumed) {

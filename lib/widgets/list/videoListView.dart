@@ -115,7 +115,6 @@ class _VideoListViewState extends State<VideoListView> {
     }
 
     if (widget.videos.length > index) {
-      print("Sender: " + widget.videos[index].channel);
 
       return Column(
         mainAxisSize: MainAxisSize.min,
