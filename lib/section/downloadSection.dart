@@ -221,10 +221,10 @@ class DownloadSectionState extends State<DownloadSection> {
           });
         },
         onError: (e) {
-          OsChecker.getTargetPlatform().then((platform) {
-            Firebase.logPlatformChannelException(
-                'cancelDownload', e.toString(), platform.toString());
-          });
+//          OsChecker.getTargetPlatform().then((platform) {
+//            Firebase.logPlatformChannelException(
+//                'cancelDownload', e.toString(), platform.toString());
+//          });
           Scaffold.of(context).showSnackBar(
                 new SnackBar(
                   backgroundColor: Colors.red,

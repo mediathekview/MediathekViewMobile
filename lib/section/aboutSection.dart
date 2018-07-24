@@ -92,7 +92,7 @@ class AboutSection extends StatelessWidget {
                         color: Colors.blue,
                         child: new Text('Paypal', style: body2TextStyle),
                         onPressed: () { _launchURL(payPal);
-                          Firebase.logPaypalClicked();
+//                          Firebase.logPaypalClicked();
                         },
                       ),
                     ],

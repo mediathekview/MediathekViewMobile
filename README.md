@@ -2,7 +2,7 @@ MediathekViewMobile ist eine mobile Android & iOS Anwendung für den Zugriff auf
 
 # Download
 
-- Android: [direkter Download](https://github.com/danielfoehrKn/MediathekViewMobile/releases/download/1.0-beta/mediathekviewmobile_beta_3.apk)
+- Android: soon 
 - iOS: in Entwicklung
 
 # Impressionen
@@ -19,6 +19,5 @@ MediathekViewMobile ist eine mobile Android & iOS Anwendung für den Zugriff auf
 # Verwendete Bibliotheken etc. (zumindest die wichtigsten, siehe [pubspec.yaml](https://github.com/danielfoehrKn/MediathekViewMobile/blob/master/pubspec.yaml) für mehr)
 
 - Ffmpeg für Android
-- Firebase Analytics
 - Sqflite flutter plugin
 - Websocket dart

@@ -87,10 +87,10 @@ class VideoPreviewManager {
     } on PlatformException catch (e) {
       print("Starting Preview generation failed. Reason " + e.toString());
 
-      OsChecker.getTargetPlatform().then((platform) {
-        Firebase.logPlatformChannelException(
-            'videoPreviewPicture', e.toString(), platform.toString());
-      });
+//      OsChecker.getTargetPlatform().then((platform) {
+//        Firebase.logPlatformChannelException(
+//            'videoPreviewPicture', e.toString(), platform.toString());
+//      });
       return;
     }
   }

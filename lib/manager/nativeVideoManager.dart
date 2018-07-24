@@ -30,10 +30,10 @@ class NativeVideoPlayer {
     String path;
     if (entity != null) {
       path = entity.filePath;
-      Firebase.logStreamDownloadedVideo(entity);
+//      Firebase.logStreamDownloadedVideo(entity);
     } else {
       path = video.url_video;
-      Firebase.logStreamVideo(video);
+//      Firebase.logStreamVideo(video);
     }
 
     try {
@@ -43,10 +43,10 @@ class NativeVideoPlayer {
 
       await _methodChannel.invokeMethod('playVideo', requestArguments);
     } on PlatformException catch (e) {
-      OsChecker.getTargetPlatform().then((platform) {
-        Firebase.logPlatformChannelException(
-            'playVideo', e.toString(), platform.toString());
-      });
+//      OsChecker.getTargetPlatform().then((platform) {
+//        Firebase.logPlatformChannelException(
+//            'playVideo', e.toString(), platform.toString());
+//      });
     }
   }
 
@@ -55,12 +55,13 @@ class NativeVideoPlayer {
       Map<String, String> requestArguments = new Map();
       requestArguments.putIfAbsent("filePath", () => channel.url);
       await _methodChannel.invokeMethod('playVideo', requestArguments);
-      Firebase.logStreamChannel(channel);
+//      Firebase.logStreamChannel(channel);
     } on PlatformException catch (e) {
-      OsChecker.getTargetPlatform().then((platform) {
-        Firebase.logPlatformChannelException(
-            'playLivestreamChannel', e.toString(), platform.toString());
-      });
+//      OsChecker.getTargetPlatform().then((platform) {
+//        Firebase.logPlatformChannelException(
+//            'playLivestreamChannel', e.toString(), platform.toString());
+//      });
+    print("Platform exception accoured : " + e.toString());
     }
   }
 
@@ -72,10 +73,10 @@ class NativeVideoPlayer {
     try {
       await _methodChannel.invokeMethod('deleteVideo', requestArguments);
     } on PlatformException catch (e) {
-      OsChecker.getTargetPlatform().then((platform) {
-        Firebase.logPlatformChannelException(
-            'deleteVideo', e.toString(), platform.toString());
-      });
+//      OsChecker.getTargetPlatform().then((platform) {
+//        Firebase.logPlatformChannelException(
+//            'deleteVideo', e.toString(), platform.toString());
+//      });
 
       return false;
     }

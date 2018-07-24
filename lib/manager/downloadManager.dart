@@ -93,7 +93,7 @@ class DownloadManager {
         " and url " +
         video.url_video);
 
-    Firebase.logDownloadVideo(video);
+//    Firebase.logDownloadVideo(video);
 
     return video;
   }
@@ -133,7 +133,7 @@ class DownloadManager {
         amountOfRemovedDownloads.toString() +
         " download.");
 
-    Firebase.logCancleDownloadVideo();
+//    Firebase.logCancleDownloadVideo();
 
     return downloadId;
   }

@@ -32,11 +32,11 @@ import 'package:uuid/uuid.dart';
 void main() => runApp(new AppSharedStateContainer(child: new MyApp()));
 
 class MyApp extends StatelessWidget {
-  static FirebaseAnalytics analytics = new FirebaseAnalytics();
-  static FirebaseAnalyticsObserver observer =
-      new FirebaseAnalyticsObserver(analytics: analytics);
-  final PageController pageController = new PageController();
-  final TextEditingController textEditingController = new TextEditingController();
+//  static FirebaseAnalytics analytics = new FirebaseAnalytics();
+//  static FirebaseAnalyticsObserver observer =
+//      new FirebaseAnalyticsObserver(analytics: analytics);
+  final TextEditingController textEditingController =
+      new TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +46,9 @@ class MyApp extends StatelessWidget {
     final title = 'MediathekView';
 
     //Track os
-    OsChecker
-        .getTargetPlatform()
-        .then((platform) => Firebase.logOperatingSystem(platform.toString()));
+//    OsChecker
+//        .getTargetPlatform()
+//        .then((platform) => Firebase.logOperatingSystem(platform.toString()));
 
     Uuid uuid = new Uuid();
     return new MaterialApp(
@@ -71,9 +71,8 @@ class MyApp extends StatelessWidget {
       home: new MyHomePage(
         key: new Key(uuid.v1()),
         title: title,
-        analytics: analytics,
-        observer: observer,
-        pageController: pageController,
+//        analytics: analytics,
+//        observer: observer,
         textEditingController: textEditingController,
       ),
     );
@@ -82,8 +81,8 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   //FirebaseAnalytics
-  final FirebaseAnalytics analytics;
-  final FirebaseAnalyticsObserver observer;
+//  final FirebaseAnalytics analytics;
+//  final FirebaseAnalyticsObserver observer;
 
   final String title;
   final TextEditingController textEditingController;
@@ -92,14 +91,15 @@ class MyHomePage extends StatefulWidget {
   MyHomePage(
       {Key key,
       @required this.title,
-      this.analytics,
-      this.observer,
-      this.pageController, this.textEditingController})
+//      this.analytics,
+//      this.observer,
+      this.pageController,
+      this.textEditingController})
       : super(key: key);
 
   @override
   State<StatefulWidget> createState() {
-    return new HomePageState(this.analytics, this.observer, this.pageController, this.textEditingController);
+    return new HomePageState(this.textEditingController);
   }
 }
 
@@ -141,7 +141,7 @@ class HomePageState extends State<MyHomePage>
   //Statusbar
   StatusBar statusBar;
 
-  PageController pageController;
+  TabController _controller;
   TextEditingController searchFieldController;
 
   /// Indicating the current displayed page
@@ -154,10 +154,17 @@ class HomePageState extends State<MyHomePage>
   bool scrolledToEndOfList;
 
   //FirebaseAnalytics
-  final FirebaseAnalytics analytics;
-  final FirebaseAnalyticsObserver observer;
+//  final FirebaseAnalytics analytics;
+//  final FirebaseAnalyticsObserver observer;
 
-  HomePageState(this.analytics, this.observer, this.pageController, this.searchFieldController);
+  //Tabs
+  Widget videoSearchList;
+  LiveTVSection liveTVSection;
+  DownloadSection downloadSection;
+  AboutSection aboutSection;
+
+
+  HomePageState(this.searchFieldController);
 
   @override
   void initState() {
@@ -184,7 +191,16 @@ class HomePageState extends State<MyHomePage>
     WidgetsBinding.instance.addObserver(this);
 
     //Firebase
-    Firebase.initFirebase(analytics);
+//    Firebase.initFirebase(analytics);
+
+    _controller = new TabController(length: 4, vsync: this);
+
+    //Init tabs
+    videoSearchList = getVideoSearchListWidget();
+    liveTVSection = new LiveTVSection();
+    downloadSection = new DownloadSection();
+    aboutSection = new AboutSection();
+
 
     //keys
     Uuid uuid = new Uuid();
@@ -258,45 +274,16 @@ class HomePageState extends State<MyHomePage>
 
     print("Rendering Home Page");
 
-    Widget videoSearchList = new Column(children: <Widget>[
-      new FilterBarSharedState(
-        child: new GradientAppBar(
-            searchFieldController,
-            new FilterMenu(
-                searchFilters: searchFilters,
-                onFilterUpdated: _filterMenuUpdatedCallback,
-                onSingleFilterTapped: _singleFilterTappedCallback)),
-      ),
-      new Flexible(
-        child: new RefreshIndicator(
-            child: new VideoListView(
-                key: videoListKey,
-                videos: videos,
-                amountOfVideosFetched: lastAmountOfVideosRetrieved,
-                queryEntries: onQueryEntries),
-            onRefresh: _handleListRefresh),
-      ),
-      new StatusBar(
-          key: statusBarKey,
-          websocketInitError: websocketInitError,
-          videoListIsEmpty: videos.isEmpty,
-          lastAmountOfVideosRetrieved: lastAmountOfVideosRetrieved,
-          firstAppStartup: lastAmountOfVideosRetrieved < 0),
-      new IndexingBar(
-          key: indexingBarKey,
-          indexingError: indexingError,
-          info: indexingInfo),
-    ]);
-
     return new Scaffold(
       backgroundColor: Colors.grey[100],
-      body: new SafeArea(
-        child: new PageView(children: [
-          videoSearchList,
-          new LiveTVSection(),
-          new DownloadSection(),
-          new AboutSection()
-        ], controller: pageController, onPageChanged: onPageChanged),
+      body: new TabBarView(
+        controller: _controller,
+        children: <Widget>[
+          new SafeArea(child:  videoSearchList == null? getVideoSearchListWidget(): videoSearchList),
+          liveTVSection == null? new LiveTVSection(): liveTVSection,
+          downloadSection == null? new DownloadSection(): downloadSection,
+          aboutSection == null? new AboutSection(): aboutSection
+        ],
       ),
       bottomNavigationBar: new Theme(
         data: Theme.of(context).copyWith(
@@ -344,20 +331,57 @@ class HomePageState extends State<MyHomePage>
     );
   }
 
-  void onPageChanged(int page) {
-    print("On page Changed: ---> Page " + page.toString());
-    setState(() {
-      this._page = page;
-    });
+  Widget getVideoSearchListWidget() {
+    Widget videoSearchList = new Column(children: <Widget>[
+      new FilterBarSharedState(
+        child: new GradientAppBar(
+            searchFieldController,
+            new FilterMenu(
+                searchFilters: searchFilters,
+                onFilterUpdated: _filterMenuUpdatedCallback,
+                onSingleFilterTapped: _singleFilterTappedCallback)),
+      ),
+      new Flexible(
+        child: new RefreshIndicator(
+            child: new VideoListView(
+                key: videoListKey,
+                videos: videos,
+                amountOfVideosFetched: lastAmountOfVideosRetrieved,
+                queryEntries: onQueryEntries),
+            onRefresh: _handleListRefresh),
+      ),
+      new StatusBar(
+          key: statusBarKey,
+          websocketInitError: websocketInitError,
+          videoListIsEmpty: videos.isEmpty,
+          lastAmountOfVideosRetrieved: lastAmountOfVideosRetrieved,
+          firstAppStartup: lastAmountOfVideosRetrieved < 0),
+      new IndexingBar(
+          key: indexingBarKey,
+          indexingError: indexingError,
+          info: indexingInfo),
+    ]);
+    return videoSearchList;
   }
+
+//  void onPageChanged(int page) {
+//    print("On page Changed: ---> Page " + page.toString());
+//    setState(() {
+//      this._page = page;
+//    });
+//  }
 
   /// Called when the user presses on of the
   /// [BottomNavigationBarItem] with corresponding
   /// page index
   void navigationTapped(int page) {
-    print("Navigation Tapped: ---> Page " + page.toString());
-    pageController.animateToPage(page,
+    print("New Navigation Tapped: ---> Page " + page.toString());
+    _controller.animateTo(page,
         duration: const Duration(milliseconds: 300), curve: Curves.ease);
+
+    setState(() {
+      this._page = page;
+    });
 
     /// 0: videoList
     /// 1: LiveTV
@@ -378,7 +402,7 @@ class HomePageState extends State<MyHomePage>
         pageName = "About";
         break;
     }
-    Firebase.sendCurrentTabToAnalytics(observer, pageName);
+//    Firebase.sendCurrentTabToAnalytics(observer, pageName);
   }
 
   Future<Null> _handleListRefresh() async {
@@ -560,7 +584,7 @@ class HomePageState extends State<MyHomePage>
     print("Clearing video list");
     videos.clear();
 
-    Firebase.logVideoSearch(searchFieldController.text, searchFilters);
+    //Firebase.logVideoSearch(searchFieldController.text, searchFilters);
 
     if (mounted) setState(() {});
     _createQuery(skip, top);

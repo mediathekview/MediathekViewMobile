@@ -77,4 +77,5 @@ dependencies {
     compile 'com.google.android.exoplayer:exoplayer:2.8.1'
 }
 
-apply plugin: 'com.google.gms.google-services'
+//Removed for Firebase
+//apply plugin: 'com.google.gms.google-services'

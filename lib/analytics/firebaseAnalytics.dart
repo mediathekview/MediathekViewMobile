@@ -7,6 +7,9 @@ import 'package:flutter_ws/model/VideoEntity.dart';
 import 'package:flutter_ws/section/liveTVSection.dart';
 import 'package:flutter_ws/widgets/filterMenu/searchFilter.dart';
 
+/**
+ * Removed Firebase (atm everything is uncommented - maybe add a opt-in possibility)
+ */
 class Firebase {
 
   static FirebaseAnalytics analytics;

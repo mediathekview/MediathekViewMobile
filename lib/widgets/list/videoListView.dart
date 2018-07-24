@@ -81,6 +81,7 @@ class _VideoListViewState extends State<VideoListView> {
     }
 
     return new ListView.builder(
+//        key: new PageStorageKey('videolist'),
         controller: scrollController,
         itemBuilder: itemBuilder,
         itemCount: widget.videos.length);

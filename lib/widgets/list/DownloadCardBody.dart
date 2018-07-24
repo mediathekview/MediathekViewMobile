@@ -220,10 +220,10 @@ class InformationRowBodyState extends State<DownloadCardBody> {
       status = null;
       print("Chanceled download");
     }, onError: (e) {
-      OsChecker.getTargetPlatform().then((platform) {
-        Firebase.logPlatformChannelException(
-            'cancelDownload', e.toString(), platform.toString());
-      });
+//      OsChecker.getTargetPlatform().then((platform) {
+//        Firebase.logPlatformChannelException(
+//            'cancelDownload', e.toString(), platform.toString());
+//      });
       showSnackBar(context,"Abbruch des aktiven Downloads ist fehlgeschlagen");
     });
   }
@@ -349,10 +349,10 @@ class InformationRowBodyState extends State<DownloadCardBody> {
           ". Error:  " +
           e.toString());
 
-      OsChecker.getTargetPlatform().then((platform) {
-        Firebase.logPlatformChannelException(
-            'downloadFile', e.toString(), platform.toString());
-      });
+//      OsChecker.getTargetPlatform().then((platform) {
+//        Firebase.logPlatformChannelException(
+//            'downloadFile', e.toString(), platform.toString());
+//      });
 
       setState(() {
         permissionDenied = true;
