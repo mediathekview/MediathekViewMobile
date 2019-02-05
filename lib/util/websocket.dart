@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter_ws/enum/wsEventTypes.dart';
-import 'package:flutter_ws/util/jsonParser.dart';
+import 'package:flutter_ws/enum/ws_event_types.dart';
+import 'package:flutter_ws/util/json_parser.dart';
 import 'package:uuid/uuid.dart';
 import 'package:web_socket_channel/io.dart';
 
@@ -36,7 +36,7 @@ class WebsocketHandler {
       print(e);
     }
     String cutBody = JSONParser.trimSocketIoResponseBody(body);
-    Map parsedMap = JSON.decode(cutBody);
+    Map parsedMap = jsonDecode(cutBody);
     return parsedMap;
   }
 
@@ -67,7 +67,7 @@ class WebsocketHandler {
   static Future<dynamic> _readResponse(HttpClientResponse response) {
     var completer = new Completer();
     var contents = new StringBuffer();
-    response.transform(UTF8.decoder).listen((String data) {
+    response.transform(Utf8Decoder()).listen((String data) {
       contents.write(data);
     },
         onError: (error) => print("An error occured reading the response"),

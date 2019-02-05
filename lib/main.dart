@@ -1,40 +1,33 @@
 import 'dart:async';
 
-import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_analytics/observer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_ws/analytics/firebaseAnalytics.dart';
-import 'package:flutter_ws/enum/wsEventTypes.dart';
-import 'package:flutter_ws/exceptions/FailedToContactWebsocket.dart';
-import 'package:flutter_ws/manager/WebsocketManager.dart';
-import 'package:flutter_ws/model/IndexingInfo.dart';
-import 'package:flutter_ws/model/QueryResult.dart';
-import 'package:flutter_ws/model/Video.dart';
-import 'package:flutter_ws/section/aboutSection.dart';
-import 'package:flutter_ws/section/downloadSection.dart';
-import 'package:flutter_ws/section/liveTVSection.dart';
-import 'package:flutter_ws/util/jsonParser.dart';
-import 'package:flutter_ws/util/osChecker.dart';
-import 'package:flutter_ws/util/textStyles.dart';
+import 'package:flutter_ws/enum/ws_event_types.dart';
+import 'package:flutter_ws/exceptions/failed_to_contact_websocket.dart';
+import 'package:flutter_ws/model/indexing_info.dart';
+import 'package:flutter_ws/model/query_result.dart';
+import 'package:flutter_ws/model/video.dart';
+import 'package:flutter_ws/platform_channels/websocket_manager.dart';
+import 'package:flutter_ws/section/about_section.dart';
+import 'package:flutter_ws/section/download_section.dart';
+import 'package:flutter_ws/section/live_tv_section.dart';
+import 'package:flutter_ws/util/json_parser.dart';
+import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/util/websocket.dart';
-import 'package:flutter_ws/widgets/StatusBar.dart';
-import 'package:flutter_ws/widgets/filterMenu/filterMenu.dart';
-import 'package:flutter_ws/widgets/filterMenu/searchFilter.dart';
-import 'package:flutter_ws/widgets/gradientAppBar.dart';
-import 'package:flutter_ws/widgets/indexingBar.dart';
+import 'package:flutter_ws/widgets/filterMenu/filter_menu.dart';
+import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
+import 'package:flutter_ws/widgets/gradient_app_bar.dart';
+import 'package:flutter_ws/widgets/indexing_bar.dart';
 import 'package:flutter_ws/widgets/inherited/appBar_state_container.dart';
 import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
-import 'package:flutter_ws/widgets/list/videoListView.dart';
+import 'package:flutter_ws/widgets/list/video_list_view.dart';
+import 'package:flutter_ws/widgets/status_bar.dart';
 import 'package:uuid/uuid.dart';
 
 void main() => runApp(new AppSharedStateContainer(child: new MyApp()));
 
 class MyApp extends StatelessWidget {
-//  static FirebaseAnalytics analytics = new FirebaseAnalytics();
-//  static FirebaseAnalyticsObserver observer =
-//      new FirebaseAnalyticsObserver(analytics: analytics);
   final TextEditingController textEditingController =
       new TextEditingController();
 
@@ -44,11 +37,6 @@ class MyApp extends StatelessWidget {
 
     print("Rendering Main App");
     final title = 'MediathekView';
-
-    //Track os
-//    OsChecker
-//        .getTargetPlatform()
-//        .then((platform) => Firebase.logOperatingSystem(platform.toString()));
 
     Uuid uuid = new Uuid();
     return new MaterialApp(
@@ -80,10 +68,6 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  //FirebaseAnalytics
-//  final FirebaseAnalytics analytics;
-//  final FirebaseAnalyticsObserver observer;
-
   final String title;
   final TextEditingController textEditingController;
   final PageController pageController;
@@ -91,8 +75,6 @@ class MyHomePage extends StatefulWidget {
   MyHomePage(
       {Key key,
       @required this.title,
-//      this.analytics,
-//      this.observer,
       this.pageController,
       this.textEditingController})
       : super(key: key);
@@ -153,16 +135,11 @@ class HomePageState extends State<MyHomePage>
 
   bool scrolledToEndOfList;
 
-  //FirebaseAnalytics
-//  final FirebaseAnalytics analytics;
-//  final FirebaseAnalyticsObserver observer;
-
   //Tabs
   Widget videoSearchList;
   LiveTVSection liveTVSection;
   DownloadSection downloadSection;
   AboutSection aboutSection;
-
 
   HomePageState(this.searchFieldController);
 
@@ -190,9 +167,6 @@ class HomePageState extends State<MyHomePage>
     //register Observer to react to android/ios lifecycle events
     WidgetsBinding.instance.addObserver(this);
 
-    //Firebase
-//    Firebase.initFirebase(analytics);
-
     _controller = new TabController(length: 4, vsync: this);
 
     //Init tabs
@@ -200,7 +174,6 @@ class HomePageState extends State<MyHomePage>
     liveTVSection = new LiveTVSection();
     downloadSection = new DownloadSection();
     aboutSection = new AboutSection();
-
 
     //keys
     Uuid uuid = new Uuid();
@@ -279,10 +252,13 @@ class HomePageState extends State<MyHomePage>
       body: new TabBarView(
         controller: _controller,
         children: <Widget>[
-          new SafeArea(child:  videoSearchList == null? getVideoSearchListWidget(): videoSearchList),
-          liveTVSection == null? new LiveTVSection(): liveTVSection,
-          downloadSection == null? new DownloadSection(): downloadSection,
-          aboutSection == null? new AboutSection(): aboutSection
+          new SafeArea(
+              child: videoSearchList == null
+                  ? getVideoSearchListWidget()
+                  : videoSearchList),
+          liveTVSection == null ? new LiveTVSection() : liveTVSection,
+          downloadSection == null ? new DownloadSection() : downloadSection,
+          aboutSection == null ? new AboutSection() : aboutSection
         ],
       ),
       bottomNavigationBar: new Theme(
@@ -291,8 +267,7 @@ class HomePageState extends State<MyHomePage>
             splashColor: new Color(0xffffbf00),
 //            unselectedWidgetColor: Colors.green,
             primaryColor: Colors.white,
-            textTheme: Theme
-                .of(context)
+            textTheme: Theme.of(context)
                 .textTheme
                 .copyWith(caption: new TextStyle(color: Colors.grey))),
         child: new BottomNavigationBar(
@@ -339,7 +314,8 @@ class HomePageState extends State<MyHomePage>
             new FilterMenu(
                 searchFilters: searchFilters,
                 onFilterUpdated: _filterMenuUpdatedCallback,
-                onSingleFilterTapped: _singleFilterTappedCallback)),
+                onSingleFilterTapped: _singleFilterTappedCallback),
+            false),
       ),
       new Flexible(
         child: new RefreshIndicator(
@@ -363,13 +339,6 @@ class HomePageState extends State<MyHomePage>
     ]);
     return videoSearchList;
   }
-
-//  void onPageChanged(int page) {
-//    print("On page Changed: ---> Page " + page.toString());
-//    setState(() {
-//      this._page = page;
-//    });
-//  }
 
   /// Called when the user presses on of the
   /// [BottomNavigationBarItem] with corresponding
@@ -402,7 +371,6 @@ class HomePageState extends State<MyHomePage>
         pageName = "About";
         break;
     }
-//    Firebase.sendCurrentTabToAnalytics(observer, pageName);
   }
 
   Future<Null> _handleListRefresh() async {
