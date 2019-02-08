@@ -12,7 +12,7 @@ class ScrollPositionHolder {
 
 class VideoListView extends StatefulWidget {
   final Logger logger = new Logger('VideoListView');
-  final int pageThreshold = 5;
+  final int pageThreshold = 10;
   final int amountOfVideosToFetch = 60;
   final ScrollPositionHolder offset = new ScrollPositionHolder();
 
@@ -59,7 +59,7 @@ class _VideoListViewState extends State<VideoListView> {
 
   @override
   Widget build(BuildContext context) {
-    widget.logger.fine("Rendering Main Video List with list length " +
+    widget.logger.info("Rendering Main Video List with list length " +
         widget.videos.length.toString() +
         " & fetched: " +
         widget.amountOfVideosFetched.toString());
@@ -67,10 +67,10 @@ class _VideoListViewState extends State<VideoListView> {
     //TODO brauche ein anderes maß -> Rewuest is finished & videos.length == 0 -> dann kein Videos
     //Siehe refresh indicator completer!!
     if (widget.videos.length == 0 && widget.amountOfVideosFetched == 0) {
+      widget.logger.info("No Videos found");
       return new Container(child: new Text("keine Videos gefunden"));
-    }
-    if (widget.videos.length == 0) {
-      widget.logger.fine("Searching: video list legth : 0 & amountFetched: " +
+    } else if (widget.videos.length == 0) {
+      widget.logger.info("Searching: video list legth : 0 & amountFetched: " +
           widget.amountOfVideosFetched.toString());
       return new Container(
         alignment: Alignment.center,
@@ -95,7 +95,7 @@ class _VideoListViewState extends State<VideoListView> {
       widget.setOffsetMethod(Scrollable.of(context).position.pixels);
     else
       widget.logger
-          .fine("Man video List View: ERROR: Could not set pixel position");
+          .severe("Video List View: Error could not set pixel position");
 
     if (index + widget.pageThreshold > widget.videos.length) {
       widget.queryEntries(index, widget.amountOfVideosToFetch);

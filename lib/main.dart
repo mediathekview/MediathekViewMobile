@@ -108,14 +108,12 @@ class HomePageState extends State<MyHomePage>
 
   //Websocket
   static WebsocketController websocketController;
+  static Timer socketHealthTimer;
   bool websocketInitError;
-  int lastAmountOfVideosRetrieved;
   IndexingInfo indexingInfo;
   bool indexingError;
-  int lastRequestedSkip;
   bool refreshOperationRunning;
   Completer<Null> refreshCompleter;
-  static Timer socketHealthTimer;
 
   //Keys
   Key videoListKey;
@@ -129,7 +127,6 @@ class HomePageState extends State<MyHomePage>
   StatusBar statusBar;
 
   TabController _controller;
-  TextEditingController searchFieldController;
 
   /// Indicating the current displayed page
   /// 0: videoList
@@ -138,7 +135,12 @@ class HomePageState extends State<MyHomePage>
   /// 3: about
   int _page = 0;
 
+  //search
+  TextEditingController searchFieldController;
   bool scrolledToEndOfList;
+  int initialQueryAmount = 60;
+  int lastRequestedSkip;
+  int lastAmountOfVideosRetrieved;
 
   //Tabs
   Widget videoSearchList;
@@ -151,21 +153,17 @@ class HomePageState extends State<MyHomePage>
   @override
   void initState() {
     videos = new List();
-
-    //initialize Vars of HomePageState
     searchFilters = new Map();
     filterMenuOpen = false;
     filterMenuChannelFilterIsOpen = false;
     websocketInitError = false;
-    lastRequestedSkip = 0;
     indexingInfo = null;
     indexingError = false;
     lastAmountOfVideosRetrieved = -1;
     refreshOperationRunning = false;
-    currentUserQueryInput = "";
     scrolledToEndOfList = false;
-
-    //search input
+    currentUserQueryInput = "";
+    lastRequestedSkip = 0;
     var inputListener = () => handleSearchInput();
     searchFieldController.addListener(inputListener);
 
@@ -175,7 +173,6 @@ class HomePageState extends State<MyHomePage>
     _controller = new TabController(length: 4, vsync: this);
 
     //Init tabs
-    videoSearchList = getVideoSearchListWidget();
     liveTVSection = new LiveTVSection();
     downloadSection = new DownloadSection();
     aboutSection = new AboutSection();
@@ -197,7 +194,7 @@ class HomePageState extends State<MyHomePage>
 
       logger.fine("Firing initial query on home page init");
       websocketController.queryEntries(
-          currentUserQueryInput, searchFilters, 0, 10);
+          currentUserQueryInput, searchFilters, 0, initialQueryAmount);
     });
 
     startSocketHealthTimer();
@@ -256,17 +253,14 @@ class HomePageState extends State<MyHomePage>
   Widget build(BuildContext context) {
     stateContainer = AppSharedStateContainer.of(context);
 
-    logger.fine("Rendering Home Page");
+    logger.info("Rendering Home Page");
 
     return new Scaffold(
       backgroundColor: Colors.grey[100],
       body: new TabBarView(
         controller: _controller,
         children: <Widget>[
-          new SafeArea(
-              child: videoSearchList == null
-                  ? getVideoSearchListWidget()
-                  : videoSearchList),
+          new SafeArea(child: getVideoSearchListWidget()),
           liveTVSection == null ? new LiveTVSection() : liveTVSection,
           downloadSection == null ? new DownloadSection() : downloadSection,
           aboutSection == null ? new AboutSection() : aboutSection
@@ -318,6 +312,7 @@ class HomePageState extends State<MyHomePage>
   }
 
   Widget getVideoSearchListWidget() {
+    logger.info("Rendering Video Search list");
     Widget videoSearchList = new Column(children: <Widget>[
       new FilterBarSharedState(
         child: new GradientAppBar(
@@ -441,26 +436,23 @@ class HomePageState extends State<MyHomePage>
       QueryResult queryResult = JSONParser.parseQueryResult(data);
 
       List<Video> newVideosFromQuery = queryResult.videos;
-      logger.fine('Received ' +
-          newVideosFromQuery.length.toString() +
-          ' entries. Amount of videos currently in list ' +
-          videos.length.toString());
 
       lastAmountOfVideosRetrieved = newVideosFromQuery.length;
 
-      //construct new videos List
-      int newVideosCount = addOnlyNewVideos(newVideosFromQuery);
-
-      logger.fine("Added amount of new videos: " + newVideosCount.toString());
+      int newVideosCount = addVideos(newVideosFromQuery);
 
       if (newVideosCount == 0 && scrolledToEndOfList == false) {
-        logger.fine("Scrolled to end of list");
+        logger.info("Scrolled to end of list & mounted: " + mounted.toString());
         scrolledToEndOfList = true;
         if (mounted) {
           setState(() {});
         }
         return;
       } else if (newVideosCount != 0) {
+        logger.info('Received ' +
+            newVideosCount.toString() +
+            ' new video(s). Amount of videos in list ' +
+            videos.length.toString());
         lastAmountOfVideosRetrieved = newVideosCount;
         scrolledToEndOfList == false;
         if (mounted) setState(() {});
@@ -484,11 +476,11 @@ class HomePageState extends State<MyHomePage>
         });
       }
     } else {
-      logger.info("Recieved pong. Content: " + data);
+      logger.info("Received pong");
     }
   }
 
-  int addOnlyNewVideos(List<Video> newVideosFromQuery) {
+  int addVideos(List<Video> newVideosFromQuery) {
     int newVideosCount = 0;
     for (int i = 0; i < newVideosFromQuery.length; i++) {
       Video currentVideo = newVideosFromQuery[i];
@@ -555,8 +547,6 @@ class HomePageState extends State<MyHomePage>
     logger.fine("Clearing video list");
     videos.clear();
 
-    //Firebase.logVideoSearch(searchFieldController.text, searchFilters);
-
     if (mounted) setState(() {});
     _createQuery(skip, top);
   }
@@ -565,8 +555,6 @@ class HomePageState extends State<MyHomePage>
 
   _filterMenuUpdatedCallback(SearchFilter newFilter) {
     //called whenever a filter in the menu gets a value
-//    logger.fine("Changed Filter detected. ID : " + newFilter.filterId + " current value: " + newFilter.filterValue);
-
     if (this.searchFilters[newFilter.filterId] != null) {
       if (this.searchFilters[newFilter.filterId].filterValue !=
           newFilter.filterValue) {

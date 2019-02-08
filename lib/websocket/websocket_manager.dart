@@ -110,11 +110,6 @@ class WebsocketController {
     wsChannel.sink.add("5");
   }
 
-  void fireInitialQuery() {
-    wsChannel.sink.add(
-        '421["queryEntries",{"queries":[],"sortBy":"timestamp","sortOrder":"desc","future":false,"offset":0,"size":20}]');
-  }
-
   void sendContinoousPing(int websocketHearthbeatInterval) {
     if (continoousPingTimer == null || !continoousPingTimer.isActive) {
       Duration duration = new Duration(milliseconds: 2000);
@@ -125,15 +120,15 @@ class WebsocketController {
         duration,
         (Timer t) {
           if (wsChannel == null) {
-            logger.info("ping NOT send. Channel => null");
+            logger.fine("ping NOT send. Channel => null");
             return;
           } else if (connectionState != ConnectionState.active) {
-            logger.info("ping NOT send. Connection State: " +
+            logger.fine("ping NOT send. Connection State: " +
                 connectionState.toString());
-            logger.info("Channel used: " + wsChannel.hashCode.toString());
+            logger.fine("Channel used: " + wsChannel.hashCode.toString());
             return;
           }
-          logger.info("Channel used: " + wsChannel.hashCode.toString());
+          logger.fine("Channel used: " + wsChannel.hashCode.toString());
           logger.fine("Sending regular ping");
           wsChannel.sink.add("2");
         },
