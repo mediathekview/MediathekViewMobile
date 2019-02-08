@@ -30,7 +30,6 @@ class FilterMenuChannelEditButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-//          new IconButton(iconSize: 18.0, disabledColor: Colors.black, alignment: Alignment.center, padding: const EdgeInsets.all(0.0), icon: new Icon(Icons.delete)),
               new Padding(
                 padding: new EdgeInsets.only(right: 5.0),
                 child: new Icon(Icons.edit, size: 25.0, color: Colors.white),

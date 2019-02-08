@@ -7,6 +7,7 @@ import 'package:flutter_ws/platform_channels/database_manager.dart';
 import 'package:flutter_ws/platform_channels/native_video_manager.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
+import 'package:logging/logging.dart';
 
 class Channel {
   String name;
@@ -20,6 +21,8 @@ class Channel {
 typedef Widget ItemBuilder(BuildContext context, int index);
 
 class LiveTVSection extends StatefulWidget {
+  final Logger logger = new Logger('LiveTVSection');
+
   @override
   _LiveTVSectionState createState() => _LiveTVSectionState();
 }
@@ -55,11 +58,11 @@ class _LiveTVSectionState extends State<LiveTVSection> {
         .then((String fileData) {
       listData = fileData.split("#EXTINF:-1");
       listData.removeAt(0);
-      print("Found entries: " + listData.length.toString());
+      widget.logger.fine("Found entries: " + listData.length.toString());
 
       //Create lists
       createSeperateLists(listData).then((x) {
-        print("finished creating lists: Alle: " +
+        widget.logger.fine("finished creating lists: Alle: " +
             allChannels.length.toString() +
             " Kinder: " +
             childChannels.length.toString() +
@@ -87,8 +90,8 @@ class _LiveTVSectionState extends State<LiveTVSection> {
 
     appWideState = AppSharedStateContainer.of(context);
     favChannels = appWideState.appState.favoritChannels;
-//    print("Amount of Fav channels: " + favChannels.length.toString());
-//    favChannels.forEach((string, channel) => print("Saved Key: " + string));
+//    widget.logger.fine("Amount of Fav channels: " + favChannels.length.toString());
+//    favChannels.forEach((string, channel) => widget.logger.fine("Saved Key: " + string));
     databaseManager = appWideState.appState.databaseManager;
 
     Widget allChannelsListView =
@@ -182,35 +185,35 @@ class _LiveTVSectionState extends State<LiveTVSection> {
 
   Widget itemBuilderAllChannels(BuildContext context, int index) {
     Channel channel = allChannels[index];
-//    print("Item with index " + index.toString() + "  content: " + channel.name);
-//    print(channel.name + " : " + channel.logo);
+//    widget.logger.fine("Item with index " + index.toString() + "  content: " + channel.name);
+//    widget.logger.fine(channel.name + " : " + channel.logo);
 
     return getListTile(channel);
   }
 
   Widget itemBuilderFavoriteChannels(BuildContext context, int index) {
-//    print("Fav: TOTAlLength: " +
+//    widget.logger.fine("Fav: TOTAlLength: " +
 //        favChannels.length.toString() +
 //        " Index: " +
 //        index.toString());
     ChannelFavoriteEntity channelEntity = favChannels.values.toList()[index];
     Channel channel = new Channel(channelEntity.name, channelEntity.logo,
         channelEntity.groupname, channelEntity.url);
-//    print(channel.name + " : " + channel.logo);
+//    widget.logger.fine(channel.name + " : " + channel.logo);
 
     return getListTile(channel);
   }
 
   Widget itemBuilderChildChannels(BuildContext context, int index) {
     Channel channel = childChannels[index];
-//    print(channel.name + " : " + channel.logo);
+//    widget.logger.fine(channel.name + " : " + channel.logo);
 
     return getListTile(channel);
   }
 
   Widget itemBuilderLocalChannels(BuildContext context, int index) {
     Channel channel = localChannels[index];
-//    print(channel.name + " : " + channel.logo);
+//    widget.logger.fine(channel.name + " : " + channel.logo);
     return getListTile(channel);
   }
 
@@ -290,11 +293,11 @@ class _LiveTVSectionState extends State<LiveTVSection> {
   }
 
   void _handleAddFavoriteChannel(Channel channel) {
-    print("Pressed favourite");
+    widget.logger.fine("Pressed favourite");
     ChannelFavoriteEntity entity = new ChannelFavoriteEntity(
         channel.name, channel.logo, channel.group, channel.url);
     databaseManager.insertChannelFavorite(entity).then((dynamic) {
-      print("added favorite CHannel to DB");
+      widget.logger.fine("added favorite CHannel to DB");
       setState(() {
         appWideState.appState.favoritChannels
             .putIfAbsent(channel.name, () => entity);
@@ -303,9 +306,9 @@ class _LiveTVSectionState extends State<LiveTVSection> {
   }
 
   void _handleRemoveFavoriteChannel(String senderName) {
-    print("Pressed remove favourite");
+    widget.logger.fine("Pressed remove favourite");
     databaseManager.deleteChannelFavorite(senderName).then((dynamic) {
-      print("removed favorite Channel from DB");
+      widget.logger.fine("removed favorite Channel from DB");
       setState(() {
         appWideState.appState.favoritChannels.remove(senderName);
       });

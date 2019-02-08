@@ -11,7 +11,10 @@ dependencies:
   socket_io: '^0.9.0+1'
   web_socket_channel: '^1.0.9'
   #dio: ^2.0.0
-  #simple_logger: ^0.7.4
+  # socket_io_client: '^0.9.1'
+  # flutter_socket_io: '^0.4.6'
+  logging: '^0.11.3+2'
+  synchronized: '^1.5.3+2'
   flutter:
     sdk: flutter
 

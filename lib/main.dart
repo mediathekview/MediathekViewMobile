@@ -23,6 +23,7 @@ import 'package:flutter_ws/widgets/inherited/appBar_state_container.dart';
 import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
 import 'package:flutter_ws/widgets/list/video_list_view.dart';
 import 'package:flutter_ws/widgets/status_bar.dart';
+import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 
 void main() => runApp(new AppSharedStateContainer(child: new MyApp()));
@@ -35,8 +36,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     AppSharedStateContainer.of(context).initializeState(context);
 
-    print("Rendering Main App");
     final title = 'MediathekView';
+
+    //Setup global log levels
+    Logger.root.level = Level.INFO;
+    Logger.root.onRecord.listen((LogRecord rec) {
+      print('${rec.level.name}: ${rec.time}: ${rec.message}');
+    });
 
     Uuid uuid = new Uuid();
     return new MaterialApp(
@@ -53,14 +59,11 @@ class MyApp extends StatelessWidget {
             labelStyle: subHeaderTextStyle,
             brightness: Brightness.dark),
         brightness: Brightness.light,
-//          indicatorColor: new Color(0xffffbf00)
       ),
       title: title,
       home: new MyHomePage(
         key: new Key(uuid.v1()),
         title: title,
-//        analytics: analytics,
-//        observer: observer,
         textEditingController: textEditingController,
       ),
     );
@@ -71,6 +74,7 @@ class MyHomePage extends StatefulWidget {
   final String title;
   final TextEditingController textEditingController;
   final PageController pageController;
+  final Logger logger = new Logger('MyHomePage');
 
   MyHomePage(
       {Key key,
@@ -81,13 +85,14 @@ class MyHomePage extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() {
-    return new HomePageState(this.textEditingController);
+    return new HomePageState(this.textEditingController, this.logger);
   }
 }
 
 class HomePageState extends State<MyHomePage>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   List<Video> videos;
+  final Logger logger;
 
   //global state
   AppSharedState stateContainer;
@@ -110,6 +115,7 @@ class HomePageState extends State<MyHomePage>
   int lastRequestedSkip;
   bool refreshOperationRunning;
   Completer<Null> refreshCompleter;
+  static Timer socketHealthTimer;
 
   //Keys
   Key videoListKey;
@@ -117,8 +123,7 @@ class HomePageState extends State<MyHomePage>
   Key indexingBarKey;
 
   //mock
-  Timer mockTimer;
-  Timer noConnectionChecker;
+  static Timer mockTimer;
 
   //Statusbar
   StatusBar statusBar;
@@ -141,7 +146,7 @@ class HomePageState extends State<MyHomePage>
   DownloadSection downloadSection;
   AboutSection aboutSection;
 
-  HomePageState(this.searchFieldController);
+  HomePageState(this.searchFieldController, this.logger);
 
   @override
   void initState() {
@@ -190,50 +195,56 @@ class HomePageState extends State<MyHomePage>
     websocketController.initializeWebsocket().then((Void) {
       currentUserQueryInput = searchFieldController.text;
 
-      print("Firing query on home page init");
+      logger.fine("Firing initial query on home page init");
       websocketController.queryEntries(
           currentUserQueryInput, searchFilters, 0, 10);
     });
 
-    Duration duration = new Duration(milliseconds: 5000);
-    noConnectionChecker = new Timer.periodic(
-      duration,
-      (Timer t) {
-        ConnectionState connectionState = websocketController.connectionState;
+    startSocketHealthTimer();
+  }
 
-        if (connectionState == ConnectionState.active) {
-          print("Ws connection is fine");
-          if (websocketInitError) {
-            websocketInitError = false;
-            if (mounted) setState(() {});
+  void startSocketHealthTimer() {
+    if (socketHealthTimer == null || !socketHealthTimer.isActive) {
+      Duration duration = new Duration(milliseconds: 5000);
+      Timer.periodic(
+        duration,
+        (Timer t) {
+          ConnectionState connectionState = websocketController.connectionState;
+
+          if (connectionState == ConnectionState.active) {
+            logger.fine("Ws connection is fine");
+            if (websocketInitError) {
+              websocketInitError = false;
+              if (mounted) setState(() {});
+            }
+          } else if (connectionState == ConnectionState.done ||
+              connectionState == ConnectionState.none) {
+            logger.fine("Ws connection is " +
+                connectionState.toString() +
+                " and mounted: " +
+                mounted.toString());
+
+            if (mounted)
+              websocketController
+                  .initializeWebsocket()
+                  .then((initializedSuccessfully) {
+                if (initializedSuccessfully) {
+                  logger.info("WS connection stable again");
+                  if (videos.isEmpty) _createQuery(0, 10);
+                } else {
+                  logger.info("WS initialization failed");
+                }
+              });
           }
-        } else if (connectionState == ConnectionState.done ||
-            connectionState == ConnectionState.none) {
-          print("Ws connection is " +
-              connectionState.toString() +
-              " and mounted: " +
-              mounted.toString());
-
-          if (mounted)
-            websocketController
-                .initializeWebsocket()
-                .then((initializedSuccessfully) {
-              if (initializedSuccessfully) {
-                print("WS connection stable again");
-                if (videos.isEmpty) _createQuery(0, 10);
-              } else {
-                print("WS initialization failed");
-              }
-            });
-        }
-      },
-    );
+        },
+      );
+    }
   }
 
   @override
   void dispose() {
 //    _pageController.dispose();
-    print("Disposing Home Page & shutting down websocket connection");
+    logger.fine("Disposing Home Page & shutting down websocket connection");
 
     websocketController.stopPing();
     websocketController.closeWebsocketChannel();
@@ -245,7 +256,7 @@ class HomePageState extends State<MyHomePage>
   Widget build(BuildContext context) {
     stateContainer = AppSharedStateContainer.of(context);
 
-    print("Rendering Home Page");
+    logger.fine("Rendering Home Page");
 
     return new Scaffold(
       backgroundColor: Colors.grey[100],
@@ -344,7 +355,7 @@ class HomePageState extends State<MyHomePage>
   /// [BottomNavigationBarItem] with corresponding
   /// page index
   void navigationTapped(int page) {
-    print("New Navigation Tapped: ---> Page " + page.toString());
+    logger.fine("New Navigation Tapped: ---> Page " + page.toString());
     _controller.animateTo(page,
         duration: const Duration(milliseconds: 300), curve: Curves.ease);
 
@@ -374,7 +385,7 @@ class HomePageState extends State<MyHomePage>
   }
 
   Future<Null> _handleListRefresh() async {
-    print("Refreshing video list ...");
+    logger.fine("Refreshing video list ...");
     refreshOperationRunning = true;
     //the completer will be completed when there are results & the flag == true
     refreshCompleter = new Completer<Null>();
@@ -392,12 +403,12 @@ class HomePageState extends State<MyHomePage>
     }
   }
 
-  //TODO add automatic reopen flag
   onWebsocketDone() {
-    print('Received a Done signal from the Websocket');
+    logger.info("Received a Done signal from the Websocket");
   }
 
   void onWebsocketError(FailedToContactWebsocketError error) {
+    logger.info("Received a ERROR from the Websocket.", {error: error});
     if (this.websocketInitError == false) {
       this.websocketInitError = true;
       if (mounted) setState(() {});
@@ -406,7 +417,7 @@ class HomePageState extends State<MyHomePage>
 
   void onWebsocketData(String data) {
     if (data == null) {
-      print("Data received is null");
+      logger.fine("Data received is null");
       setState(() {});
       return;
     }
@@ -416,21 +427,21 @@ class HomePageState extends State<MyHomePage>
         WebsocketHandler.parseSocketIOConnectionType(data);
 
     if (socketIOEventType != WebsocketConnectionTypes.UNKNOWN)
-      print("Websocket: received response type: " + socketIOEventType);
+      logger.fine("Websocket: received response type: " + socketIOEventType);
 
     if (socketIOEventType == WebsocketConnectionTypes.RESULT) {
       if (refreshOperationRunning) {
         refreshOperationRunning = false;
         refreshCompleter.complete();
         videos.clear();
-        print("Refresh operation finished.");
+        logger.fine("Refresh operation finished.");
         HapticFeedback.lightImpact();
       }
 
       QueryResult queryResult = JSONParser.parseQueryResult(data);
 
       List<Video> newVideosFromQuery = queryResult.videos;
-      print('Received ' +
+      logger.fine('Received ' +
           newVideosFromQuery.length.toString() +
           ' entries. Amount of videos currently in list ' +
           videos.length.toString());
@@ -440,10 +451,10 @@ class HomePageState extends State<MyHomePage>
       //construct new videos List
       int newVideosCount = addOnlyNewVideos(newVideosFromQuery);
 
-      print("Added amount of new videos: " + newVideosCount.toString());
+      logger.fine("Added amount of new videos: " + newVideosCount.toString());
 
       if (newVideosCount == 0 && scrolledToEndOfList == false) {
-        print("Scrolled to end of list");
+        logger.fine("Scrolled to end of list");
         scrolledToEndOfList = true;
         if (mounted) {
           setState(() {});
@@ -473,7 +484,7 @@ class HomePageState extends State<MyHomePage>
         });
       }
     } else {
-      print("Recieved pong. Content: " + data);
+      logger.info("Recieved pong. Content: " + data);
     }
   }
 
@@ -494,12 +505,6 @@ class HomePageState extends State<MyHomePage>
         if (video.id == currentVideo.id ||
             video.title == currentVideo.title &&
                 video.duration == currentVideo.duration) {
-//          print("FOund duplicate with title: " +
-//              video.title +
-//              " and duration: " +
-//              video.duration.toString() +
-//              " and index: " +
-//              b.toString());
           hasDuplicate = true;
           break;
         }
@@ -507,10 +512,7 @@ class HomePageState extends State<MyHomePage>
       if (hasDuplicate == false) {
         //TODO exlude ORF atm
         if (currentVideo.channel == "ORF") continue;
-
-//        print("video: " + currentVideo.channel);
         videos.add(currentVideo);
-//        print("Adding video. Length now: " + videos.length.toString());
         newVideosCount++;
       }
     }
@@ -520,21 +522,22 @@ class HomePageState extends State<MyHomePage>
   // ----------CALLBACKS: From List View ----------------
 
   onQueryEntries(int skip, int top) {
-    print('Requesting entries with skip ' +
+    logger.fine('Requesting entries with skip ' +
         skip.toString() +
         ". last requested skip is " +
         lastRequestedSkip.toString());
 
     lastRequestedSkip = skip;
     websocketController.queryEntries(
-        currentUserQueryInput, searchFilters, skip, top);
+        currentUserQueryInput, searchFilters, skip, top); //
   }
 
   // ---------- SEARCH Input ----------------
 
   void handleSearchInput() {
     if (currentUserQueryInput == searchFieldController.text) {
-      print("Current Query Input equals new query input - not querying again!");
+      logger.fine(
+          "Current Query Input equals new query input - not querying again!");
       return;
     }
 
@@ -549,7 +552,7 @@ class HomePageState extends State<MyHomePage>
   }
 
   void _createQueryWithClearedVideoList(int skip, int top) {
-    print("Clearing video list");
+    logger.fine("Clearing video list");
     videos.clear();
 
     //Firebase.logVideoSearch(searchFieldController.text, searchFilters);
@@ -562,12 +565,12 @@ class HomePageState extends State<MyHomePage>
 
   _filterMenuUpdatedCallback(SearchFilter newFilter) {
     //called whenever a filter in the menu gets a value
-//    print("Changed Filter detected. ID : " + newFilter.filterId + " current value: " + newFilter.filterValue);
+//    logger.fine("Changed Filter detected. ID : " + newFilter.filterId + " current value: " + newFilter.filterValue);
 
     if (this.searchFilters[newFilter.filterId] != null) {
       if (this.searchFilters[newFilter.filterId].filterValue !=
           newFilter.filterValue) {
-        print("Changed filter text for filter with id " +
+        logger.fine("Changed filter text for filter with id " +
             newFilter.filterId.toString() +
             " detected. Old Value: " +
             this.searchFilters[newFilter.filterId].filterValue +
@@ -583,7 +586,7 @@ class HomePageState extends State<MyHomePage>
         _createQueryWithClearedVideoList(0, 10);
       }
     } else if (newFilter.filterValue.isNotEmpty) {
-      print("New filter with id " +
+      logger.fine("New filter with id " +
           newFilter.filterId.toString() +
           " detected with value " +
           newFilter.filterValue);
@@ -605,7 +608,7 @@ class HomePageState extends State<MyHomePage>
   // ----------LIFECYCLE----------------
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    print("Observed Lifecycle change " + state.toString());
+    logger.fine("Observed Lifecycle change " + state.toString());
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.suspending) {
       //TODO maybe dispose Tab controller here
@@ -617,25 +620,27 @@ class HomePageState extends State<MyHomePage>
   }
 
   mockIndexing() {
-    var one = new Duration(seconds: 1);
-    this.mockTimer = new Timer.periodic(one, (Timer t) {
-      print("increase");
-      if (indexingInfo == null) {
-        indexingInfo = new IndexingInfo();
-        indexingInfo.indexerProgress = 0.0;
-      }
-      if (indexingInfo.indexerProgress > 1) {
+    if (mockTimer == null || !mockTimer.isActive) {
+      var one = new Duration(seconds: 1);
+      mockTimer = new Timer.periodic(one, (Timer t) {
+        logger.fine("increase");
+        if (indexingInfo == null) {
+          indexingInfo = new IndexingInfo();
+          indexingInfo.indexerProgress = 0.0;
+        }
+        if (indexingInfo.indexerProgress > 1) {
+          setState(() {
+            //Setting indexingInfo == null to ensure removal of progress indicator
+            this.indexingError = false;
+            this.indexingInfo = null;
+          });
+          mockTimer.cancel();
+          return;
+        }
         setState(() {
-          //Setting indexingInfo == null to ensure removal of progress indicator
-          this.indexingError = false;
-          this.indexingInfo = null;
+          indexingInfo.indexerProgress = indexingInfo.indexerProgress + 0.05;
         });
-        mockTimer.cancel();
-        return;
-      }
-      setState(() {
-        indexingInfo.indexerProgress = indexingInfo.indexerProgress + 0.05;
       });
-    });
+    }
   }
 }

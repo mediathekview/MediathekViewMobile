@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/util/calculator.dart';
 import 'package:flutter_ws/util/text_styles.dart';
+import 'package:logging/logging.dart';
 
 class MetadataBar extends StatelessWidget {
+  final Logger logger = new Logger('MetadataBar');
+
   var videoDuration;
   int videoTimestamp;
   ThemeData theme;

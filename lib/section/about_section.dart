@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:logging/logging.dart';
 
 class AboutSection extends StatelessWidget {
+  static final Logger logger = new Logger('AboutSection');
   static const eMailAddress =
       'mailto:kontakt.mediathekview.mobile@gmail.com?subject=Feedback zu MediathekView Mobile&body=<body>Hi Daniel,';
   static const eMailAddressKontonummer =
@@ -105,12 +107,12 @@ class AboutSection extends StatelessWidget {
       ),
     );
   }
-}
 
-_launchURL(String url) async {
-  if (await canLaunch(url)) {
-    await launch(url);
-  } else {
-    print('Could not launch $url');
+  _launchURL(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      logger.fine('Could not launch $url');
+    }
   }
 }

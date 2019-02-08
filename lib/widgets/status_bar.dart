@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/widgets/reuse/circular_progress_with_text.dart';
 import 'package:meta/meta.dart';
+import 'package:logging/logging.dart';
 
 class StatusBar extends StatelessWidget {
+  final Logger logger = new Logger('VideoWidget');
   final bool videoListIsEmpty;
   final bool websocketInitError;
   final bool firstAppStartup;
@@ -19,7 +21,7 @@ class StatusBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print("Rendering Status bar. videoListIsEmpty: " +
+    logger.fine("Rendering Status bar. videoListIsEmpty: " +
         videoListIsEmpty.toString() +
         " websocketInitError: " +
         websocketInitError.toString() +

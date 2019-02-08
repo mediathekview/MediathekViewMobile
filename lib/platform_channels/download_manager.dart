@@ -7,6 +7,7 @@ import 'package:flutter_ws/model/download_status.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/model/video_entity.dart';
 import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
+import 'package:logging/logging.dart';
 
 enum DownloadStatusText {
   STATUS_FAILED,
@@ -18,6 +19,7 @@ enum DownloadStatusText {
 }
 
 class DownloadManager {
+  final Logger logger = new Logger('DownloadManager');
   static DownloadManager _instance;
 
   //Method Channel
@@ -76,14 +78,14 @@ class DownloadManager {
 
     if (downloadManagerId == "-1") {
       downloadVideoRequestWithoutPermission = video;
-      print("Remembering download attemped video for later use");
+      logger.fine("Remembering download attemped video for later use");
       throw new Exception(
           "Permission for accessing local filesystem not granted yet -asking for permission");
     }
 
     appWideState.appState.currentDownloads.putIfAbsent(video.id, () => video);
 
-    print("Requested download of video with id " +
+    logger.fine("Requested download of video with id " +
         video.id +
         " and url " +
         video.url_video);
@@ -92,7 +94,7 @@ class DownloadManager {
   }
 
   Future<DownloadStatus> getStatus(String downloadId) async {
-    print('Requesting Download status synchronously for video with id ' +
+    logger.fine('Requesting Download status synchronously for video with id ' +
         downloadId.toString());
 
     Map<String, String> requestArguments = getRequestArgument(downloadId);
@@ -101,7 +103,7 @@ class DownloadManager {
     status =
         await _downloadMethodChannel.invokeMethod('status', requestArguments);
 
-    print('Download status received synchronously for video with id ' +
+    logger.fine('Download status received synchronously for video with id ' +
         downloadId.toString());
 
     return parseDownloadEvent(status);
@@ -121,7 +123,7 @@ class DownloadManager {
 
     appWideState.appState.currentDownloads.remove(downloadId);
 
-    print("Successfully Stopped " +
+    logger.fine("Successfully Stopped " +
         amountOfRemovedDownloads.toString() +
         " download.");
 
@@ -140,7 +142,7 @@ class DownloadManager {
       appWideState.appState.currentDownloads
           .putIfAbsent(videoId, () => downloadVideoRequestWithoutPermission);
       downloadVideoRequestWithoutPermission == null;
-      print("Permission for video with id " +
+      logger.info("Permission for video with id " +
           videoId +
           " has been granted - adding to current downloads");
     }
@@ -153,7 +155,7 @@ class DownloadManager {
       case 'STATUS_SUCCESSFUL':
         Video video = appWideState.appState.currentDownloads[videoId];
 
-        print("Download Manager: Download: " + videoId + " is " + status);
+        logger.fine("Download Manager: Download: " + videoId + " is " + status);
 
         downloadStatus.filePath = event["filePath"];
         downloadStatus.status = DownloadStatusText.STATUS_SUCCESSFUL;
@@ -177,13 +179,13 @@ class DownloadManager {
             .putIfAbsent(entity.id, () => entity);
 
         appWideState.appState.databaseManager.insert(entity).then((dynamic) {
-          print("Inserted downloaded video with id " +
+          logger.info("Inserted downloaded video with id " +
               entity.id +
               " and filename " +
               entity.fileName +
               " into db");
         }, onError: (e) {
-          print("Save to Database failed for video with id " +
+          logger.severe("Save to Database failed for video with id " +
               videoId +
               " Error: " +
               e.toString());
@@ -203,7 +205,7 @@ class DownloadManager {
         var progress = event["progress"];
         if (progress != null) {
           downloadStatus.progress = double.parse(progress);
-          print("Download Manager: Download: " +
+          logger.fine("Download Manager: Download: " +
               videoId +
               " is " +
               status +
@@ -225,7 +227,7 @@ class DownloadManager {
         var progress = event["progress"];
         if (progress != null) {
           downloadStatus.progress = double.parse(progress);
-          print("Download Manager: Download: " +
+          logger.fine("Download Manager: Download: " +
               videoId +
               " is " +
               status +
@@ -240,7 +242,7 @@ class DownloadManager {
         downloadStatus.message = event['reasonText'];
         downloadStatus.totalActiveCount = int.parse(event["totalActiveCount"]);
         appWideState.appState.currentDownloads.remove(videoId);
-        print("Download Manager: Download: " +
+        logger.severe("Download Manager: Download: " +
             videoId +
             " is " +
             status +
@@ -253,11 +255,11 @@ class DownloadManager {
         downloadStatus.message = event['reasonText'];
         downloadStatus.totalActiveCount = int.parse(event["totalActiveCount"]);
         appWideState.appState.currentDownloads.remove(videoId);
-        print("Download Manager: Download: " + videoId + " is " + status);
+        logger.info("Download Manager: Download: " + videoId + " is " + status);
         break;
 
       default:
-        print('$status is not a valid download status.');
+        logger.fine('$status is not a valid download status.');
         throw new ArgumentError('$status is not a valid download status.');
     }
 

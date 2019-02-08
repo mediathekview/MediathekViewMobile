@@ -3,8 +3,10 @@ import 'package:flutter_ws/model/indexing_info.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/widgets/reuse/circular_progress_with_text.dart';
 import 'package:meta/meta.dart';
+import 'package:logging/logging.dart';
 
 class IndexingBar extends StatelessWidget {
+  final Logger logger = new Logger('IndexingBar');
   final IndexingInfo info;
   final bool indexingError;
 
@@ -13,10 +15,10 @@ class IndexingBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print("Rendering indexing Bar");
+    logger.fine("Rendering indexing Bar");
 
     if (!indexingError && info != null) {
-      print("Currently indexing. Indexing progress: " +
+      logger.fine("Currently indexing. Indexing progress: " +
           info.indexerProgress.toString());
       return new CircularProgressWithText(
           new Text("Update Video Datenbank", style: connectionLostTextStyle),
@@ -24,7 +26,7 @@ class IndexingBar extends StatelessWidget {
           Colors.white);
     } else if (indexingError) {
       //TODO show error icon & say server error - but you can still watch your Downloads
-      print("Server Indexing error detected");
+      logger.fine("Server Indexing error detected");
     }
 
     return new Container();

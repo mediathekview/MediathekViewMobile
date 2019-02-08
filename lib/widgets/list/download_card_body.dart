@@ -11,8 +11,10 @@ import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
 import 'package:flutter_ws/widgets/list/metadata_bar.dart';
 import 'package:flutter_ws/widgets/reuse/circular_progress_with_text.dart';
 import 'package:uuid/uuid.dart';
+import 'package:logging/logging.dart';
 
 class DownloadCardBody extends StatefulWidget {
+  final Logger logger = new Logger('VideoWidget');
   final Video video;
 
   DownloadCardBody(this.video);
@@ -77,7 +79,7 @@ class InformationRowBodyState extends State<DownloadCardBody> {
 //      if (!mounted) return;
 //
 //      if (akt == null || akt.status == null) {
-//        //print("Video with id " + widget.video.id + " is not downloading");
+//        //widget.logger.fine("Video with id " + widget.video.id + " is not downloading");
 //        return;
 //      }
 //
@@ -85,7 +87,7 @@ class InformationRowBodyState extends State<DownloadCardBody> {
 //        status = akt.status;
 //        switchValue = true;
 //      });
-//    }, onError: (e) => print("Error: Video with id " + widget.video.id + " is not downloading"));
+//    }, onError: (e) => widget.logger.fine("Error: Video with id " + widget.video.id + " is not downloading"));
 
     return new Column(
         key: new Key(uuid.v1()),
@@ -137,11 +139,12 @@ class InformationRowBodyState extends State<DownloadCardBody> {
                                   switchValue = newSwitchValue;
                                 });
 
-                                print("Switch touched with value: " +
-                                    newSwitchValue.toString());
+                                widget.logger.fine(
+                                    "Switch touched with value: " +
+                                        newSwitchValue.toString());
 
                                 if (newSwitchValue == true && status == null) {
-                                  print(
+                                  widget.logger.fine(
                                       "Triggering download for video with id " +
                                           widget.video.id);
                                   onDownloadRequested();
@@ -149,32 +152,33 @@ class InformationRowBodyState extends State<DownloadCardBody> {
                                 }
 
                                 if (isAlreadyDownloaded) {
-                                  print("Deleting download for video with id " +
-                                      videoEntity.id);
+                                  widget.logger.fine(
+                                      "Deleting download for video with id " +
+                                          videoEntity.id);
 
                                   appWideState.appState.downloadedVideos
                                       .remove(videoEntity.id);
 
                                   databaseManager.delete(videoEntity.id).then(
                                       (id) {
-                                    print("Deleted from Database");
+                                    widget.logger.fine("Deleted from Database");
 
                                     new NativeVideoPlayer()
                                         .deleteVideo(videoEntity.fileName)
                                         .then((bool) {
                                       if (bool) {
-                                        print(
+                                        widget.logger.fine(
                                             "Deleted video also from local storage");
                                       } else {
-                                        print(
+                                        widget.logger.fine(
                                             "Failed to Delete video also from local storage");
                                       }
                                     },
-                                            onError: (e) => print(
+                                            onError: (e) => widget.logger.fine(
                                                 "Deleting video failed. Reason " +
                                                     e.toString()));
                                   },
-                                      onError: (e) => print(
+                                      onError: (e) => widget.logger.fine(
                                           "Error when deleting videos from Db"));
 
                                   status = null;
@@ -196,7 +200,7 @@ class InformationRowBodyState extends State<DownloadCardBody> {
                                             DownloadStatusText.STATUS_PENDING ||
                                         status ==
                                             DownloadStatusText.STATUS_PAUSED)) {
-                                  print(
+                                  widget.logger.fine(
                                       "Canceling download for video with id " +
                                           widget.video.id);
 
@@ -228,7 +232,7 @@ class InformationRowBodyState extends State<DownloadCardBody> {
   void cancleActiveDownload(BuildContext context) {
     downloadManager.cancelDownload(widget.video.id).then((id) {
       status = null;
-      print("Chanceled download");
+      widget.logger.fine("Chanceled download");
     }, onError: (e) {
 //      OsChecker.getTargetPlatform().then((platform) {
 //        Firebase.logPlatformChannelException(
@@ -255,13 +259,13 @@ class InformationRowBodyState extends State<DownloadCardBody> {
   void onDownloadStateChanged(DownloadStatus updatedStatus) {
 //    if (updatedStatus.id != widget.video.id) return;
 
-//    print("Download with id " +
+//    widget.logger.fine("Download with id " +
 //        updatedStatus.id +
 //        " has " +
 //        updatedStatus.status.toString());
 
     if (updatedStatus.status == DownloadStatusText.STATUS_SUCCESSFUL) {
-      print("Download Card Body: Download with id" +
+      widget.logger.fine("Download Card Body: Download with id" +
           widget.video.id +
           " is successfull");
 //      Video video = appWideState.appState.currentDownloads[updatedStatus.id];
@@ -277,7 +281,7 @@ class InformationRowBodyState extends State<DownloadCardBody> {
 //          .putIfAbsent(entity.id, () => entity);
 //
 //      appWideState.appState.databaseManager.insert(entity).then((dynamic) {
-//        print("Inserted downloaded video with id " +
+//        widget.logger.fine("Inserted downloaded video with id " +
 //            entity.id +
 //            " and filename " +
 //            entity.fileName +
@@ -305,7 +309,8 @@ class InformationRowBodyState extends State<DownloadCardBody> {
             updatedStatus.status == DownloadStatusText.STATUS_PAUSED ||
             updatedStatus.status == DownloadStatusText.STATUS_PENDING) &&
         switchValue == false) {
-      print("Putting switch value on - download is already running");
+      widget.logger
+          .fine("Putting switch value on - download is already running");
       setState(() {
         permissionDenied = false;
 //        switchValue = true;
@@ -318,7 +323,7 @@ class InformationRowBodyState extends State<DownloadCardBody> {
 
   void updateStatus(DownloadStatusText updatedStatus) {
     if (updatedStatus != status) {
-      print("Update Status: new : " +
+      widget.logger.fine("Update Status: new : " +
           updatedStatus.toString() +
           " old: " +
           status.toString());
@@ -332,20 +337,21 @@ class InformationRowBodyState extends State<DownloadCardBody> {
 
   @override
   void dispose() {
-//    print("Disposing information row body");
+//    widget.logger.fine("Disposing information row body");
     super.dispose();
   }
 
   void onSubscriptionDone() {
     //whole stream is done - cannot recieve any download updates any more!
-    print("Received close signal from download manager");
+    widget.logger.fine("Received close signal from download manager");
   }
 
   //
   void onDOwnloaderError(e) {
     //Code == video ID & Message is the error message from the ios/android downloader
-    print("Received error signal from download manager. Message: " +
-        e.toString());
+    widget.logger.fine(
+        "Received error signal from download manager. Message: " +
+            e.toString());
 
     updateStatus(DownloadStatusText.STATUS_FAILED);
   }
@@ -353,8 +359,9 @@ class InformationRowBodyState extends State<DownloadCardBody> {
   void onDownloadRequested() {
     downloadManager
         .downloadFile(widget.video)
-        .then((video) => print("Downloaded request successfull"), onError: (e) {
-      print("Error starting download: " +
+        .then((video) => widget.logger.fine("Downloaded request successfull"),
+            onError: (e) {
+      widget.logger.fine("Error starting download: " +
           widget.video.title +
           ". Error:  " +
           e.toString());

@@ -5,8 +5,10 @@ import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/model/video_entity.dart';
 import 'package:flutter_ws/section/live_tv_section.dart';
 import 'package:meta/meta.dart';
+import 'package:logging/logging.dart';
 
 class NativeVideoPlayer {
+  final Logger logger = new Logger('NativeVideoPlayer');
   static NativeVideoPlayer _instance;
   MethodChannel _methodChannel;
 
@@ -39,7 +41,7 @@ class NativeVideoPlayer {
 
       await _methodChannel.invokeMethod('playVideo', requestArguments);
     } on PlatformException catch (e) {
-      //TODO add exception handling
+      logger.severe("Platform exception accoured : " + e.toString());
     }
   }
 
@@ -48,23 +50,20 @@ class NativeVideoPlayer {
       Map<String, String> requestArguments = new Map();
       requestArguments.putIfAbsent("filePath", () => channel.url);
       await _methodChannel.invokeMethod('playVideo', requestArguments);
-//      Firebase.logStreamChannel(channel);
     } on PlatformException catch (e) {
-      //TODO add exception handling
-      print("Platform exception accoured : " + e.toString());
+      logger.severe("Platform exception accoured : " + e.toString());
     }
   }
 
   Future<bool> deleteVideo(String fileName) async {
     Map<String, String> requestArguments = new Map();
     requestArguments.putIfAbsent("fileName", () => fileName);
-    print("Deleting video with name " + fileName + " from local storage");
+    logger.fine("Deleting video with name " + fileName + " from local storage");
 
     try {
       await _methodChannel.invokeMethod('deleteVideo', requestArguments);
     } on PlatformException catch (e) {
-      //TODO add exception handling
-
+      logger.severe("Platform exception accoured : " + e.toString());
       return false;
     }
     return true;

@@ -11,8 +11,11 @@ import 'package:flutter_ws/widgets/filterMenu/download_progress_bar.dart';
 import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
 import 'package:flutter_ws/widgets/list/channel_thumbnail.dart';
 import 'package:flutter_ws/widgets/list/video_preview_adapter.dart';
+import 'package:logging/logging.dart';
 
 class DownloadSection extends StatefulWidget {
+  final Logger logger = new Logger('DownloadSection');
+
   @override
   State<StatefulWidget> createState() {
     return new DownloadSectionState(new Set());
@@ -173,7 +176,7 @@ class DownloadSectionState extends State<DownloadSection> {
   }
 
   deleteDownloadedVideo(String id, String fileName) {
-    print("Deleting download for video with id " + id);
+    widget.logger.fine("Deleting download for video with id " + id);
 
     new Timer(new Duration(milliseconds: milliseconds), () {
       setState(() {
@@ -187,19 +190,21 @@ class DownloadSectionState extends State<DownloadSection> {
     });
 
     appState.databaseManager.delete(id).then((id) {
-      print("Deleted from Database");
+      widget.logger.fine("Deleted from Database");
 
       new NativeVideoPlayer().deleteVideo(fileName).then((bool) {
         if (bool) {
-          print("Deleted video also from local storage");
+          widget.logger.fine("Deleted video also from local storage");
         } else {
-          print("Failed to Delete video also from local storage");
+          widget.logger.fine("Failed to Delete video also from local storage");
         }
       },
-          onError: (e) => print(
+          onError: (e) => widget.logger.fine(
               "Deleting video from file system failed. However it is deleted from the Database already. Reason " +
                   e.toString()));
-    }, onError: (e) => print("Error when deleting videos from Db"));
+    },
+        onError: (e) =>
+            widget.logger.fine("Error when deleting videos from Db"));
   }
 
   void cancelActiveDownload(String id) {
@@ -210,7 +215,7 @@ class DownloadSectionState extends State<DownloadSection> {
     new Timer(new Duration(milliseconds: milliseconds), () {
       appState.downloadManager.cancelDownload(id).then(
         (Void) {
-          print("Chanceled download with id " + id);
+          widget.logger.fine("Chanceled download with id " + id);
           //Download managers internally removes active download from state - so state changed already here
           setState(() {
             userDeletedAppId.remove(id);

@@ -7,7 +7,6 @@ class FilterMenuState {
 }
 
 class _InheritedStateContainer extends InheritedWidget {
-
   final StateContainerAppBarState data;
 
   _InheritedStateContainer({
@@ -15,7 +14,6 @@ class _InheritedStateContainer extends InheritedWidget {
     @required this.data,
     @required Widget child,
   }) : super(key: key, child: child);
-
 
   @override
   bool updateShouldNotify(_InheritedStateContainer old) {
@@ -46,10 +44,7 @@ class StateContainerAppBarState extends State<FilterBarSharedState> {
   FilterMenuState filterMenuState;
 
   void updateAppBarState() {
-    print("Filter menu");
-
     if (filterMenuState == null) {
-
       setState(() {
         filterMenuState = new FilterMenuState(true);
       });
@@ -60,10 +55,8 @@ class StateContainerAppBarState extends State<FilterBarSharedState> {
     }
   }
 
-  // build new inherited widget
   @override
   Widget build(BuildContext context) {
-    print("Rendering StateContainerState");
     return new _InheritedStateContainer(
       data: this,
       child: widget.child,

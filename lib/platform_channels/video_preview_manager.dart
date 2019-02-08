@@ -6,8 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
 import 'package:flutter_ws/widgets/video_widget.dart';
+import 'package:logging/logging.dart';
 
 class VideoPreviewManager {
+  final Logger logger = new Logger('VideoPreviewManager');
   EventChannel _eventChannel;
   MethodChannel _methodChannel;
   AppSharedState _appWideState;
@@ -25,7 +27,7 @@ class VideoPreviewManager {
     _getBroadcastStream().listen(
       (raw) => _onPreviewReceived(raw),
       onError: (e) {
-        print("Preview generation failed. Reason " + e.toString());
+        logger.severe("Preview generation failed. Reason " + e.toString());
       },
     );
   }
@@ -42,7 +44,7 @@ class VideoPreviewManager {
       VideoWidgetState widgetToUpdate = _widgetsWaitingForPreview[videoId];
 
       if (widgetToUpdate != null) {
-        print("Updating image preview for video: " + videoId);
+        logger.fine("Updating image preview for video: " + videoId);
         widgetToUpdate.previewImage = image;
 
         if (widgetToUpdate.mounted) widgetToUpdate.setState(() {});
@@ -74,7 +76,8 @@ class VideoPreviewManager {
       await _methodChannel.invokeMethod(
           'videoPreviewPicture', requestArguments);
     } on PlatformException catch (e) {
-      print("Starting Preview generation failed. Reason " + e.toString());
+      logger
+          .severe("Starting Preview generation failed. Reason " + e.toString());
 
       return;
     }

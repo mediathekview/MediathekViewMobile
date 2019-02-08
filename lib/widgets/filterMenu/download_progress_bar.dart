@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ws/model/download_status.dart';
 import 'package:flutter_ws/platform_channels/download_manager.dart';
 import 'package:uuid/uuid.dart';
+import 'package:logging/logging.dart';
 
 typedef void OnDownloadStateChange(DownloadStatus state);
 typedef void OnDownloadError(var e);
 typedef void OnSubscriptionDone();
 
 class DownloadProgressBar extends StatefulWidget {
+  final Logger logger = new Logger('DownloadProgressBar');
   String videoId;
   DownloadManager downloadManager;
   OnDownloadStateChange onDownloadStateChanged;

@@ -5,8 +5,10 @@ import 'package:flutter_ws/model/video_entity.dart';
 import 'package:flutter_ws/platform_channels/native_video_manager.dart';
 import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
 import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
+import 'package:logging/logging.dart';
 
 class VideoWidget extends StatefulWidget {
+  final Logger logger = new Logger('VideoWidget');
   String videoId;
   VideoEntity entity;
   Video video;
@@ -63,7 +65,7 @@ class VideoWidgetState extends State<VideoWidget> {
     double screenAspectRatio = size.width > size.height
         ? size.width / size.height
         : size.height / size.width;
-    print("Aspect ratio: " + screenAspectRatio.toString());
+    ("Aspect ratio: " + screenAspectRatio.toString());
     double height;
 
     if (previewImage != null) {
@@ -74,7 +76,7 @@ class VideoWidgetState extends State<VideoWidget> {
       //calc height
       double shrinkFactor = totalWidth / originalWidth;
       height = originalHeight * shrinkFactor;
-      print("Aspect ratio video: " +
+      widget.logger.fine("Aspect ratio video: " +
           aspectRatioVideo.toString() +
           " Shrink factor: " +
           shrinkFactor.toString() +
@@ -150,7 +152,7 @@ class VideoWidgetState extends State<VideoWidget> {
         ),
       ),
       onTap: () {
-        print("Opening video player");
+        widget.logger.fine("Opening video player");
 
         NativeVideoPlayer nativeVideoPlayer = new NativeVideoPlayer();
         widget.entity != null

@@ -10,10 +10,10 @@ import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:logging/logging.dart';
 
 class VideoListState {
   VideoListState(this.extendetListTiles, this.previewImages);
-
   Set<String> extendetListTiles;
   Map<String, Image> previewImages;
 }
@@ -63,6 +63,7 @@ class AppSharedStateContainer extends StatefulWidget {
 }
 
 class AppSharedState extends State<AppSharedStateContainer> {
+  final Logger logger = new Logger('VideoWidget');
   VideoListState videoListState;
   AppState appState;
 
@@ -87,7 +88,7 @@ class AppSharedState extends State<AppSharedStateContainer> {
     //VIDEOS
     Set<VideoEntity> videos =
         await appState.databaseManager.getAllDownloadedVideos();
-    print("Currently there are " +
+    logger.fine("Currently there are " +
         videos.length.toString() +
         " downloaded videos in the database");
     videos.forEach((entity) =>
@@ -96,7 +97,7 @@ class AppSharedState extends State<AppSharedStateContainer> {
     //FAV Channels
     Set<ChannelFavoriteEntity> channels =
         await appState.databaseManager.getAllChannelFavorites();
-    print("There are " +
+    logger.fine("There are " +
         channels.length.toString() +
         " favorited channels in the database");
     channels.forEach((entity) =>
@@ -108,8 +109,8 @@ class AppSharedState extends State<AppSharedStateContainer> {
     String path = join(documentsDirectory.path, "demo.db");
 //   appState.databaseManager.deleteDb(path);
     await appState.databaseManager.open(path).then(
-        (dynamic) => print("Successfully opened database"),
-        onError: (e) => print("Error when opening database"));
+        (dynamic) => logger.fine("Successfully opened database"),
+        onError: (e) => logger.fine("Error when opening database"));
   }
 
   void _initializeListState() {
@@ -117,7 +118,7 @@ class AppSharedState extends State<AppSharedStateContainer> {
   }
 
   void addImagePreview(String videoId, Image preview) {
-    print("Adding preview image to state for video with id " + videoId);
+    logger.fine("Adding preview image to state for video with id " + videoId);
     videoListState.previewImages.putIfAbsent(videoId, () => preview);
   }
 
@@ -129,7 +130,7 @@ class AppSharedState extends State<AppSharedStateContainer> {
 
   @override
   Widget build(BuildContext context) {
-    print("Rendering StateContainerState");
+    logger.fine("Rendering StateContainerState");
     return new _InheritedWidget(
       data: this,
       child: widget.child,

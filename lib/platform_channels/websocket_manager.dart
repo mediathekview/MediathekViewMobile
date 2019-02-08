@@ -7,8 +7,10 @@ import 'package:flutter_ws/util/websocket.dart';
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
 import 'package:meta/meta.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:logging/logging.dart';
 
 class WebsocketController {
+  final Logger logger = new Logger('WebsocketController');
   static WebSocketChannel wsChannel;
 
   //callbacks
@@ -17,8 +19,7 @@ class WebsocketController {
   var onDone;
   var onWebsocketChannelOpenedSuccessfully;
 
-  //vars
-  Timer timer;
+  static Timer continoousPingTimer;
   ConnectionState connectionState = ConnectionState.none;
 
   WebsocketController(
@@ -29,13 +30,16 @@ class WebsocketController {
 
   Future<bool> initializeWebsocket() async {
     if (connectionState == ConnectionState.active) {
-      print("Not re-initializing of Websocket - current is still active");
+      logger.fine("Not re-initializing of Websocket - current is still active");
     }
+
+    //setting null to garbage collect
+    wsChannel = null;
 
     Iterable<Cookie> initialRequestCookies =
         WebsocketHandler.generateInitialRequestCookies();
 
-    print("Initially contacting Websocket Endpoint");
+    logger.fine("Initially contacting Websocket Endpoint");
     HttpClientResponse response;
     try {
       response = await WebsocketHandler.initiallyContactWebsocketEndpoint(
@@ -52,14 +56,14 @@ class WebsocketController {
     }
 
     if (response.statusCode != HttpStatus.OK) {
-      print(
+      logger.severe(
           'Error getting sessionId address:\nHttp status ${response.statusCode}');
       onError(new FailedToContactWebsocketError(
           "Failed to retrieve valid session id from websocket endpoint"));
       return false;
     }
 
-    print("Recieved OK when initially contacting the Websocket Endpoint");
+    logger.fine("Recieved OK when initially contacting the Websocket Endpoint");
     Map parsedMap = await WebsocketHandler.parseInitialResponseBody(response);
 
     String sessionId = parsedMap["sid"];
@@ -67,7 +71,7 @@ class WebsocketController {
     //TODO not in use currently
     int pingTimeout = parsedMap["pingTimeout"];
 
-    print("Extracted session ID: " +
+    logger.fine("Extracted session ID: " +
         sessionId +
         " ping Timeout: " +
         pingTimeout.toString() +
@@ -77,10 +81,11 @@ class WebsocketController {
     try {
       wsChannel = WebsocketHandler.createWebsocketChannel(
           response, initialRequestCookies, sessionId);
-      print('Received websocket Channel');
+
+      logger.fine('Received websocket Channel');
       onWebsocketChannelOpenedSuccessfully();
     } catch (e) {
-      print("Error connecting to websocket" + e.toString());
+      logger.severe("Error connecting to websocket" + e.toString());
       onError(new FailedToContactWebsocketError(e.toString()));
       return false;
     }
@@ -90,7 +95,7 @@ class WebsocketController {
     //start handshake
     sendSocketStartingSequence();
 
-    print("Sending ping during ws init");
+    logger.fine("Sending ping during ws init");
     wsChannel.sink.add("2");
 
     //Socket IO hearthbeat
@@ -100,7 +105,7 @@ class WebsocketController {
   }
 
   void sendSocketStartingSequence() {
-    print("Sending Socket IO initializing sequence");
+    logger.fine("Sending Socket IO initializing sequence");
     wsChannel.sink.add("2probe");
     wsChannel.sink.add("5");
   }
@@ -111,31 +116,33 @@ class WebsocketController {
   }
 
   void sendContinoousPing(int websocketHearthbeatInterval) {
-    stopPing();
-    Duration duration = new Duration(milliseconds: websocketHearthbeatInterval);
-    print("Starting ping with interval of " +
-        websocketHearthbeatInterval.toString() +
-        " milliseconds");
-    timer = new Timer.periodic(
-      duration,
-      (Timer t) {
-        if (wsChannel == null) {
-          print("ping NOT send. Channel => null");
-          return;
-        } else if (connectionState != ConnectionState.active) {
-          print(
-              "ping NOT send. Connection State: " + connectionState.toString());
-          return;
-        }
-        print("Sending regular ping");
-        wsChannel.sink.add("2");
-      },
-    );
+    if (continoousPingTimer == null || !continoousPingTimer.isActive) {
+      Duration duration = new Duration(milliseconds: 2000);
+      logger.info("Starting ping with interval of " +
+          websocketHearthbeatInterval.toString() +
+          " milliseconds");
+      continoousPingTimer = new Timer.periodic(
+        duration,
+        (Timer t) {
+          if (wsChannel == null) {
+            logger.info("ping NOT send. Channel => null");
+            return;
+          } else if (connectionState != ConnectionState.active) {
+            logger.info("ping NOT send. Connection State: " +
+                connectionState.toString());
+            logger.info("Channel used: " + wsChannel.hashCode.toString());
+            return;
+          }
+          logger.info("Channel used: " + wsChannel.hashCode.toString());
+          logger.fine("Sending regular ping");
+          wsChannel.sink.add("2");
+        },
+      );
+    }
   }
 
   void listenToWebsocket() {
-    print("Started listening to Websocket...");
-    //TODO check if it is a pong -> if yes rememrber for the ping
+    logger.fine("Started listening to Websocket...");
     wsChannel.stream.listen((data) {
       connectionState = ConnectionState.active;
       onDataReceived(data);
@@ -191,7 +198,7 @@ class WebsocketController {
         amount.toString() +
         '}]';
 
-    print("Firing request: " +
+    logger.fine("Firing request: " +
         request +
         "With connection state: " +
         connectionState.toString());
@@ -199,13 +206,13 @@ class WebsocketController {
     if (wsChannel != null) {
       wsChannel.sink.add(request);
     } else {
-      //Todo: initialize channel again?
-      print("Trying to query entries but channel is null");
+      logger.severe("Trying to query entries but channel is null");
     }
   }
 
   void stopPing() {
-    if (timer != null && timer.isActive) timer.cancel();
+    if (continoousPingTimer != null && continoousPingTimer.isActive)
+      continoousPingTimer.cancel();
   }
 
   void closeWebsocketChannel() {

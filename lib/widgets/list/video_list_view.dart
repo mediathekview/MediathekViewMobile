@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/util/row_adapter.dart';
 import 'package:meta/meta.dart';
+import 'package:logging/logging.dart';
 
 typedef void ListTileTapped(String id);
 
@@ -10,6 +11,7 @@ class ScrollPositionHolder {
 }
 
 class VideoListView extends StatefulWidget {
+  final Logger logger = new Logger('VideoListView');
   final int pageThreshold = 5;
   final int amountOfVideosToFetch = 20;
   final ScrollPositionHolder offset = new ScrollPositionHolder();
@@ -45,19 +47,19 @@ class _VideoListViewState extends State<VideoListView> {
     super.initState();
 
     if (widget.getOffsetMethod() != null) {
-      print(
+      widget.logger.fine(
           "Video List View get offset: " + widget.getOffsetMethod().toString());
       scrollController =
           new ScrollController(initialScrollOffset: widget.getOffsetMethod());
     } else {
-      print("Video List View: Not Setting scroll offset -> NULL");
+      widget.logger.fine("Video List View: Not Setting scroll offset -> NULL");
       scrollController = new ScrollController();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    print("Rendering Main Video List with list length " +
+    widget.logger.fine("Rendering Main Video List with list length " +
         widget.videos.length.toString() +
         " & fetched: " +
         widget.amountOfVideosFetched.toString());
@@ -68,7 +70,7 @@ class _VideoListViewState extends State<VideoListView> {
       return new Container(child: new Text("keine Videos gefunden"));
     }
     if (widget.videos.length == 0) {
-      print("Searching: video list legth : 0 & amountFetched: " +
+      widget.logger.fine("Searching: video list legth : 0 & amountFetched: " +
           widget.amountOfVideosFetched.toString());
       return new Container(
         alignment: Alignment.center,
@@ -93,7 +95,8 @@ class _VideoListViewState extends State<VideoListView> {
         Scrollable.of(context).position.pixels != null)
       widget.setOffsetMethod(Scrollable.of(context).position.pixels);
     else
-      print("Man video List View: ERROR: Could not set pixel position");
+      widget.logger
+          .fine("Man video List View: ERROR: Could not set pixel position");
 
     if (index + widget.pageThreshold > widget.videos.length) {
       widget.queryEntries(index, widget.amountOfVideosToFetch);
@@ -101,7 +104,7 @@ class _VideoListViewState extends State<VideoListView> {
 
     if (widget.videos.length == index + 1 &&
         widget.amountOfVideosToFetch == widget.amountOfVideosFetched) {
-      print("Return progress indicator. Video list length is " +
+      widget.logger.fine("Return progress indicator. Video list length is " +
           widget.videos.length.toString() +
           " and index is " +
           index.toString() +

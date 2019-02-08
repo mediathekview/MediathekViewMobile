@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter_ws/model/channel_favorite_entity.dart';
 import 'package:flutter_ws/model/video_entity.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:logging/logging.dart';
 
 final String columnId = "_id";
 final String columnTitle = "title";
 final String columnDone = "done";
 
 class DatabaseManager {
+  final Logger logger = new Logger('DatabaseManager');
   Database db;
 
   Future open(String path) async {
@@ -16,9 +18,9 @@ class DatabaseManager {
         onCreate: (Database db, int version) async {
       String videoTableSQL = getVideoTableSQL();
       String channelFavoritesSQL = getChannelFavoriteSQL();
-      print("DB MANAGER: Executing " + videoTableSQL);
+      logger.fine("DB MANAGER: Executing " + videoTableSQL);
       await db.execute(videoTableSQL);
-      print("DB MANAGER: Executing " + channelFavoritesSQL);
+      logger.fine("DB MANAGER: Executing " + channelFavoritesSQL);
       await db.execute(channelFavoritesSQL);
     });
   }

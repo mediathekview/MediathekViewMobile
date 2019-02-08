@@ -4,11 +4,11 @@ import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/widgets/filterMenu/filter_menu.dart';
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
 import 'package:flutter_ws/widgets/inherited/appBar_state_container.dart';
+import 'package:logging/logging.dart';
 
 class GradientAppBar extends StatelessWidget {
+  final Logger logger = new Logger('GradientAppBar');
   final TextEditingController controller;
-
-//  final IconButton filterButton;
   final bool isFilterMenuOpen;
   FilterMenu filterMenu;
   List<SearchFilter> searchFilters;
@@ -18,7 +18,7 @@ class GradientAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print("Rendering App Bar");
+    logger.fine("Rendering App Bar");
 
     final theme = Theme.of(context);
     state = FilterBarSharedState.of(context);

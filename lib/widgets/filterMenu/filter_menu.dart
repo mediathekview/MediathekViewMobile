@@ -6,8 +6,10 @@ import 'package:flutter_ws/widgets/filterMenu/filtermenu_channel_edit_button.dar
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
 import 'package:flutter_ws/widgets/inherited/appBar_state_container.dart';
 import 'package:meta/meta.dart';
+import 'package:logging/logging.dart';
 
 class FilterMenu extends StatelessWidget {
+  final Logger logger = new Logger('FilterMenu');
   var onFilterUpdated;
   var onSingleFilterTapped;
   var onChannelsSelected;
@@ -28,7 +30,7 @@ class FilterMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     theme = Theme.of(context);
-    print("Rendering filter Menu");
+    logger.fine("Rendering filter Menu");
     _titleFieldController = searchFilters.containsKey('Titel')
         ? new TextEditingController(text: searchFilters['Titel'].filterValue)
         : new TextEditingController();
@@ -73,7 +75,7 @@ class FilterMenu extends StatelessWidget {
                         value: false,
                         onChanged: (bool isEnabled) {
                           if (isEnabled) {
-                            print("User enabled channel switch");
+                            logger.fine("User enabled channel switch");
                             _openAddEntryDialog(context);
                           }
                         })
@@ -90,7 +92,7 @@ class FilterMenu extends StatelessWidget {
   }
 
   handleTapOnFilter(String id) {
-    print("Filter with id " + id.toString() + " was tapped");
+    logger.fine("Filter with id " + id.toString() + " was tapped");
     onSingleFilterTapped(id);
   }
 
@@ -159,14 +161,14 @@ class FilterMenu extends StatelessWidget {
             },
             fullscreenDialog: true));
 
-    print("Channel selection received");
+    logger.fine("Channel selection received");
 
     String filterValue =
         channelSelection.map((String channel) => channel).join(";");
 
     String displayText = "Sender: " + channelSelection.length.toString();
 
-    print("Sender filter: value: " +
+    logger.fine("Sender filter: value: " +
         filterValue +
         " DisplayText: " +
         displayText);

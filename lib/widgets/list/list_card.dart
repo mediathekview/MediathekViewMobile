@@ -7,8 +7,10 @@ import 'package:flutter_ws/widgets/list/download_card_body.dart';
 import 'package:flutter_ws/widgets/list/video_preview_adapter.dart';
 import 'package:meta/meta.dart';
 import 'package:uuid/uuid.dart';
+import 'package:logging/logging.dart';
 
 class ListCard extends StatefulWidget {
+  final Logger logger = new Logger('VideoWidget');
   final String imgPath;
   final Video video;
 
@@ -168,7 +170,7 @@ class _ListCardState extends State<ListCard> {
   }
 
   void _handleTap() {
-    print("handle tab on tile");
+    widget.logger.fine("handle tab on tile");
     stateContainer.updateExtendetListTile(widget.video.id);
     //only rerender this tile, not the whole app state!
     setState(() {});

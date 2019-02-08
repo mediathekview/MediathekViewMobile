@@ -4,8 +4,10 @@ import 'package:flutter_ws/model/video_entity.dart';
 import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
 import 'package:flutter_ws/widgets/video_widget.dart';
 import 'package:uuid/uuid.dart';
+import 'package:logging/logging.dart';
 
 class VideoPreviewAdapter extends StatelessWidget {
+  final Logger logger = new Logger('VideoWidget');
   final String videoId;
   final Video video;
   final String defaultImageAssetPath;
@@ -22,7 +24,7 @@ class VideoPreviewAdapter extends StatelessWidget {
     Image previewImage;
     if (stateContainer.videoListState != null &&
         stateContainer.videoListState.previewImages.containsKey(videoId)) {
-      print("Getting preview image from memory");
+      logger.fine("Getting preview image from memory");
       previewImage = stateContainer.videoListState.previewImages[videoId];
     }
 

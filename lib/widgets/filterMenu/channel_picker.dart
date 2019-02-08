@@ -4,15 +4,16 @@ import 'package:flutter_ws/model/channel.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/widgets/filterMenu/channel_list_tile.dart';
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
+import 'package:logging/logging.dart';
 
 class ChannelPickerDialog extends StatefulWidget {
+  final Logger logger = new Logger('ChannelPickerDialog');
   final SearchFilter filterPreSelection;
-
   ChannelPickerDialog(this.filterPreSelection);
 
   @override
   ChannelPickerDialogState createState() {
-    print("Creating state for channel picker");
+    logger.fine("Creating state for channel picker");
     Set<String> selectedChannels = extractChannelNamesFromCurrentFilter();
     Set<Channel> channels = new Set();
 
@@ -30,14 +31,14 @@ class ChannelPickerDialog extends StatefulWidget {
         filterPreSelection.filterValue.isNotEmpty &&
         !filterPreSelection.filterValue.contains(";")) {
       //only one filter in pre-selection
-      print("One filter pre-selected");
+      logger.fine("One filter pre-selected");
       selectedChannels.add(filterPreSelection.filterValue);
     } else if (filterPreSelection != null &&
         filterPreSelection.filterValue.isNotEmpty &&
         filterPreSelection.filterValue.contains(";")) {
       //multiple filters already
       selectedChannels = filterPreSelection.filterValue.split(";").toSet();
-      print(selectedChannels.length.toString() + " filters pre-selected");
+      logger.fine(selectedChannels.length.toString() + " filters pre-selected");
     }
     return selectedChannels;
   }

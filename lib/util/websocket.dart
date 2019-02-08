@@ -6,8 +6,10 @@ import 'package:flutter_ws/enum/ws_event_types.dart';
 import 'package:flutter_ws/util/json_parser.dart';
 import 'package:uuid/uuid.dart';
 import 'package:web_socket_channel/io.dart';
+import 'package:logging/logging.dart';
 
 class WebsocketHandler {
+  static final Logger logger = new Logger('VideoWidget');
   static final initializerUrl =
       'https://mediathekviewweb.de/socket.io/?EIO=3&transport=polling&t=M9seBZ1';
   static final websocketRoot =
@@ -31,9 +33,9 @@ class WebsocketHandler {
     String body;
     try {
       body = await _readResponse(response);
-      print("Received body: " + body.toString());
+      logger.fine("Received body: " + body.toString());
     } catch (e) {
-      print(e);
+      logger.severe(e);
     }
     String cutBody = JSONParser.trimSocketIoResponseBody(body);
     Map parsedMap = jsonDecode(cutBody);
@@ -42,8 +44,6 @@ class WebsocketHandler {
 
   static Future<HttpClientResponse> initiallyContactWebsocketEndpoint(
       Iterable<Cookie> cookieList) async {
-    //Todo: how to generate the t=M9seBZ1 dynamically?
-
     var httpClient = new HttpClient();
     var response = await httpClient
         .getUrl(Uri.parse(initializerUrl))
@@ -58,8 +58,6 @@ class WebsocketHandler {
   static Iterable<Cookie> generateInitialRequestCookies() {
     var uuid = new Uuid();
     String id = uuid.v1();
-//    String io = "RymH-uAd1DQo_-nTA15Z"; //welches format?
-//    Cookie ioCookie = new Cookie("io",  io);
     Cookie idCookie = new Cookie("uid", id);
     return [idCookie];
   }
@@ -70,7 +68,8 @@ class WebsocketHandler {
     response.transform(Utf8Decoder()).listen((String data) {
       contents.write(data);
     },
-        onError: (error) => print("An error occured reading the response"),
+        onError: (error) =>
+            logger.severe("An error occured reading the response"),
         onDone: () => completer.complete(contents.toString()));
     return completer.future;
   }
@@ -78,16 +77,18 @@ class WebsocketHandler {
   static IOWebSocketChannel _openWebsocketChannel(
       String sessionId, List<Cookie> websocketCookieHeaders) {
     String url = websocketRoot + sessionId;
-    print("Using this url to open Socket: " + url);
+    logger.fine("Using this url to open Socket: " + url);
     Map<String, String> headerMap = new Map<String, String>();
     String cookieValues = websocketCookieHeaders
         .map((cookie) => cookie.name + "=" + cookie.value)
         .join("; ");
-    print("Setting cookie header: " + cookieValues);
+    logger.fine("Setting cookie header: " + cookieValues);
     headerMap.putIfAbsent("Cookie", () => cookieValues);
 
-    print("Trying to create Websocket Channel");
-    IOWebSocketChannel channel = new IOWebSocketChannel.connect(url);
+    logger.fine("Trying to create Websocket Channel");
+    IOWebSocketChannel channel =
+        new IOWebSocketChannel.connect(url, headers: headerMap);
+
     return channel;
   }
 
