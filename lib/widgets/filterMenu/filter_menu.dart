@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ws/widgets/filterMenu/channel_picker.dart';
 import 'package:flutter_ws/widgets/filterMenu/filtermenu_channel_edit_button.dart';
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
-import 'package:flutter_ws/widgets/inherited/appBar_state_container.dart';
+import 'package:flutter_ws/global_state/appBar_state_container.dart';
 import 'package:meta/meta.dart';
 import 'package:logging/logging.dart';
 

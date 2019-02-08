@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/util/text_styles.dart';
-import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
-import 'package:flutter_ws/widgets/list/channel_thumbnail.dart';
-import 'package:flutter_ws/widgets/list/download_card_body.dart';
-import 'package:flutter_ws/widgets/list/video_preview_adapter.dart';
+import 'package:flutter_ws/global_state/list_state_container.dart';
+import 'package:flutter_ws/widgets/videolist/channel_thumbnail.dart';
+import 'package:flutter_ws/widgets/videolist/download_card_body.dart';
+import 'package:flutter_ws/widgets/videolist/video_preview_adapter.dart';
 import 'package:meta/meta.dart';
 import 'package:uuid/uuid.dart';
 import 'package:logging/logging.dart';

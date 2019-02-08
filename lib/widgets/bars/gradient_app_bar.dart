@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/widgets/filterMenu/filter_menu.dart';
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
-import 'package:flutter_ws/widgets/inherited/appBar_state_container.dart';
+import 'package:flutter_ws/global_state/appBar_state_container.dart';
 import 'package:logging/logging.dart';
 
 class GradientAppBar extends StatelessWidget {

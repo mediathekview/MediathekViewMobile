@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/exceptions/failed_to_contact_websocket.dart';
-import 'package:flutter_ws/util/websocket.dart';
+import 'package:flutter_ws/websocket/websocket.dart';
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
 import 'package:meta/meta.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';

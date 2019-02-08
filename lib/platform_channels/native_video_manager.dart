@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/model/video_entity.dart';
+import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/section/live_tv_section.dart';
 import 'package:meta/meta.dart';
 import 'package:logging/logging.dart';

@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_ws/model/channel_favorite_entity.dart';
+import 'package:flutter_ws/database/channel_favorite_entity.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/model/video_entity.dart';
-import 'package:flutter_ws/platform_channels/database_manager.dart';
+import 'package:flutter_ws/database/video_entity.dart';
+import 'package:flutter_ws/database/database_manager.dart';
 import 'package:flutter_ws/platform_channels/download_manager.dart';
 import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
 import 'package:meta/meta.dart';

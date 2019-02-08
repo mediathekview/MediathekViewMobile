@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/model/download_status.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/model/video_entity.dart';
-import 'package:flutter_ws/platform_channels/database_manager.dart';
+import 'package:flutter_ws/database/video_entity.dart';
+import 'package:flutter_ws/database/database_manager.dart';
 import 'package:flutter_ws/platform_channels/download_manager.dart';
 import 'package:flutter_ws/platform_channels/native_video_manager.dart';
 import 'package:flutter_ws/util/text_styles.dart';
-import 'package:flutter_ws/widgets/filterMenu/download_progress_bar.dart';
-import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
-import 'package:flutter_ws/widgets/list/metadata_bar.dart';
-import 'package:flutter_ws/widgets/reuse/circular_progress_with_text.dart';
+import 'package:flutter_ws/widgets/bars/download_progress_bar.dart';
+import 'package:flutter_ws/global_state/list_state_container.dart';
+import 'package:flutter_ws/widgets/bars/metadata_bar.dart';
+import 'package:flutter_ws/widgets/videolist/circular_progress_with_text.dart';
 import 'package:uuid/uuid.dart';
 import 'package:logging/logging.dart';
 
 class DownloadCardBody extends StatefulWidget {
-  final Logger logger = new Logger('VideoWidget');
+  final Logger logger = new Logger('DownloadCardBody');
   final Video video;
 
   DownloadCardBody(this.video);
@@ -57,11 +57,8 @@ class InformationRowBodyState extends State<DownloadCardBody> {
     downloadManager = appWideState.appState.downloadManager;
     databaseManager = appWideState.appState.databaseManager;
 
-    // appWideState = AppSharedappWideState.of(context);
-
     if (appWideState.appState.currentDownloads.containsKey(widget.video.id)) {
       switchValue = true;
-//      status = DownloadStatusText.STATUS_RUNNING;
     }
 
     VideoListState videoListState = appWideState.videoListState;
@@ -74,20 +71,6 @@ class InformationRowBodyState extends State<DownloadCardBody> {
 
     if (permissionDenied != null && permissionDenied == true)
       switchValue = false;
-
-//    downloadManager.getStatus(widget.video.id).then((akt) {
-//      if (!mounted) return;
-//
-//      if (akt == null || akt.status == null) {
-//        //widget.logger.fine("Video with id " + widget.video.id + " is not downloading");
-//        return;
-//      }
-//
-//      setState(() {
-//        status = akt.status;
-//        switchValue = true;
-//      });
-//    }, onError: (e) => widget.logger.fine("Error: Video with id " + widget.video.id + " is not downloading"));
 
     return new Column(
         key: new Key(uuid.v1()),
@@ -257,41 +240,10 @@ class InformationRowBodyState extends State<DownloadCardBody> {
   }
 
   void onDownloadStateChanged(DownloadStatus updatedStatus) {
-//    if (updatedStatus.id != widget.video.id) return;
-
-//    widget.logger.fine("Download with id " +
-//        updatedStatus.id +
-//        " has " +
-//        updatedStatus.status.toString());
-
     if (updatedStatus.status == DownloadStatusText.STATUS_SUCCESSFUL) {
       widget.logger.fine("Download Card Body: Download with id" +
           widget.video.id +
           " is successfull");
-//      Video video = appWideState.appState.currentDownloads[updatedStatus.id];
-//
-//      VideoEntity entity = VideoEntity.fromVideo(video);
-//      entity.filePath = updatedStatus.filePath;
-//      entity.fileName = DownloadManager.getFileNameForVideo(
-//          video.id, video.url_video, video.title);
-//      entity.mimeType = updatedStatus.mimeType;
-//
-//      appWideState.appState.currentDownloads.remove(updatedStatus.id);
-//      appWideState.appState.downloadedVideos
-//          .putIfAbsent(entity.id, () => entity);
-//
-//      appWideState.appState.databaseManager.insert(entity).then((dynamic) {
-//        widget.logger.fine("Inserted downloaded video with id " +
-//            entity.id +
-//            " and filename " +
-//            entity.fileName +
-//            " into db");
-//      });
-
-//      setState(() {
-////        switchValue = true;
-//        status = DownloadStatusText.STATUS_SUCCESSFUL;
-//      });
     }
 
     if (updatedStatus.status == DownloadStatusText.STATUS_CANCELED) {
@@ -313,7 +265,6 @@ class InformationRowBodyState extends State<DownloadCardBody> {
           .fine("Putting switch value on - download is already running");
       setState(() {
         permissionDenied = false;
-//        switchValue = true;
       });
       return;
     }
@@ -337,7 +288,6 @@ class InformationRowBodyState extends State<DownloadCardBody> {
 
   @override
   void dispose() {
-//    widget.logger.fine("Disposing information row body");
     super.dispose();
   }
 
@@ -365,11 +315,6 @@ class InformationRowBodyState extends State<DownloadCardBody> {
           widget.video.title +
           ". Error:  " +
           e.toString());
-
-//      OsChecker.getTargetPlatform().then((platform) {
-//        Firebase.logPlatformChannelException(
-//            'downloadFile', e.toString(), platform.toString());
-//      });
 
       setState(() {
         permissionDenied = true;

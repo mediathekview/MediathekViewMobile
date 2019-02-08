@@ -5,7 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:logging/logging.dart';
 
 class OsChecker {
-  static final Logger logger = new Logger('VideoWidget');
+  static final Logger logger = new Logger('OsChecker');
   static TargetPlatform platform;
 
   static Future<TargetPlatform> getTargetPlatform() async {

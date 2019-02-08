@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter_ws/model/channel_favorite_entity.dart';
-import 'package:flutter_ws/model/video_entity.dart';
+import 'package:flutter_ws/database/channel_favorite_entity.dart';
+import 'package:flutter_ws/database/video_entity.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:logging/logging.dart';
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/model/indexing_info.dart';
 import 'package:flutter_ws/util/text_styles.dart';
-import 'package:flutter_ws/widgets/reuse/circular_progress_with_text.dart';
+import 'package:flutter_ws/widgets/videolist/circular_progress_with_text.dart';
 import 'package:meta/meta.dart';
 import 'package:logging/logging.dart';
 

@@ -3,14 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/enum/channels.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/model/video_entity.dart';
+import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/platform_channels/native_video_manager.dart';
-import 'package:flutter_ws/util/calculator.dart';
+import 'package:flutter_ws/util/timestamp_calculator.dart';
 import 'package:flutter_ws/util/text_styles.dart';
-import 'package:flutter_ws/widgets/filterMenu/download_progress_bar.dart';
-import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
-import 'package:flutter_ws/widgets/list/channel_thumbnail.dart';
-import 'package:flutter_ws/widgets/list/video_preview_adapter.dart';
+import 'package:flutter_ws/widgets/bars/download_progress_bar.dart';
+import 'package:flutter_ws/global_state/list_state_container.dart';
+import 'package:flutter_ws/widgets/videolist/channel_thumbnail.dart';
+import 'package:flutter_ws/widgets/videolist/video_preview_adapter.dart';
 import 'package:logging/logging.dart';
 
 class DownloadSection extends StatefulWidget {

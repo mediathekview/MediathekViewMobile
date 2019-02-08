@@ -4,8 +4,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
-import 'package:flutter_ws/widgets/video_widget.dart';
+import 'package:flutter_ws/global_state/list_state_container.dart';
+import 'package:flutter_ws/widgets/videolist/video_widget.dart';
 import 'package:logging/logging.dart';
 
 class VideoPreviewManager {

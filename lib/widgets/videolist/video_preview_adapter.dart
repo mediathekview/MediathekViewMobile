@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/model/video_entity.dart';
-import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
-import 'package:flutter_ws/widgets/video_widget.dart';
+import 'package:flutter_ws/database/video_entity.dart';
+import 'package:flutter_ws/global_state/list_state_container.dart';
+import 'package:flutter_ws/widgets/videolist/video_widget.dart';
 import 'package:uuid/uuid.dart';
 import 'package:logging/logging.dart';
 

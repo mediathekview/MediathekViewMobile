@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/model/video_entity.dart';
+import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/platform_channels/native_video_manager.dart';
 import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
-import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
+import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:logging/logging.dart';
 
 class VideoWidget extends StatefulWidget {
@@ -85,8 +85,6 @@ class VideoWidgetState extends State<VideoWidget> {
           " New height: " +
           height.toString());
     } else {
-//      final size = MediaQuery.of(context).size;
-//      width = size.width;
       height = totalWidth / 16 * 9; //divide by aspect ratio
     }
 

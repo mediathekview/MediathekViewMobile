@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:flutter_ws/model/channel_favorite_entity.dart';
-import 'package:flutter_ws/platform_channels/database_manager.dart';
+import 'package:flutter_ws/database/channel_favorite_entity.dart';
+import 'package:flutter_ws/database/database_manager.dart';
 import 'package:flutter_ws/platform_channels/native_video_manager.dart';
 import 'package:flutter_ws/util/text_styles.dart';
-import 'package:flutter_ws/widgets/inherited/list_state_container.dart';
+import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:logging/logging.dart';
 
 class Channel {

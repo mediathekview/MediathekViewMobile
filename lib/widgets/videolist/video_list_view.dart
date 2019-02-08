@@ -13,7 +13,7 @@ class ScrollPositionHolder {
 class VideoListView extends StatefulWidget {
   final Logger logger = new Logger('VideoListView');
   final int pageThreshold = 5;
-  final int amountOfVideosToFetch = 20;
+  final int amountOfVideosToFetch = 60;
   final ScrollPositionHolder offset = new ScrollPositionHolder();
 
   List<Video> videos;
@@ -83,7 +83,6 @@ class _VideoListViewState extends State<VideoListView> {
     }
 
     return new ListView.builder(
-//        key: new PageStorageKey('videolist'),
         controller: scrollController,
         itemBuilder: itemBuilder,
         itemCount: widget.videos.length);
