@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:ui';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/util/timestamp_calculator.dart';
@@ -59,30 +60,19 @@ class VideoDescription extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     getVerticalDividerLine(bottom: 15.0),
-                    new Row(
-                      mainAxisSize: MainAxisSize.max,
-                      children: <Widget>[
-                        new Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            getCaption("Thema"),
-                            getSpacedContentRow(video.topic),
-                            getDivider(),
-                            getCaption("Titel"),
-                            getSpacedContentRow(video.title),
-                            getDivider(),
-                            getCaption("Länge"),
-                            getSpacedContentRow(
-                                Calculator.calculateDuration(video.duration)),
-                            getDivider(),
-                            getCaption("Ausgestrahlt"),
-                            getSpacedContentRow(
-                                Calculator.calculateTimestamp(video.timestamp)),
-                          ],
-                        )
-                      ],
-                    ),
+                    getCaption("Titel"),
+                    getSpacedContentRow(video.title),
+                    getDivider(),
+                    getCaption("Thema"),
+                    getSpacedContentRow(video.topic),
+                    getDivider(),
+                    getCaption("Länge"),
+                    getSpacedContentRow(
+                        Calculator.calculateDuration(video.duration)),
+                    getDivider(),
+                    getCaption("Ausgestrahlt"),
+                    getSpacedContentRow(
+                        Calculator.calculateTimestamp(video.timestamp)),
                     video.description != null && video.description.isNotEmpty
                         ? getDivider()
                         : new Container(),
@@ -147,6 +137,7 @@ class VideoDescription extends StatelessWidget {
             padding: EdgeInsets.only(left: 10.0),
             child: new Text(
               content,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context)
                   .textTheme

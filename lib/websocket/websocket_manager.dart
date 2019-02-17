@@ -19,6 +19,9 @@ class WebsocketController {
   var onDone;
   var onWebsocketChannelOpenedSuccessfully;
 
+  static int skip = 0;
+  static final int defaultQueryAmount = 60;
+
   static Timer continoousPingTimer;
   ConnectionState connectionState = ConnectionState.none;
 
@@ -151,9 +154,11 @@ class WebsocketController {
   }
 
   //TODO add search model
-  void queryEntries(String genericQuery,
-      Map<String, SearchFilter> searchFilters, int skip, int amount) {
+  void queryEntries(
+      String genericQuery, Map<String, SearchFilter> searchFilters) {
     List<String> queryFilters = new List();
+
+    logger.info("Query skip: " + skip.toString());
 
     if (searchFilters.containsKey('Titel') &&
         searchFilters['Titel'].filterValue.isNotEmpty)
@@ -190,7 +195,7 @@ class WebsocketController {
         '],"sortBy":"timestamp","sortOrder":"desc","future":false,"offset":' +
         skip.toString() +
         ',"size":' +
-        amount.toString() +
+        defaultQueryAmount.toString() +
         '}]';
 
     logger.fine("Firing request: " +
@@ -199,6 +204,7 @@ class WebsocketController {
         connectionState.toString());
     if (wsChannel != null) {
       wsChannel.sink.add(request);
+      skip = skip + defaultQueryAmount;
     } else {
       logger.severe("Trying to query entries but channel is null");
     }
@@ -211,5 +217,9 @@ class WebsocketController {
 
   void closeWebsocketChannel() {
     if (wsChannel != null) wsChannel.sink.close();
+  }
+
+  void resetSkip() {
+    skip = 0;
   }
 }

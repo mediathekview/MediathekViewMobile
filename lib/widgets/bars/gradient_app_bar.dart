@@ -1,20 +1,23 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_ws/global_state/appBar_state_container.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/widgets/filterMenu/filter_menu.dart';
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
-import 'package:flutter_ws/global_state/appBar_state_container.dart';
 import 'package:logging/logging.dart';
 
 class GradientAppBar extends StatelessWidget {
   final Logger logger = new Logger('GradientAppBar');
   final TextEditingController controller;
   final bool isFilterMenuOpen;
+  final int currentAmountOfVideosInList;
+  final int totalAmountOfVideosForSelection;
   FilterMenu filterMenu;
   List<SearchFilter> searchFilters;
   StateContainerAppBarState state;
 
-  GradientAppBar(this.controller, this.filterMenu, this.isFilterMenuOpen);
+  GradientAppBar(this.controller, this.filterMenu, this.isFilterMenuOpen,
+      this.currentAmountOfVideosInList, this.totalAmountOfVideosForSelection);
 
   @override
   Widget build(BuildContext context) {
@@ -80,6 +83,10 @@ class GradientAppBar extends StatelessWidget {
                     ),
                   ),
                 ),
+                new Text("Videos: " +
+                    currentAmountOfVideosInList.toString() +
+                    " / " +
+                    totalAmountOfVideosForSelection.toString()),
                 new Center(
                   child: new FloatingActionButton(
                     mini: true,

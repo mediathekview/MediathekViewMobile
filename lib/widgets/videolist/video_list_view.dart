@@ -12,8 +12,7 @@ class ScrollPositionHolder {
 
 class VideoListView extends StatefulWidget {
   final Logger logger = new Logger('VideoListView');
-  final int pageThreshold = 10;
-  final int amountOfVideosToFetch = 60;
+  final int pageThreshold = 25;
   final ScrollPositionHolder offset = new ScrollPositionHolder();
 
   List<Video> videos;
@@ -60,9 +59,7 @@ class _VideoListViewState extends State<VideoListView> {
   @override
   Widget build(BuildContext context) {
     widget.logger.info("Rendering Main Video List with list length " +
-        widget.videos.length.toString() +
-        " & fetched: " +
-        widget.amountOfVideosFetched.toString());
+        widget.videos.length.toString());
 
     if (widget.videos.length == 0 && widget.amountOfVideosFetched == 0) {
       widget.logger.fine("No Videos found");
@@ -96,11 +93,10 @@ class _VideoListViewState extends State<VideoListView> {
           .severe("Video List View: Error could not set pixel position");
 
     if (index + widget.pageThreshold > widget.videos.length) {
-      widget.queryEntries(index, widget.amountOfVideosToFetch);
+      widget.queryEntries();
     }
 
-    if (widget.videos.length == index + 1 &&
-        widget.amountOfVideosToFetch == widget.amountOfVideosFetched) {
+    if (widget.videos.length == index + 1) {
       widget.logger.fine("Return progress indicator. Video list length is " +
           widget.videos.length.toString() +
           " and index is " +
