@@ -4,17 +4,18 @@ class VideoEntity {
   static final String TABLE_NAME = "videos";
 
   String id;
-  String channel; //ARD
-  String topic; //Tatort
-  String description; //details:  erst anzeigen wenn man drauf klickt
-  String title; // Der Frühling kommt bald
-  int timestamp; //unten rechts
-  var duration; //unten links
-  int size; //details
+  String task_id;
+  String channel;
+  String topic;
+  String description;
+  String title;
+  int timestamp;
+  var duration;
+  int size;
   String url_website;
   String url_video_low;
   String url_video_hd;
-  String filmlisteTimestamp; // weglassen?
+  String filmlisteTimestamp;
   String url_video;
   String url_subtitle;
 
@@ -25,6 +26,7 @@ class VideoEntity {
 
   //column names
   static final String idColumn = "id";
+  static final String task_idColumn = "task_id";
   static final String channelColumn = "channel";
   static final String topicColumn = "topic";
   static final String descriptionColumn = "description";
@@ -44,6 +46,7 @@ class VideoEntity {
 
   VideoEntity(
       this.id,
+      this.task_id,
       this.channel,
       this.topic,
       this.description,
@@ -64,6 +67,7 @@ class VideoEntity {
   static VideoEntity fromVideo(Video video) {
     return new VideoEntity(
         video.id,
+        "", //task Id is added by download manager
         video.channel,
         video.topic,
         video.description,
@@ -81,6 +85,7 @@ class VideoEntity {
 
   VideoEntity.fromMap(Map<String, dynamic> json)
       : id = json['id'],
+        task_id = json['task_id'],
         channel = json['channel'],
         topic = json['topic'],
         description = json['description'],
@@ -101,6 +106,7 @@ class VideoEntity {
   Map<String, dynamic> toMap() {
     var map = <String, dynamic>{
       'id': id,
+      'task_id': task_id,
       'channel': channel,
       'topic': topic,
       'description': description,

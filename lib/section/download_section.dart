@@ -1,17 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_ws/enum/channels.dart';
-import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/database/video_entity.dart';
-import 'package:flutter_ws/platform_channels/native_video_manager.dart';
-import 'package:flutter_ws/util/timestamp_calculator.dart';
-import 'package:flutter_ws/util/text_styles.dart';
-import 'package:flutter_ws/widgets/bars/download_progress_bar.dart';
+import 'package:flutter_ws/enum/channels.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
+import 'package:flutter_ws/model/video.dart';
+import 'package:flutter_ws/util/show_snackbar.dart';
+import 'package:flutter_ws/util/text_styles.dart';
+import 'package:flutter_ws/util/timestamp_calculator.dart';
+import 'package:flutter_ws/widgets/bars/download_progress_bar_stateful.dart';
 import 'package:flutter_ws/widgets/videolist/channel_thumbnail.dart';
+import 'package:flutter_ws/widgets/videolist/circular_progress_with_text.dart';
 import 'package:flutter_ws/widgets/videolist/video_preview_adapter.dart';
 import 'package:logging/logging.dart';
+
+const ERROR_MSG = "Delete of video failed.";
+const TRY_AGAIN_MSG = "Try again.";
 
 class DownloadSection extends StatefulWidget {
   final Logger logger = new Logger('DownloadSection');
@@ -23,8 +27,8 @@ class DownloadSection extends StatefulWidget {
 }
 
 class DownloadSectionState extends State<DownloadSection> {
-  List<MapEntry<String, VideoEntity>> downloadedVideos;
-  List<MapEntry<String, Video>> currentDownloads;
+  Set<VideoEntity> downloadedVideos = new Set();
+  Set<VideoEntity> currentDownloads = new Set();
   AppState appState;
   Set<String> userDeletedAppId; //used for fade out animation
   int milliseconds = 1500;
@@ -32,17 +36,11 @@ class DownloadSectionState extends State<DownloadSection> {
   DownloadSectionState(this.userDeletedAppId);
 
   @override
-  void initState() {
-    //Todo  I want to be informed about running downloads  - that are not in the active list right now! -> for instance after kill of app or fll restart!
-    //need a method in the downloader manager to get all the currently running downloads
-  }
-
-  @override
   Widget build(BuildContext context) {
     appState = AppSharedStateContainer.of(context).appState;
 
-    downloadedVideos = appState.downloadedVideos.entries.toList();
-    currentDownloads = appState.currentDownloads.entries.toList();
+    loadAlreadyDownloadedVideosFromDb();
+    loadCurrentDownloads();
 
     return new Scaffold(
       backgroundColor: Colors.grey[800],
@@ -53,25 +51,46 @@ class DownloadSectionState extends State<DownloadSection> {
         elevation: 6.0,
         backgroundColor: Colors.grey[800],
       ),
-      body: new ListView.builder(
-          itemBuilder: itemBuilder,
-          itemCount: currentDownloads.length + downloadedVideos.length),
+      body: currentDownloads.length == 0
+          ? new ListView.builder(
+              itemBuilder: itemBuilder,
+              itemCount: currentDownloads.length + downloadedVideos.length)
+          : new Column(children: <Widget>[
+              CircularProgressWithText(
+                  currentDownloads.length == 1
+                      ? new Text(
+                          "Downloading: '" +
+                              currentDownloads.elementAt(0).title +
+                              "'",
+                          style: connectionLostTextStyle)
+                      : new Text(
+                          currentDownloads.length.toString() +
+                              " downloads running",
+                          style: connectionLostTextStyle),
+                  Colors.green,
+                  Colors.white),
+              new Flexible(
+                child: new ListView.builder(
+                    itemBuilder: itemBuilder,
+                    itemCount:
+                        currentDownloads.length + downloadedVideos.length),
+              )
+            ]),
     );
   }
 
   Widget itemBuilder(BuildContext context, int index) {
     VideoEntity entity;
-    Video video;
-    downloadedVideos = appState.downloadedVideos.entries.toList();
-    int length = appState.currentDownloads.length;
+    int length = currentDownloads.length;
+    bool isDownloadedAlready = true;
 
     if (index <= length - 1 && length > 0) {
-      video = currentDownloads[index].value;
-      entity = VideoEntity.fromVideo(video);
+      entity = currentDownloads.elementAt(index);
     } else {
       //index already in downloaded videos
       int downloadedVideoIndex = index - length;
-      entity = downloadedVideos[downloadedVideoIndex].value;
+      entity = downloadedVideos.elementAt(downloadedVideoIndex);
+      isDownloadedAlready = false;
     }
 
     String assetPath = Channels.channelMap.entries.firstWhere((entry) {
@@ -88,7 +107,8 @@ class DownloadSectionState extends State<DownloadSection> {
             new Positioned(
               child: (index <= length - 1 && length > 0)
                   ? new VideoPreviewAdapter(entity.id,
-                      video: video, showLoadingIndicator: false)
+                      video: Video.fromMap(entity.toMap()),
+                      showLoadingIndicator: false)
                   : new VideoPreviewAdapter(entity.id,
                       showLoadingIndicator: false),
             ),
@@ -99,10 +119,7 @@ class DownloadSectionState extends State<DownloadSection> {
                 child: new FloatingActionButton(
                   mini: true,
                   onPressed: () {
-                    if (appState.currentDownloads[entity.id] != null)
-                      cancelActiveDownload(entity.id);
-                    else
-                      deleteDownloadedVideo(entity.id, entity.fileName);
+                    deleteDownload(context, entity.id);
                   },
                   backgroundColor: Colors.red[800],
                   highlightElevation: 10.0,
@@ -132,7 +149,7 @@ class DownloadSectionState extends State<DownloadSection> {
                           videoMetadataTextStyle.copyWith(color: Colors.white),
                     ),
                     leading: assetPath.isNotEmpty
-                        ? new ChannelThumbnail(assetPath)
+                        ? new ChannelThumbnail(assetPath, true)
                         : new Container(),
                     title: new Text(
                       entity.title,
@@ -156,8 +173,10 @@ class DownloadSectionState extends State<DownloadSection> {
               bottom: 6.0,
               left: 0.0,
               right: 0.0,
-              child:
-                  new DownloadProgressBar(entity.id, appState.downloadManager),
+              child: new DownloadProgressbarStateful(
+                  Video.fromMap(entity.toMap()),
+                  appState.downloadManager,
+                  OnDownloadFinished),
             ),
           ],
         ),
@@ -175,73 +194,52 @@ class DownloadSectionState extends State<DownloadSection> {
         child: listRow);
   }
 
-  deleteDownloadedVideo(String id, String fileName) {
-    widget.logger.fine("Deleting download for video with id " + id);
-
-    new Timer(new Duration(milliseconds: milliseconds), () {
-      setState(() {
-        appState.downloadedVideos.remove(id);
-        userDeletedAppId.remove(id);
-      });
-    });
-
-    setState(() {
-      userDeletedAppId.add(id);
-    });
-
-    appState.databaseManager.delete(id).then((id) {
-      widget.logger.fine("Deleted from Database");
-
-      new NativeVideoPlayer().deleteVideo(fileName).then((bool) {
-        if (bool) {
-          widget.logger.fine("Deleted video also from local storage");
-        } else {
-          widget.logger.fine("Failed to Delete video also from local storage");
-        }
-      },
-          onError: (e) => widget.logger.fine(
-              "Deleting video from file system failed. However it is deleted from the Database already. Reason " +
-                  e.toString()));
-    },
-        onError: (e) =>
-            widget.logger.fine("Error when deleting videos from Db"));
-  }
-
-  void cancelActiveDownload(String id) {
+  //Cancels active download (remove from task schema), removes the file from local storage & deletes the entry in VideoEntity schema
+  void deleteDownload(BuildContext context, String id) {
     setState(() {
       userDeletedAppId.add(id);
     });
 
     new Timer(new Duration(milliseconds: milliseconds), () {
-      appState.downloadManager.cancelDownload(id).then(
-        (Void) {
-          widget.logger.fine("Chanceled download with id " + id);
-          //Download managers internally removes active download from state - so state changed already here
+      appState.downloadManager.deleteVideo(id).then((bool deletedSuccessfully) {
+        if (deletedSuccessfully) {
           setState(() {
             userDeletedAppId.remove(id);
           });
-        },
-        onError: (e) {
-//          OsChecker.getTargetPlatform().then((platform) {
-//            Firebase.logPlatformChannelException(
-//                'cancelDownload', e.toString(), platform.toString());
-//          });
-          Scaffold.of(context).showSnackBar(
-            new SnackBar(
-              backgroundColor: Colors.red,
-              content:
-                  new Text("Abbruch des aktiven Downloads ist fehlgeschlagen."),
-              action: new SnackBarAction(
-                label: "Erneut versuchen",
-                onPressed: () {
-                  Scaffold.of(context).hideCurrentSnackBar();
-                  cancelActiveDownload(id);
-                },
-              ),
-            ),
-          );
-        },
-      );
+          return;
+        }
+        SnackbarActions.showErrorWithTryAgain(context, ERROR_MSG, TRY_AGAIN_MSG,
+            appState.downloadManager.deleteVideo, id);
+      });
     });
+  }
+
+  void loadAlreadyDownloadedVideosFromDb() async {
+    Set<VideoEntity> downloads =
+        await appState.databaseManager.getAllDownloadedVideos();
+    if (downloadedVideos.length != downloads.length) {
+      downloadedVideos = downloads;
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+
+  void loadCurrentDownloads() async {
+    Set<VideoEntity> downloads =
+        await appState.downloadManager.getCurrentDownloads();
+
+    if (currentDownloads.length != downloads.length) {
+      currentDownloads = downloads;
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+
+  void OnDownloadFinished() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 }

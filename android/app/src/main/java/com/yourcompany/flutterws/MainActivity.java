@@ -7,11 +7,9 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Toast;
 
-import com.yourcompany.flutterws.download.DownloadCallHandler;
-import com.yourcompany.flutterws.download.DownloadStreamHandler;
-import com.yourcompany.flutterws.download.DownloadUtil;
+import com.yourcompany.flutterws.download.FilesystemPermissionStreamHandler;
+import com.yourcompany.flutterws.download.PermissionMethodHandler;
 import com.yourcompany.flutterws.video.VideoCallHandler;
 import com.yourcompany.flutterws.video.VideoStreamHandler;
 
@@ -26,24 +24,21 @@ import io.flutter.plugins.GeneratedPluginRegistrant;
 
 @TargetApi(Build.VERSION_CODES.GINGERBREAD)
 public class MainActivity extends FlutterActivity{
-  private static final String DOWNLOAD_METHOD_CHANNEL = "samples.flutter.io/download";
   private static final String VIDEO_METHOD_CHANNEL = "samples.flutter.io/video";
-  private static final String DOWNLOAD_EVENT_CHANNEL = "samples.flutter.io/downloadEvent";
   private static final String VIDEO_EVENT_CHANNEL = "samples.flutter.io/videoEvent";
+  private static final String PERMISSION_METHOD_CHANNEL = "samples.flutter.io/permission";
+  private static final String PERMISSION_EVENT_CHANNEL = "samples.flutter.io/permissionEvent";
 
   public static Context context;
   public static MainActivity mainActivity;
 
-  MethodChannel downloadMethodChannel;
   MethodChannel videoMethodChannel;
-  EventChannel downloadEventChannel;
   EventChannel videoEventChannel;
-
-  DownloadManager downloadManager;
+  MethodChannel permissionMethodChannel;
+  EventChannel permissionEventChannel;
 
   //Handler
-  DownloadStreamHandler downloadStreamHandler;
-  DownloadCallHandler downloadCallHandler;
+  FilesystemPermissionStreamHandler filesystemPermissionStreamHandler;
 
 
   //mapping: userChoosenId -> downloadManager id
@@ -57,29 +52,22 @@ public class MainActivity extends FlutterActivity{
     context = this.getApplicationContext();
     mainActivity = this;
 
-    downloadManager = (DownloadManager)context.getSystemService(DOWNLOAD_SERVICE);
-
-    // downloadManager.getUriForDownloadedFile() -> in broadcast reciever done
-
-    //event channel
-    downloadEventChannel = new EventChannel(getFlutterView(), DOWNLOAD_EVENT_CHANNEL);
-    downloadStreamHandler = new DownloadStreamHandler(downloadManager);
-    downloadEventChannel.setStreamHandler(downloadStreamHandler);
-
-    //method channel download
-    downloadMethodChannel = new MethodChannel(getFlutterView(), DOWNLOAD_METHOD_CHANNEL);
-    downloadCallHandler = new DownloadCallHandler(context, downloadManager, downloadStreamHandler);
-    downloadMethodChannel.setMethodCallHandler(downloadCallHandler);
-
-    //event channel
+    //video player
     videoEventChannel = new EventChannel(getFlutterView(), VIDEO_EVENT_CHANNEL);
     VideoStreamHandler videoStreamHandler = new VideoStreamHandler();
     videoEventChannel.setStreamHandler(videoStreamHandler);
 
-    //method channel video player
     videoMethodChannel = new MethodChannel(getFlutterView(), VIDEO_METHOD_CHANNEL);
     videoMethodChannel.setMethodCallHandler(new VideoCallHandler(context, videoStreamHandler));
 
+
+    //Permissions
+    permissionEventChannel = new EventChannel(getFlutterView(), PERMISSION_EVENT_CHANNEL);
+    filesystemPermissionStreamHandler = new FilesystemPermissionStreamHandler();
+    permissionEventChannel.setStreamHandler(filesystemPermissionStreamHandler);
+
+    permissionMethodChannel = new MethodChannel(getFlutterView(), PERMISSION_METHOD_CHANNEL);
+    permissionMethodChannel.setMethodCallHandler(new PermissionMethodHandler(context));
   }
 
   @Override
@@ -90,34 +78,11 @@ public class MainActivity extends FlutterActivity{
         // If request is cancelled, the result arrays are empty.
         if (grantResults.length > 0
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-          Log.i("Permission","Permission granted!");
-
-          //To get last request file download after grant of permission
-          String fileName = downloadCallHandler.getLastRequestedDownloadFileName();
-          String videoUrl = downloadCallHandler.getLastRequestedDownloadVideoUrl();
-          String userDownloadId = downloadCallHandler.getLastRequestedDownloadUserDownloadId();
-
-          Integer downloadManagerId = (int) DownloadUtil.enqueueFile(context, downloadManager, fileName, videoUrl);
-
-          if (downloadManagerId == -1){
-
-            return;
-          }
-
-          if (userDownloadId == null || userDownloadId.isEmpty()) {
-            Log.i("Method Call Handler", "User Download id not specified. Putting in download list:  userId " + userDownloadId + "  and manager id " + downloadManagerId);
-            MainActivity.currentlyRunning.put(String.valueOf(downloadManagerId), downloadManagerId);
-          } else {
-            MainActivity.currentlyRunning.put(userDownloadId, downloadManagerId);
-          }
-          downloadStreamHandler.startProgressChecker();
-
+          Log.i("Permission","Filesystem permission granted!");
+          filesystemPermissionStreamHandler.permissionGranted(true);
         } else {
-          Log.i("Permission","Permission NOT granted!");
-
-          // permission denied, boo! Disable the
-          // functionality that depends on this permission.
-          Toast.makeText(MainActivity.this, "Download nicht möglich", Toast.LENGTH_SHORT).show();
+          Log.i("Permission","Filesystem permission NOT granted!");
+          filesystemPermissionStreamHandler.permissionGranted(false);
         }
         return;
       }

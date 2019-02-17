@@ -1,202 +1,152 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_ws/model/download_status.dart';
-import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/database/video_entity.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_ws/database/database_manager.dart';
-import 'package:flutter_ws/platform_channels/download_manager.dart';
-import 'package:flutter_ws/platform_channels/native_video_manager.dart';
+import 'package:flutter_ws/model/video.dart';
+import 'package:flutter_ws/platform_channels/download_manager_flutter.dart';
+import 'package:flutter_ws/platform_channels/video_manager.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/widgets/bars/download_progress_bar.dart';
-import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/widgets/bars/metadata_bar.dart';
 import 'package:flutter_ws/widgets/videolist/circular_progress_with_text.dart';
-import 'package:uuid/uuid.dart';
 import 'package:logging/logging.dart';
+import 'package:uuid/uuid.dart';
+
+const ERROR_MSG = "Delete of video failed.";
+const ERROR_MSG_DOWNLOAD = "Download failed.";
 
 class DownloadCardBody extends StatefulWidget {
   final Logger logger = new Logger('DownloadCardBody');
   final Video video;
+  final DownloadManager downloadManager;
+  final DatabaseManager databaseManager;
+  final NativeVideoPlayer nativeVideoPlayer;
+  final tileIsExtendet;
+  final bool isDownloadedAlready;
+  final bool isCurrentlyDownloading;
+  final DownloadTaskStatus currentStatus;
+  final double progress;
+  Uuid uuid;
+  var onDownloadRequested;
+  var onDeleteRequested;
 
-  DownloadCardBody(this.video);
+  DownloadCardBody(
+      this.video,
+      this.downloadManager,
+      this.databaseManager,
+      this.nativeVideoPlayer,
+      this.tileIsExtendet,
+      this.isDownloadedAlready,
+      this.isCurrentlyDownloading,
+      this.currentStatus,
+      this.progress,
+      this.onDownloadRequested,
+      this.onDeleteRequested);
 
   @override
   State<StatefulWidget> createState() {
-    return new InformationRowBodyState(new Uuid());
+    return new DownloadCardBodyState(new Uuid());
   }
 }
 
-class InformationRowBodyState extends State<DownloadCardBody> {
-  bool switchValue;
-  DownloadStatusText status;
-  bool permissionDenied;
-
-  NativeVideoPlayer nativeVideoPlayer;
-
+class DownloadCardBodyState extends State<DownloadCardBody> {
+  bool switchValue = false;
+  bool permissionDenied = false;
   Uuid uuid;
 
-  AppSharedState appWideState;
-  DownloadManager downloadManager;
-  DatabaseManager databaseManager;
+  DownloadCardBodyState(this.uuid);
 
-  InformationRowBodyState(this.uuid);
+  @override
+  void dispose() {
+    super.dispose();
+    widget.logger.fine("Disposing download card body for video with name " +
+        widget.video.title +
+        " and id " +
+        widget.video.id);
+  }
 
   @override
   Widget build(BuildContext context) {
-    appWideState = AppSharedStateContainer.of(context);
-    VideoEntity videoEntity =
-        appWideState.appState.downloadedVideos[widget.video.id];
-
-    bool isAlreadyDownloaded = false;
-
-    if (videoEntity != null) {
-      isAlreadyDownloaded = true;
+    if (widget.isDownloadedAlready) {
       switchValue = true;
-      status = DownloadStatusText.STATUS_SUCCESSFUL;
-    }
-
-    downloadManager = appWideState.appState.downloadManager;
-    databaseManager = appWideState.appState.databaseManager;
-
-    if (appWideState.appState.currentDownloads.containsKey(widget.video.id)) {
+    } else if (widget.isCurrentlyDownloading) {
       switchValue = true;
     }
 
-    VideoListState videoListState = appWideState.videoListState;
-
-    bool isExtendet = false;
-    if (videoListState != null) {
-      Set<String> extendetTiles = videoListState.extendetListTiles;
-      isExtendet = extendetTiles.contains(widget.video.id);
-    }
-
-    if (permissionDenied != null && permissionDenied == true)
+    if (permissionDenied != null && permissionDenied == true) {
       switchValue = false;
+    }
 
     return new Column(
         key: new Key(uuid.v1()),
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          isExtendet == false
+          widget.tileIsExtendet == false
               ? new Container()
               : new Row(
                   key: new Key(uuid.v1()),
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: <Widget>[
-                      isLivestreamVideo(widget.video)
-                          ? new Container()
-                          : new Container(
-                              key: new Key(uuid.v1()),
-                              padding:
-                                  new EdgeInsets.only(left: 40.0, right: 12.0),
-                              child: status != null &&
-                                      (status ==
-                                              DownloadStatusText
-                                                  .STATUS_RUNNING ||
-                                          status ==
-                                              DownloadStatusText
-                                                  .STATUS_PENDING ||
-                                          status ==
-                                              DownloadStatusText.STATUS_PAUSED)
-                                  ? new CircularProgressWithText(
-                                      new Text(
-                                          getVideoDownloadText(
-                                              isAlreadyDownloaded),
-                                          style: subHeaderTextStyle.copyWith(
-                                              color: Colors.black)),
-                                      Colors.white,
-                                      Colors.grey)
-                                  : new Text(
-                                      getVideoDownloadText(isAlreadyDownloaded),
-                                      style: subHeaderTextStyle.copyWith(
-                                          color: Colors.black),
-                                    ),
-                            ),
-                      isLivestreamVideo(widget.video)
-                          ? new Container()
-                          : new Switch(
-                              key: new Key(uuid.v1()),
-                              activeColor: Colors.green,
-                              value: switchValue,
-                              onChanged: (newSwitchValue) {
-                                setState(() {
-                                  switchValue = newSwitchValue;
-                                });
+                    isLivestreamVideo(widget.video)
+                        ? new Container()
+                        : new Container(
+                            key: new Key(uuid.v1()),
+                            padding:
+                                new EdgeInsets.only(left: 40.0, right: 12.0),
+                            child: widget.currentStatus != null &&
+                                    (widget.currentStatus ==
+                                            DownloadTaskStatus.running ||
+                                        widget.currentStatus ==
+                                            DownloadTaskStatus.enqueued ||
+                                        widget.currentStatus ==
+                                            DownloadTaskStatus.paused)
+                                ? new CircularProgressWithText(
+                                    new Text(
+                                        getVideoDownloadText(
+                                            widget.isDownloadedAlready),
+                                        style: subHeaderTextStyle.copyWith(
+                                            color: Colors.black)),
+                                    Colors.white,
+                                    Colors.grey)
+                                : new Text(
+                                    getVideoDownloadText(
+                                        widget.isDownloadedAlready),
+                                    style: subHeaderTextStyle.copyWith(
+                                        color: Colors.black),
+                                  ),
+                          ),
+                    isLivestreamVideo(widget.video)
+                        ? new Container()
+                        : new Switch(
+                            key: new Key(uuid.v1()),
+                            activeColor: Colors.green,
+                            value: switchValue,
+                            onChanged: (newSwitchValue) {
+                              setState(() {
+                                switchValue = newSwitchValue;
+                              });
 
+                              widget.logger.fine("Switch touched with value: " +
+                                  newSwitchValue.toString());
+
+                              if (newSwitchValue == true &&
+                                  widget.currentStatus == null) {
                                 widget.logger.fine(
-                                    "Switch touched with value: " +
-                                        newSwitchValue.toString());
+                                    "Triggering download for video with id " +
+                                        widget.video.id);
+                                widget.onDownloadRequested();
+                                return;
+                              }
 
-                                if (newSwitchValue == true && status == null) {
-                                  widget.logger.fine(
-                                      "Triggering download for video with id " +
-                                          widget.video.id);
-                                  onDownloadRequested();
-                                  return;
-                                }
-
-                                if (isAlreadyDownloaded) {
-                                  widget.logger.fine(
-                                      "Deleting download for video with id " +
-                                          videoEntity.id);
-
-                                  appWideState.appState.downloadedVideos
-                                      .remove(videoEntity.id);
-
-                                  databaseManager.delete(videoEntity.id).then(
-                                      (id) {
-                                    widget.logger.fine("Deleted from Database");
-
-                                    new NativeVideoPlayer()
-                                        .deleteVideo(videoEntity.fileName)
-                                        .then((bool) {
-                                      if (bool) {
-                                        widget.logger.fine(
-                                            "Deleted video also from local storage");
-                                      } else {
-                                        widget.logger.fine(
-                                            "Failed to Delete video also from local storage");
-                                      }
-                                    },
-                                            onError: (e) => widget.logger.fine(
-                                                "Deleting video failed. Reason " +
-                                                    e.toString()));
-                                  },
-                                      onError: (e) => widget.logger.fine(
-                                          "Error when deleting videos from Db"));
-
-                                  status = null;
-
-                                  //NativeVideoPlayer().playVideo(videoEntity.filePath, videoEntity.mimeType);
-                                  return;
-                                }
-
-                                if (status == null) {
-                                  //should not happen. Just remove from active downloads
-                                  appWideState.appState.currentDownloads
-                                      .remove(widget.video.id);
-                                }
-
-                                if (status != null &&
-                                    (status ==
-                                            DownloadStatusText.STATUS_RUNNING ||
-                                        status ==
-                                            DownloadStatusText.STATUS_PENDING ||
-                                        status ==
-                                            DownloadStatusText.STATUS_PAUSED)) {
-                                  widget.logger.fine(
-                                      "Canceling download for video with id " +
-                                          widget.video.id);
-
-                                  cancleActiveDownload(context);
-
-                                  return;
-                                }
-                              }),
-                      status != null &&
-                              status == DownloadStatusText.STATUS_FAILED
-                          ? new Icon(Icons.warning, color: Colors.red)
-                          : new Container(),
-                    ]),
+                              //Delete the video - remove download task, delete from disk & from VideoEntity db
+                              widget.onDeleteRequested();
+                            },
+                          ),
+                    widget.currentStatus != null &&
+                            widget.currentStatus == DownloadTaskStatus.failed
+                        ? new Icon(Icons.warning, color: Colors.red)
+                        : new Container(),
+                  ],
+                ),
           new Flexible(
               key: new Key(uuid.v1()),
               child: new Container(
@@ -205,135 +155,24 @@ class InformationRowBodyState extends State<DownloadCardBody> {
                   height: 2.0,
                   color: Colors.grey)),
           new MetadataBar(widget.video.duration, widget.video.timestamp),
-          new DownloadProgressBar(widget.video.id, downloadManager,
-              onDownloadStateChanged: onDownloadStateChanged,
-              onDownloadError: onDOwnloaderError,
-              onSubscriptionDone: onSubscriptionDone),
+          new DownloadProgressBar(
+              widget.video, widget.currentStatus, widget.progress),
         ]);
   }
 
-  void cancleActiveDownload(BuildContext context) {
-    downloadManager.cancelDownload(widget.video.id).then((id) {
-      status = null;
-      widget.logger.fine("Chanceled download");
-    }, onError: (e) {
-//      OsChecker.getTargetPlatform().then((platform) {
-//        Firebase.logPlatformChannelException(
-//            'cancelDownload', e.toString(), platform.toString());
-//      });
-      showSnackBar(context, "Abbruch des aktiven Downloads ist fehlgeschlagen");
-    });
-  }
-
-  void showSnackBar(BuildContext context, String text) {
-    Scaffold.of(context).showSnackBar(
-      new SnackBar(
-        backgroundColor: Colors.red,
-        content: new Text(text),
-      ),
-    );
-  }
-
-  @override
-  void initState() {
-    switchValue = false;
-  }
-
-  void onDownloadStateChanged(DownloadStatus updatedStatus) {
-    if (updatedStatus.status == DownloadStatusText.STATUS_SUCCESSFUL) {
-      widget.logger.fine("Download Card Body: Download with id" +
-          widget.video.id +
-          " is successfull");
-    }
-
-    if (updatedStatus.status == DownloadStatusText.STATUS_CANCELED) {
-      switchValue = false;
-      updateStatus(null);
-      return;
-    } else if (updatedStatus.status == DownloadStatusText.STATUS_FAILED) {
-      switchValue = false;
-      updateStatus(updatedStatus.status);
-      showSnackBar(context, "Download fehlgeschlagen");
-      return;
-    }
-
-    if ((updatedStatus.status == DownloadStatusText.STATUS_RUNNING ||
-            updatedStatus.status == DownloadStatusText.STATUS_PAUSED ||
-            updatedStatus.status == DownloadStatusText.STATUS_PENDING) &&
-        switchValue == false) {
-      widget.logger
-          .fine("Putting switch value on - download is already running");
-      setState(() {
-        permissionDenied = false;
-      });
-      return;
-    }
-
-    updateStatus(updatedStatus.status);
-  }
-
-  void updateStatus(DownloadStatusText updatedStatus) {
-    if (updatedStatus != status) {
-      widget.logger.fine("Update Status: new : " +
-          updatedStatus.toString() +
-          " old: " +
-          status.toString());
-      if (mounted) {
-        setState(() {
-          status = updatedStatus;
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  void onSubscriptionDone() {
-    //whole stream is done - cannot recieve any download updates any more!
-    widget.logger.fine("Received close signal from download manager");
-  }
-
-  //
-  void onDOwnloaderError(e) {
-    //Code == video ID & Message is the error message from the ios/android downloader
-    widget.logger.fine(
-        "Received error signal from download manager. Message: " +
-            e.toString());
-
-    updateStatus(DownloadStatusText.STATUS_FAILED);
-  }
-
-  void onDownloadRequested() {
-    downloadManager
-        .downloadFile(widget.video)
-        .then((video) => widget.logger.fine("Downloaded request successfull"),
-            onError: (e) {
-      widget.logger.fine("Error starting download: " +
-          widget.video.title +
-          ". Error:  " +
-          e.toString());
-
-      setState(() {
-        permissionDenied = true;
-      });
-    });
-  }
-
   String getVideoDownloadText(bool isAlreadyDownloaded) {
-    if (isAlreadyDownloaded || status == DownloadStatusText.STATUS_SUCCESSFUL)
+    if (isAlreadyDownloaded ||
+        widget.currentStatus == DownloadTaskStatus.complete)
       return "Downloaded";
-    else if (status == DownloadStatusText.STATUS_CANCELED)
+    else if (widget.currentStatus == DownloadTaskStatus.canceled)
       return "Canceled";
-    else if (status == DownloadStatusText.STATUS_RUNNING)
+    else if (widget.currentStatus == DownloadTaskStatus.running)
       return "Downloading";
-    else if (status == DownloadStatusText.STATUS_PAUSED)
+    else if (widget.currentStatus == DownloadTaskStatus.paused)
       return "Downloading";
-    else if (status == DownloadStatusText.STATUS_PENDING)
+    else if (widget.currentStatus == DownloadTaskStatus.enqueued)
       return "Pending";
-    else if (status == DownloadStatusText.STATUS_FAILED)
+    else if (widget.currentStatus == DownloadTaskStatus.failed)
       return "Download error";
     return "Download";
   }

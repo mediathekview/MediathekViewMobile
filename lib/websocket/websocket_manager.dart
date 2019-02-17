@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ws/exceptions/failed_to_contact_websocket.dart';
 import 'package:flutter_ws/websocket/websocket.dart';
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
+import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:logging/logging.dart';
 
 class WebsocketController {
   final Logger logger = new Logger('WebsocketController');
@@ -113,7 +113,7 @@ class WebsocketController {
   void sendContinoousPing(int websocketHearthbeatInterval) {
     if (continoousPingTimer == null || !continoousPingTimer.isActive) {
       Duration duration = new Duration(milliseconds: 2000);
-      logger.info("Starting ping with interval of " +
+      logger.fine("Starting ping with interval of " +
           websocketHearthbeatInterval.toString() +
           " milliseconds");
       continoousPingTimer = new Timer.periodic(
@@ -197,7 +197,6 @@ class WebsocketController {
         request +
         "With connection state: " +
         connectionState.toString());
-    //&& connectionState != ConnectionState.done
     if (wsChannel != null) {
       wsChannel.sink.add(request);
     } else {

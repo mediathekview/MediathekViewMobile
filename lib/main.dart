@@ -5,24 +5,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_ws/enum/ws_event_types.dart';
 import 'package:flutter_ws/exceptions/failed_to_contact_websocket.dart';
+import 'package:flutter_ws/global_state/appBar_state_container.dart';
+import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/indexing_info.dart';
 import 'package:flutter_ws/model/query_result.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/websocket/websocket_manager.dart';
 import 'package:flutter_ws/section/about_section.dart';
 import 'package:flutter_ws/section/download_section.dart';
 import 'package:flutter_ws/section/live_tv_section.dart';
 import 'package:flutter_ws/util/json_parser.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/websocket/websocket.dart';
-import 'package:flutter_ws/widgets/filterMenu/filter_menu.dart';
-import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
+import 'package:flutter_ws/websocket/websocket_manager.dart';
 import 'package:flutter_ws/widgets/bars/gradient_app_bar.dart';
 import 'package:flutter_ws/widgets/bars/indexing_bar.dart';
-import 'package:flutter_ws/global_state/appBar_state_container.dart';
-import 'package:flutter_ws/global_state/list_state_container.dart';
-import 'package:flutter_ws/widgets/videolist/video_list_view.dart';
 import 'package:flutter_ws/widgets/bars/status_bar.dart';
+import 'package:flutter_ws/widgets/filterMenu/filter_menu.dart';
+import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
+import 'package:flutter_ws/widgets/videolist/video_list_view.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 
@@ -151,6 +151,16 @@ class HomePageState extends State<MyHomePage>
   HomePageState(this.searchFieldController, this.logger);
 
   @override
+  void dispose() {
+    logger.fine("Disposing Home Page & shutting down websocket connection");
+
+    websocketController.stopPing();
+    websocketController.closeWebsocketChannel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
   void initState() {
     videos = new List();
     searchFilters = new Map();
@@ -239,21 +249,10 @@ class HomePageState extends State<MyHomePage>
   }
 
   @override
-  void dispose() {
-//    _pageController.dispose();
-    logger.fine("Disposing Home Page & shutting down websocket connection");
-
-    websocketController.stopPing();
-    websocketController.closeWebsocketChannel();
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     stateContainer = AppSharedStateContainer.of(context);
 
-    logger.info("Rendering Home Page");
+    logger.fine("Rendering Home Page");
 
     return new Scaffold(
       backgroundColor: Colors.grey[100],
@@ -312,7 +311,7 @@ class HomePageState extends State<MyHomePage>
   }
 
   Widget getVideoSearchListWidget() {
-    logger.info("Rendering Video Search list");
+    logger.fine("Rendering Video Search list");
     Widget videoSearchList = new Column(children: <Widget>[
       new FilterBarSharedState(
         child: new GradientAppBar(
@@ -442,7 +441,7 @@ class HomePageState extends State<MyHomePage>
       int newVideosCount = addVideos(newVideosFromQuery);
 
       if (newVideosCount == 0 && scrolledToEndOfList == false) {
-        logger.info("Scrolled to end of list & mounted: " + mounted.toString());
+        logger.fine("Scrolled to end of list & mounted: " + mounted.toString());
         scrolledToEndOfList = true;
         if (mounted) {
           setState(() {});
@@ -587,7 +586,7 @@ class HomePageState extends State<MyHomePage>
   }
 
   _singleFilterTappedCallback(String id) {
-    //remove filter from list and refresh state to retrigger build of app bar and list!
+    //remove filter from list and refresh state to trigger build of app bar and list!
     searchFilters.remove(id);
     HapticFeedback.mediumImpact();
     _createQueryWithClearedVideoList(0, 10);

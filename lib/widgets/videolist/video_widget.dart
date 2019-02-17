@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/database/video_entity.dart';
-import 'package:flutter_ws/platform_channels/native_video_manager.dart';
+import 'package:flutter_ws/platform_channels/video_manager.dart';
 import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:logging/logging.dart';

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/util/row_adapter.dart';
-import 'package:meta/meta.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 
 typedef void ListTileTapped(String id);
 
@@ -64,13 +64,11 @@ class _VideoListViewState extends State<VideoListView> {
         " & fetched: " +
         widget.amountOfVideosFetched.toString());
 
-    //TODO brauche ein anderes maß -> Rewuest is finished & videos.length == 0 -> dann kein Videos
-    //Siehe refresh indicator completer!!
     if (widget.videos.length == 0 && widget.amountOfVideosFetched == 0) {
-      widget.logger.info("No Videos found");
+      widget.logger.fine("No Videos found");
       return new Container(child: new Text("keine Videos gefunden"));
     } else if (widget.videos.length == 0) {
-      widget.logger.info("Searching: video list legth : 0 & amountFetched: " +
+      widget.logger.fine("Searching: video list legth : 0 & amountFetched: " +
           widget.amountOfVideosFetched.toString());
       return new Container(
         alignment: Alignment.center,

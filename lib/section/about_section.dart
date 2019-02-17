@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/util/text_styles.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:logging/logging.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AboutSection extends StatelessWidget {
   static final Logger logger = new Logger('AboutSection');
@@ -10,7 +10,7 @@ class AboutSection extends StatelessWidget {
   static const eMailAddressKontonummer =
       'mailto:kontakt.mediathekview.mobile@gmail.com?subject=Spende - Kontonummer Anfrage&body=<body>Hi Daniel, Ich würde gerne etwas spenden und brauche dazu deine Kontonummer. Ich möchte folgende Summe spenden: ';
   static const githubUrl =
-      'https://github.com/danielfoehrKn/MediathekViewMobile';
+      'https://github.com/Mediathekview/MediathekViewMobile';
   static const payPal = 'https://paypal.me/danielfoehr';
 
   @override

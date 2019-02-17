@@ -2,15 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/database/channel_favorite_entity.dart';
-import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/database/database_manager.dart';
-import 'package:flutter_ws/platform_channels/download_manager.dart';
+import 'package:flutter_ws/platform_channels/download_manager_flutter.dart';
 import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
+import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:logging/logging.dart';
 
 class VideoListState {
   VideoListState(this.extendetListTiles, this.previewImages);
@@ -20,12 +18,10 @@ class VideoListState {
 
 class AppState {
   AppState(this.downloadManager, this.databaseManager, this.videoPreviewManager,
-      this.downloadedVideos, this.currentDownloads, this.favoritChannels);
+      this.favoritChannels);
   DownloadManager downloadManager;
   DatabaseManager databaseManager;
   VideoPreviewManager videoPreviewManager;
-  Map<String, VideoEntity> downloadedVideos;
-  Map<String, Video> currentDownloads;
   Map<String, ChannelFavoriteEntity> favoritChannels;
 }
 
@@ -69,32 +65,20 @@ class AppSharedState extends State<AppSharedStateContainer> {
 
   void initializeState(BuildContext context) {
     if (appState == null) {
-      appState = new AppState(
-          new DownloadManager(context),
-          new DatabaseManager(),
-          new VideoPreviewManager(context),
-          new Map(),
-          new Map(),
-          new Map());
-      getAllDownloadsFromDatabase();
+      DownloadManager downloadManager = new DownloadManager(context);
+      appState = new AppState(downloadManager, new DatabaseManager(),
+          new VideoPreviewManager(context), new Map());
+      initializeDatabase().then((init) {
+        downloadManager.startListeningToDownloads();
+        prefillFavoritedChannels();
+      });
     }
     if (videoListState == null) {
       _initializeListState();
     }
   }
 
-  void getAllDownloadsFromDatabase() async {
-    await initializeDownloadDb();
-    //VIDEOS
-    Set<VideoEntity> videos =
-        await appState.databaseManager.getAllDownloadedVideos();
-    logger.fine("Currently there are " +
-        videos.length.toString() +
-        " downloaded videos in the database");
-    videos.forEach((entity) =>
-        appState.downloadedVideos.putIfAbsent(entity.id, () => entity));
-
-    //FAV Channels
+  void prefillFavoritedChannels() async {
     Set<ChannelFavoriteEntity> channels =
         await appState.databaseManager.getAllChannelFavorites();
     logger.fine("There are " +
@@ -104,13 +88,15 @@ class AppSharedState extends State<AppSharedStateContainer> {
         appState.favoritChannels.putIfAbsent(entity.name, () => entity));
   }
 
-  initializeDownloadDb() async {
+  Future initializeDatabase() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String path = join(documentsDirectory.path, "demo.db");
-//   appState.databaseManager.deleteDb(path);
-    await appState.databaseManager.open(path).then(
-        (dynamic) => logger.fine("Successfully opened database"),
-        onError: (e) => logger.fine("Error when opening database"));
+    //Uncomment when having made changes to the DB Schema
+    //appState.databaseManager.deleteDb(path);
+    //appState.databaseManager.deleteDb(join(documentsDirectory.path, "task.db"));
+    return appState.databaseManager.open(path).then(
+        (dynamic) => logger.info("Successfully opened database"),
+        onError: (e) => logger.severe("Error when opening database"));
   }
 
   void _initializeListState() {

@@ -1,72 +1,32 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_ws/model/download_status.dart';
-import 'package:flutter_ws/platform_channels/download_manager.dart';
-import 'package:uuid/uuid.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
+import 'package:flutter_ws/model/video.dart';
 import 'package:logging/logging.dart';
 
-typedef void OnDownloadStateChange(DownloadStatus state);
+typedef void OnDownloadStateChange(DownloadTaskStatus state);
 typedef void OnDownloadError(var e);
 typedef void OnSubscriptionDone();
 
-class DownloadProgressBar extends StatefulWidget {
+class DownloadProgressBar extends StatelessWidget {
   final Logger logger = new Logger('DownloadProgressBar');
-  String videoId;
-  DownloadManager downloadManager;
-  OnDownloadStateChange onDownloadStateChanged;
-  OnDownloadError onDownloadError;
-  OnSubscriptionDone onSubscriptionDone;
+  Video video;
+  DownloadTaskStatus currentStatus;
+  double downloadProgress;
 
-  DownloadProgressBar(this.videoId, this.downloadManager,
-      {this.onDownloadStateChanged,
-      this.onDownloadError,
-      this.onSubscriptionDone});
-
-  @override
-  State<StatefulWidget> createState() {
-    Uuid uuid = new Uuid();
-    Key progressIndicatorKey = new Key(uuid.v1());
-
-    return new DownloadProgressBarState(progressIndicatorKey);
-  }
-}
-
-class DownloadProgressBarState extends State<DownloadProgressBar> {
-  StreamSubscription<DownloadStatus> subscription;
-  Key progressIndicatorKey;
-  DownloadStatusText status;
-  double progress;
-  DownloadProgressBarState(this.progressIndicatorKey);
-
-  @override
-  void initState() {
-    super.initState();
-    subscribeToProgressChannel();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-//    print("Called dispose on Progress bar for video " + widget.videoId);
-    subscription.cancel();
-  }
-
-  void subscribeToProgressChannel() {
-    subscription = widget.downloadManager.onDownloadProgressUpdate.listen(
-        (DownloadStatus state) => this.onDownloaderProgress(state),
-        onError: (e) =>
-            widget.onDownloadError != null ? widget.onDownloadError(e) : {},
-        onDone: () => widget.onSubscriptionDone != null
-            ? widget.onSubscriptionDone()
-            : {});
-  }
+  DownloadProgressBar(this.video, this.currentStatus, this.downloadProgress);
 
   @override
   Widget build(BuildContext context) {
-    return status != null &&
-            (status == DownloadStatusText.STATUS_RUNNING ||
-                status == DownloadStatusText.STATUS_PAUSED)
+    if (downloadProgress != null && currentStatus != null) {
+      logger.fine("Progressbar: Progress: " +
+          downloadProgress.toString() +
+          " and current status " +
+          currentStatus.toString());
+    }
+    return currentStatus != null &&
+            (currentStatus == DownloadTaskStatus.running ||
+                currentStatus == DownloadTaskStatus.paused ||
+                currentStatus == DownloadTaskStatus.enqueued)
         ? getProgressIndicator()
         : new Container();
   }
@@ -74,40 +34,15 @@ class DownloadProgressBarState extends State<DownloadProgressBar> {
   Widget getProgressIndicator() {
     return new Container(
         constraints: BoxConstraints.expand(height: 5.0),
-        child: progress == null || progress == -1
+        child: downloadProgress == null || downloadProgress == -1
             ? new LinearProgressIndicator(
-                key: progressIndicatorKey,
                 valueColor:
                     new AlwaysStoppedAnimation<Color>(Colors.green[700]),
                 backgroundColor: Colors.green[100])
             : new LinearProgressIndicator(
-                key: progressIndicatorKey,
-                value: (progress / 100),
+                value: (downloadProgress / 100),
                 valueColor:
                     new AlwaysStoppedAnimation<Color>(Colors.green[700]),
                 backgroundColor: Colors.green[100]));
-  }
-
-  onDownloaderProgress(DownloadStatus state) {
-    if (state.id != widget.videoId) return;
-
-    print("DownloadProgressbar : " +
-        widget.videoId +
-        " Status: " +
-        state.status.toString() +
-        " Progress: " +
-        state.progress.toString());
-
-    if (mounted) {
-      setState(() {
-        status = state.status;
-        progress = state.progress;
-      });
-    }
-
-    //parent decides if it wants to trigger a rerender of its state -> update switvh text
-    widget.onDownloadStateChanged != null
-        ? widget.onDownloadStateChanged(state)
-        : {};
   }
 }

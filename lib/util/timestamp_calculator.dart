@@ -1,4 +1,4 @@
-class Calculator{
+class Calculator {
   static String calculateDuration(duration) {
     try {
       int sekunden = int.parse(duration.toString());
@@ -15,9 +15,9 @@ class Calculator{
       return verbleibendeMinuten == 0
           ? stunden.toString() + " h "
           : stunden.toString() +
-          " h " +
-          verbleibendeMinuten.toString() +
-          " min";
+              " h " +
+              verbleibendeMinuten.toString() +
+              " min";
     } catch (e) {
       return "";
     }
@@ -25,12 +25,12 @@ class Calculator{
 
   static String calculateTimestamp(int timestamp) {
     DateTime time =
-    new DateTime.fromMillisecondsSinceEpoch(timestamp * 1000, isUtc: true);
+        new DateTime.fromMillisecondsSinceEpoch(timestamp * 1000, isUtc: true);
     var minutes =
-    time.minute < 9 ? "0" + time.minute.toString() : time.minute.toString();
+        time.minute < 9 ? "0" + time.minute.toString() : time.minute.toString();
     var day = time.day < 9 ? "0" + time.day.toString() : time.day.toString();
     var month =
-    time.month < 9 ? "0" + time.month.toString() : time.month.toString();
+        time.month < 9 ? "0" + time.month.toString() : time.month.toString();
 
     return day +
         "." +
@@ -38,6 +38,7 @@ class Calculator{
         "." +
         time.year.toString() +
         " " +
+        "um " +
         time.hour.toString() +
         ":" +
         minutes;

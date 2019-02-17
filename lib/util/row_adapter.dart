@@ -17,6 +17,8 @@ class RowAdapter {
         .value;
 
     return new ListCard(
-        key: new Key(uuid.v1()), imgPath: assetPath, video: video);
+        key: new Key(uuid.v1()),
+        channelPictureImagePath: assetPath,
+        video: video);
   }
 }

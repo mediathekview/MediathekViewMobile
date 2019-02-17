@@ -16,10 +16,10 @@ apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 def keystorePropertiesFile = rootProject.file("key.properties")
 def keystoreProperties = new Properties()
-keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+//keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion 28
 
     lintOptions {
         disable 'InvalidPackage'
@@ -29,10 +29,10 @@ android {
 
         applicationId "com.yourcompany.flutterws"
         minSdkVersion 16
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode 3
         versionName "1.0-beta"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
 
@@ -41,23 +41,23 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    signingConfigs {
+    /*signingConfigs {
         release {
             keyAlias keystoreProperties['keyAlias']
             keyPassword keystoreProperties['keyPassword']
             storeFile file(keystoreProperties['storeFile'])
             storePassword keystoreProperties['storePassword']
         }
-    }
+    }*/
     buildTypes {
         release {
             ndk{
 //               add x86 support for emulator on windows
-//                abiFilters 'x86'
+               // abiFilters 'x86'
                 //Release
                 abiFilters 'armeabi-v7a'
             }
-            signingConfig signingConfigs.release
+            //signingConfig signingConfigs.release
         }
     }
 }
@@ -68,14 +68,15 @@ flutter {
 
 dependencies {
     testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.1'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
-    implementation 'com.android.support:appcompat-v7:27.1.1'
+    androidTestImplementation 'androidx.test:runner:1.1.0-alpha4'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0-alpha4'
+    implementation 'androidx.appcompat:appcompat:1.0.0-beta01'
+   // implementation 'androidx.core:core:1.0.1'
     implementation(name:'armv7-fmmr', ext:'aar')
     //implementation(name:'x86-fmmr', ext:'aar')
     // full exoplayer library
     compile 'com.google.android.exoplayer:exoplayer:2.8.1'
 }
 
-//Removed for Firebase
-//apply plugin: 'com.google.gms.google-services'
+
+
