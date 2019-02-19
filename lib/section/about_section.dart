@@ -22,7 +22,7 @@ class AboutSection extends StatelessWidget {
         title: new Text('About'),
 //            backgroundColor: new Color(0xffffbf00),
         elevation: 6.0,
-        backgroundColor: Colors.grey[800],
+        backgroundColor: Colors.indigo,
       ),
       body: new Column(
         children: <Widget>[

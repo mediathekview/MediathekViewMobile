@@ -49,7 +49,7 @@ class DownloadSectionState extends State<DownloadSection> {
           child: const Text('Downloads'),
         ),
         elevation: 6.0,
-        backgroundColor: Colors.grey[800],
+        backgroundColor: Colors.green,
       ),
       body: currentDownloads.length == 0
           ? new ListView.builder(

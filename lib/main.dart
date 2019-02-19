@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bubble_bottom_bar/bubble_bottom_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -264,47 +265,56 @@ class HomePageState extends State<MyHomePage>
           aboutSection == null ? new AboutSection() : aboutSection
         ],
       ),
-      bottomNavigationBar: new Theme(
-        data: Theme.of(context).copyWith(
-            canvasColor: Colors.grey[900],
-            splashColor: new Color(0xffffbf00),
-//            unselectedWidgetColor: Colors.green,
-            primaryColor: Colors.white,
-            textTheme: Theme.of(context)
-                .textTheme
-                .copyWith(caption: new TextStyle(color: Colors.grey))),
-        child: new BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            items: [
-              new BottomNavigationBarItem(
-                activeIcon:
-                    new Icon(Icons.search, color: new Color(0xffffbf00)),
-                icon: new Icon(Icons.search, color: Colors.white),
-                title: new Text("Suche"),
+      bottomNavigationBar: BubbleBottomBar(
+        opacity: .2, //sets the background opacity of active BubbleBottomBarItem
+        currentIndex: _page,
+        onTap: navigationTapped,
+        items: [
+          BubbleBottomBarItem(
+              backgroundColor: Colors.red,
+              icon: Icon(
+                Icons.search,
+                color: Colors.black,
               ),
-              new BottomNavigationBarItem(
-                activeIcon:
-                    new Icon(Icons.live_tv, color: new Color(0xffffbf00)),
-                icon: new Icon(Icons.live_tv,
-                    color: _page != 1 ? Colors.white : new Color(0xffffbf00)),
-                title: new Text("Live Tv"),
+              activeIcon: Icon(
+                Icons.search,
+                color: Colors.red,
               ),
-              new BottomNavigationBarItem(
-                activeIcon:
-                    new Icon(Icons.file_download, color: new Color(0xffffbf00)),
-                icon: new Icon(Icons.file_download,
-                    color: _page != 2 ? Colors.white : new Color(0xffffbf00)),
-                title: new Text("Downloads"),
+              title: Text("Suche")),
+          BubbleBottomBarItem(
+              backgroundColor: Colors.deepPurple,
+              icon: Icon(
+                Icons.live_tv,
+                color: Colors.black,
               ),
-              new BottomNavigationBarItem(
-                activeIcon:
-                    new Icon(Icons.info_outline, color: new Color(0xffffbf00)),
-                icon: new Icon(Icons.info_outline, color: Colors.white),
-                title: new Text("About"),
-              )
-            ],
-            onTap: navigationTapped,
-            currentIndex: _page),
+              activeIcon: Icon(
+                Icons.live_tv,
+                color: Colors.deepPurple,
+              ),
+              title: Text("Live")),
+          BubbleBottomBarItem(
+              backgroundColor: Colors.green,
+              icon: Icon(
+                Icons.file_download,
+                color: Colors.black,
+              ),
+              activeIcon: Icon(
+                Icons.file_download,
+                color: Colors.green,
+              ),
+              title: Text("Downloads")),
+          BubbleBottomBarItem(
+              backgroundColor: Colors.indigo,
+              icon: Icon(
+                Icons.info_outline,
+                color: Colors.black,
+              ),
+              activeIcon: Icon(
+                Icons.info_outline,
+                color: Colors.indigo,
+              ),
+              title: Text("Info"))
+        ],
       ),
     );
   }

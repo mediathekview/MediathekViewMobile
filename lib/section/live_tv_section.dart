@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_ws/database/channel_favorite_entity.dart';
 import 'package:flutter_ws/database/database_manager.dart';
+import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/platform_channels/video_manager.dart';
 import 'package:flutter_ws/util/text_styles.dart';
-import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:logging/logging.dart';
 
 class Channel {
@@ -145,7 +145,7 @@ class _LiveTVSectionState extends State<LiveTVSection> {
           title: new Text('Live Tv'),
 //            backgroundColor: new Color(0xffffbf00),
           elevation: 6.0,
-          backgroundColor: Colors.grey[800],
+          backgroundColor: Colors.deepPurple,
           bottom: tabbar,
         ),
         body: new TabBarView(children: <Widget>[
