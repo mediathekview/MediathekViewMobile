@@ -28,6 +28,12 @@ class DownloadManager {
           DownloadTaskStatus.running.value.toString() +
           " OR status = " +
           DownloadTaskStatus.paused.value.toString();
+  static String SQL_GET_ALL_COMPLETED_TASKS =
+      "SELECT * FROM task WHERE status = " +
+          DownloadTaskStatus.complete.value.toString();
+  static String SQL_GET_ALL_FAILED_TASKS =
+      "SELECT * FROM task WHERE status = " +
+          DownloadTaskStatus.failed.value.toString();
 
   //Listeners
   static Map<String, MapEntry<Video, onFailed>> onFailedListeners =
@@ -96,7 +102,7 @@ class DownloadManager {
       DatabaseManager databaseManager, VideoEntity entity) {
     if (status == DownloadTaskStatus.failed) {
       //delete from schema first in case we want to try downloading video again
-      _deleteVideo(entity);
+      //_deleteVideo(entity);
 
       FilesystemPermissionManager filesystemPermissionManager =
           new FilesystemPermissionManager(_context);
@@ -129,7 +135,7 @@ class DownloadManager {
               logger.severe(
                   "Listening to User Action regarding Android file system permission failed. Reason " +
                       e.toString());
-              //TODO cnacel subscription to stream
+              //TODO cancel subscription to stream
             },
           );
 
@@ -160,13 +166,15 @@ class DownloadManager {
         entry.value(entity.id);
       }
     } else if (status == DownloadTaskStatus.complete) {
-      //status now includes data that we want to add to the entity#
+      //status now includes data that we want to add to the entity
       FlutterDownloader.loadTasksWithRawQuery(
               query: SQL_GET_SINGEL_TASK + "'" + taskId + "'")
           .then((List<DownloadTask> list) {
         DownloadTask task = list.elementAt(0);
         entity.filePath = task.savedDir;
         entity.fileName = task.filename;
+        entity.timestamp_video_saved =
+            new DateTime.now().millisecondsSinceEpoch;
         databaseManager.updateVideoEntity(entity).then((rowsUpdated) {
           logger.fine("Updated " + rowsUpdated.toString() + " relations.");
         });
@@ -196,14 +204,14 @@ class DownloadManager {
   }
 
   // Check first if a entity with that id exists on the db or cache. If yes & task id is set, check Task schema for running, queued or paused status
-  Future<bool> isCurrentlyDownloading(String videoId) async {
+  Future<DownloadTask> isCurrentlyDownloading(String videoId) async {
     return _getEntityForId(videoId).then((entity) {
       if (entity == null || entity.task_id == '') {
-        return false;
+        return null;
       }
       // if already has a filename, then it is already downloaded!
       if (entity.fileName != null && entity.fileName != '') {
-        return false;
+        return null;
       }
 
       //check for right task status
@@ -211,16 +219,16 @@ class DownloadManager {
               query: SQL_GET_SINGEL_TASK + "'" + entity.task_id + "'")
           .then((List<DownloadTask> list) {
         if (list.isEmpty) {
-          return false;
+          return null;
         }
         var task = list.first;
 
         if (task.status == DownloadTaskStatus.running ||
             task.status == DownloadTaskStatus.enqueued ||
             task.status == DownloadTaskStatus.paused) {
-          return true;
+          return task;
         }
-        return false;
+        return null;
       });
     });
   }
@@ -324,10 +332,11 @@ class DownloadManager {
     });
   }
 
-  // Remnove from task schema and cancel download if running
+  // Remove from task schema and cancel download if running
   Future _cancelDownload(String taskId) {
     logger.fine("Deleting Task with id " + taskId);
-    return FlutterDownloader.remove(taskId: taskId, shouldDeleteContent: false);
+    return FlutterDownloader.cancel(taskId: taskId).then((_) =>
+        FlutterDownloader.remove(taskId: taskId, shouldDeleteContent: false));
   }
 
   void subscribe(
@@ -370,13 +379,75 @@ class DownloadManager {
   }
 
   Future<List<DownloadTask>> _getCurrentDownloadTasks() async {
-    return FlutterDownloader.loadTasksWithRawQuery(
-            query: SQL_GET_ALL_RUNNING_TASKS)
+    return _getTasksWithRawQuery(SQL_GET_ALL_RUNNING_TASKS);
+  }
+
+  Future<List<DownloadTask>> _getFailedTasks() async {
+    return _getTasksWithRawQuery(SQL_GET_ALL_FAILED_TASKS);
+  }
+
+  Future<List<DownloadTask>> _getCompletedTasks() async {
+    return _getTasksWithRawQuery(SQL_GET_ALL_COMPLETED_TASKS);
+  }
+
+  Future<List<DownloadTask>> _getTasksWithRawQuery(String query) async {
+    return FlutterDownloader.loadTasksWithRawQuery(query: query)
         .then((List<DownloadTask> list) {
       if (list == null) {
         return new List();
       }
       return list;
+    });
+  }
+
+  //sync completeed DownloadTasks from DownloadManager with VideoEntity - filename and storage location
+  syncCompletedDownloads() {
+    _getCompletedTasks().then((List<DownloadTask> task) {
+      task.forEach((DownloadTask task) {
+        databaseManager
+            .getVideoEntityForTaskId(task.taskId)
+            .then((VideoEntity entity) {
+          if (entity == null) {
+            logger.severe(
+                "Startup sync for completed downloads: task that we do not know of - Ignoring. URL: : " +
+                    task.url);
+            return;
+          }
+          if (entity.filePath == null || entity.fileName == null) {
+            logger.info(
+                "Found download tasks that was completed while flutter app was not running. Syncing with VideoEntity Schema. Title: " +
+                    entity.title);
+            entity.filePath = task.savedDir;
+            entity.fileName = task.filename;
+            databaseManager.updateVideoEntity(entity).then((rowsUpdated) {
+              logger.fine("Updated " + rowsUpdated.toString() + " relations.");
+            });
+          }
+          //also update cache
+          cache.putIfAbsent(entity.id, () => entity);
+        });
+      });
+    });
+  }
+
+  retryFailedDownloads() {
+    _getFailedTasks().then((List<DownloadTask> taskList) {
+      taskList.forEach((DownloadTask task) {
+        databaseManager.getVideoEntityForTaskId(task.taskId).then(
+          (VideoEntity entity) {
+            if (entity == null) {
+              logger.severe(
+                  "Startup sync for failed downloads: task that we do not know of - Ignoring. URL: : " +
+                      task.url);
+              return;
+            }
+
+            //only retry for downloads we know about
+            logger.info("Retrying failed download with url " + task.url);
+            FlutterDownloader.retry(taskId: task.taskId);
+          },
+        );
+      });
     });
   }
 

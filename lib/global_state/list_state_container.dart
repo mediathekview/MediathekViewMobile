@@ -69,7 +69,15 @@ class AppSharedState extends State<AppSharedStateContainer> {
       appState = new AppState(downloadManager, new DatabaseManager(),
           new VideoPreviewManager(context), new Map());
       initializeDatabase().then((init) {
+        //start subscription to Flutter Download Manager
         downloadManager.startListeningToDownloads();
+
+        //check for downloads that have been completed while flutter app was not running
+        downloadManager.syncCompletedDownloads();
+
+        //check for failed DownloadTasks and retry them
+        downloadManager.retryFailedDownloads();
+
         prefillFavoritedChannels();
       });
     }

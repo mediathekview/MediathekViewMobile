@@ -115,6 +115,8 @@ class HomePageState extends State<MyHomePage>
   bool indexingError;
   bool refreshOperationRunning;
   Completer<Null> refreshCompleter;
+  static const SHOW_CONNECTION_ISSUES_THRESHOLD = 3;
+  int consecutiveWebsocketUnhealthyChecks;
 
   //Keys
   Key videoListKey;
@@ -175,14 +177,16 @@ class HomePageState extends State<MyHomePage>
     currentUserQueryInput = "";
     var inputListener = () => handleSearchInput();
     searchFieldController.addListener(inputListener);
+    consecutiveWebsocketUnhealthyChecks = 0;
 
     //register Observer to react to android/ios lifecycle events
     WidgetsBinding.instance.addObserver(this);
 
     _controller = new TabController(length: 4, vsync: this);
+    _controller.addListener(() => onUISectionChange());
 
     //Init tabs
-    liveTVSection = new LiveTVSection();
+    //liveTVSection = new LiveTVSection();
     downloadSection = new DownloadSection();
     aboutSection = new AboutSection();
 
@@ -218,12 +222,15 @@ class HomePageState extends State<MyHomePage>
 
           if (connectionState == ConnectionState.active) {
             logger.fine("Ws connection is fine");
+            consecutiveWebsocketUnhealthyChecks = 0;
             if (websocketInitError) {
               websocketInitError = false;
               if (mounted) setState(() {});
             }
           } else if (connectionState == ConnectionState.done ||
               connectionState == ConnectionState.none) {
+            showStatusBar();
+
             logger.fine("Ws connection is " +
                 connectionState.toString() +
                 " and mounted: " +
@@ -234,6 +241,7 @@ class HomePageState extends State<MyHomePage>
                   .initializeWebsocket()
                   .then((initializedSuccessfully) {
                 if (initializedSuccessfully) {
+                  consecutiveWebsocketUnhealthyChecks = 0;
                   logger.info("WS connection stable again");
                   if (videos.isEmpty) {
                     _createQuery();
@@ -260,7 +268,7 @@ class HomePageState extends State<MyHomePage>
         controller: _controller,
         children: <Widget>[
           new SafeArea(child: getVideoSearchListWidget()),
-          liveTVSection == null ? new LiveTVSection() : liveTVSection,
+          //liveTVSection == null ? new LiveTVSection() : liveTVSection,
           downloadSection == null ? new DownloadSection() : downloadSection,
           aboutSection == null ? new AboutSection() : aboutSection
         ],
@@ -281,17 +289,18 @@ class HomePageState extends State<MyHomePage>
                 color: Colors.red,
               ),
               title: Text("Suche")),
-          BubbleBottomBarItem(
-              backgroundColor: Colors.deepPurple,
-              icon: Icon(
-                Icons.live_tv,
-                color: Colors.black,
-              ),
-              activeIcon: Icon(
-                Icons.live_tv,
-                color: Colors.deepPurple,
-              ),
-              title: Text("Live")),
+          /*BubbleBottomBarItem(
+            backgroundColor: Colors.deepPurple,
+            icon: Icon(
+              Icons.live_tv,
+              color: Colors.black,
+            ),
+            activeIcon: Icon(
+              Icons.live_tv,
+              color: Colors.deepPurple,
+            ),
+            title: Text("Live"),
+          ),*/
           BubbleBottomBarItem(
               backgroundColor: Colors.green,
               icon: Icon(
@@ -302,7 +311,7 @@ class HomePageState extends State<MyHomePage>
                 Icons.file_download,
                 color: Colors.green,
               ),
-              title: Text("Downloads")),
+              title: Text("Saved")),
           BubbleBottomBarItem(
               backgroundColor: Colors.indigo,
               icon: Icon(
@@ -336,10 +345,13 @@ class HomePageState extends State<MyHomePage>
       new Flexible(
         child: new RefreshIndicator(
             child: new VideoListView(
-                key: videoListKey,
-                videos: videos,
-                amountOfVideosFetched: lastAmountOfVideosRetrieved,
-                queryEntries: onQueryEntries),
+              key: videoListKey,
+              videos: videos,
+              amountOfVideosFetched: lastAmountOfVideosRetrieved,
+              queryEntries: onQueryEntries,
+              currentQuerySkip: websocketController.getCurrentSkip(),
+              totalResultSize: totalQueryResults,
+            ),
             onRefresh: _handleListRefresh),
       ),
       new StatusBar(
@@ -356,36 +368,24 @@ class HomePageState extends State<MyHomePage>
     return videoSearchList;
   }
 
-  /// Called when the user presses on of the
-  /// [BottomNavigationBarItem] with corresponding
-  /// page index
+  // Called when the user presses on of the BottomNavigationBarItems. Does not get triggered by a users swipe.
   void navigationTapped(int page) {
-    logger.fine("New Navigation Tapped: ---> Page " + page.toString());
+    logger.info("New Navigation Tapped: ---> Page " + page.toString());
     _controller.animateTo(page,
         duration: const Duration(milliseconds: 300), curve: Curves.ease);
-
     setState(() {
       this._page = page;
     });
+  }
 
-    /// 0: videoList
-    /// 1: LiveTV
-    /// 2: downloads
-    /// 3: about
-    String pageName;
-    switch (page) {
-      case 0:
-        pageName = "VideoList";
-        break;
-      case 1:
-        pageName = "LiveTV";
-        break;
-      case 2:
-        pageName = "Downloads";
-        break;
-      case 3:
-        pageName = "About";
-        break;
+  // gets triggered whenever TabController changes page. This can be due to a user's swipe or via tab on the BottomNavigationBar
+  onUISectionChange() {
+    if (this._page != _controller.index) {
+      logger
+          .info("UI Section Change: ---> Page " + _controller.index.toString());
+      setState(() {
+        this._page = _controller.index;
+      });
     }
   }
 
@@ -414,7 +414,16 @@ class HomePageState extends State<MyHomePage>
 
   void onWebsocketError(FailedToContactWebsocketError error) {
     logger.info("Received a ERROR from the Websocket.", {error: error});
-    if (this.websocketInitError == false) {
+    showStatusBar();
+  }
+
+  void showStatusBar() {
+    logger.info("Ws Status: Errors retrieved: " +
+        consecutiveWebsocketUnhealthyChecks.toString());
+    consecutiveWebsocketUnhealthyChecks++;
+    if (this.websocketInitError == false &&
+        consecutiveWebsocketUnhealthyChecks ==
+            SHOW_CONNECTION_ISSUES_THRESHOLD) {
       this.websocketInitError = true;
       if (mounted) setState(() {});
     }

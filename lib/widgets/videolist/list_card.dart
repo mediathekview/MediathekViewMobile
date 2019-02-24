@@ -290,7 +290,7 @@ class _ListCardState extends State<ListCard> {
       return;
     }
 
-    if (await downloadManager.isCurrentlyDownloading(videoId)) {
+    if (await downloadManager.isCurrentlyDownloading(videoId) != null) {
       widget.logger.fine("Video with name  " +
           widget.video.title +
           " and id " +

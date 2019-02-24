@@ -222,4 +222,8 @@ class WebsocketController {
   void resetSkip() {
     skip = 0;
   }
+
+  int getCurrentSkip() {
+    return skip;
+  }
 }

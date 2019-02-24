@@ -42,6 +42,27 @@ class DownloadSectionState extends State<DownloadSection> {
     loadAlreadyDownloadedVideosFromDb();
     loadCurrentDownloads();
 
+    Widget loadingIndicator;
+    if (currentDownloads.length == 1) {
+      loadingIndicator = CircularProgressWithText(
+          new Text("Downloading: '" + currentDownloads.elementAt(0).title + "'",
+              style: connectionLostTextStyle),
+          Colors.green,
+          Colors.white,
+          height: 50.0);
+    } else if (currentDownloads.length > 1) {
+      loadingIndicator = CircularProgressWithText(
+        new Text(
+            "Downloading " + currentDownloads.length.toString() + " videos",
+            style: connectionLostTextStyle),
+        Colors.green,
+        Colors.white,
+        height: 50.0,
+      );
+    } else {
+      loadingIndicator = new Container();
+    }
+
     return new Scaffold(
       backgroundColor: Colors.grey[800],
       appBar: new AppBar(
@@ -49,33 +70,16 @@ class DownloadSectionState extends State<DownloadSection> {
           child: const Text('Downloads'),
         ),
         elevation: 6.0,
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.grey[800],
       ),
-      body: currentDownloads.length == 0
-          ? new ListView.builder(
+      body: new Column(children: <Widget>[
+        loadingIndicator,
+        new Flexible(
+          child: new ListView.builder(
               itemBuilder: itemBuilder,
-              itemCount: currentDownloads.length + downloadedVideos.length)
-          : new Column(children: <Widget>[
-              CircularProgressWithText(
-                  currentDownloads.length == 1
-                      ? new Text(
-                          "Downloading: '" +
-                              currentDownloads.elementAt(0).title +
-                              "'",
-                          style: connectionLostTextStyle)
-                      : new Text(
-                          currentDownloads.length.toString() +
-                              " downloads running",
-                          style: connectionLostTextStyle),
-                  Colors.green,
-                  Colors.white),
-              new Flexible(
-                child: new ListView.builder(
-                    itemBuilder: itemBuilder,
-                    itemCount:
-                        currentDownloads.length + downloadedVideos.length),
-              )
-            ]),
+              itemCount: currentDownloads.length + downloadedVideos.length),
+        )
+      ]),
     );
   }
 
@@ -202,7 +206,7 @@ class DownloadSectionState extends State<DownloadSection> {
 
     new Timer(new Duration(milliseconds: milliseconds), () {
       appState.downloadManager.deleteVideo(id).then((bool deletedSuccessfully) {
-        if (deletedSuccessfully) {
+        if (deletedSuccessfully && mounted) {
           setState(() {
             userDeletedAppId.remove(id);
           });

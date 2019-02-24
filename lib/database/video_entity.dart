@@ -10,6 +10,7 @@ class VideoEntity {
   String description;
   String title;
   int timestamp;
+  int timestamp_video_saved;
   var duration;
   int size;
   String url_website;
@@ -32,6 +33,7 @@ class VideoEntity {
   static final String descriptionColumn = "description";
   static final String titleColumn = "title";
   static final String timestampColumn = "timestamp";
+  static final String timestamp_video_savedColumn = "timestamp_video_saved";
   static final String durationColumn = "duration";
   static final String sizeColumn = "size";
   static final String url_websiteColumn = "url_website";
@@ -52,6 +54,7 @@ class VideoEntity {
       this.description,
       this.title,
       this.timestamp,
+      this.timestamp_video_saved,
       this.duration,
       this.size,
       this.url_website,
@@ -73,6 +76,7 @@ class VideoEntity {
         video.description,
         video.title,
         video.timestamp,
+        0,
         video.duration,
         video.size,
         video.url_website,
@@ -91,6 +95,7 @@ class VideoEntity {
         description = json['description'],
         title = json['title'],
         timestamp = json['timestamp'],
+        timestamp_video_saved = json['timestamp_video_saved'],
         duration = json['duration'],
         size = json['size'],
         url_website = json['url_website'],
@@ -112,6 +117,7 @@ class VideoEntity {
       'description': description,
       'title': title,
       'timestamp': timestamp,
+      'timestamp_video_saved': timestamp_video_saved,
       'duration': duration,
       'size': size,
       'url_website': url_website,

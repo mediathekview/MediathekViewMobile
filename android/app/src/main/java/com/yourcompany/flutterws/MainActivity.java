@@ -1,15 +1,14 @@
 package com.yourcompany.flutterws;
 
 import android.annotation.TargetApi;
-import android.app.DownloadManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.yourcompany.flutterws.download.FilesystemPermissionStreamHandler;
-import com.yourcompany.flutterws.download.PermissionMethodHandler;
+import com.yourcompany.flutterws.filesystempermission.FilesystemPermissionStreamHandler;
+import com.yourcompany.flutterws.filesystempermission.PermissionMethodHandler;
 import com.yourcompany.flutterws.video.VideoCallHandler;
 import com.yourcompany.flutterws.video.VideoStreamHandler;
 
@@ -39,10 +38,6 @@ public class MainActivity extends FlutterActivity{
 
   //Handler
   FilesystemPermissionStreamHandler filesystemPermissionStreamHandler;
-
-
-  //mapping: userChoosenId -> downloadManager id
-  public static ConcurrentHashMap<String, Integer> currentlyRunning = new ConcurrentHashMap();
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {

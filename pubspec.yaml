@@ -17,6 +17,8 @@ dependencies:
   synchronized: '^1.5.3+2'
   flutter_downloader: '^1.1.6'
   bubble_bottom_bar: '^0.0.5'
+  shimmer: '^1.0.0'
+  flutter_spinkit: '^3.1.0'
   flutter:
     sdk: flutter
 

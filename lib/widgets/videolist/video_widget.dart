@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/database/video_entity.dart';
+import 'package:flutter_ws/global_state/list_state_container.dart';
+import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/platform_channels/video_manager.dart';
 import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
-import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:logging/logging.dart';
 
 class VideoWidget extends StatefulWidget {
@@ -49,6 +49,9 @@ class VideoWidgetState extends State<VideoWidget> {
       VideoPreviewManager previewController =
           appWideState.appState.videoPreviewManager;
       //Manager will update state of this widget!
+      if (widget.entity == null && widget.video == null) {
+        return new Container();
+      }
       if (widget.entity == null) {
         previewController.startPreviewGeneration(this, widget.videoId,
             url: widget.video.url_video);

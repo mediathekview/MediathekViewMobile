@@ -47,9 +47,11 @@ class _VideoPreviewAdapterState extends State<VideoPreviewAdapter> {
               entity.title +
               " and filename: " +
               entity.fileName);
-          setState(() {
-            videoEntity = entity;
-          });
+          if (mounted) {
+            setState(() {
+              videoEntity = entity;
+            });
+          }
         }
       });
 

@@ -75,7 +75,7 @@ dependencies {
     implementation(name:'armv7-fmmr', ext:'aar')
     //implementation(name:'x86-fmmr', ext:'aar')
     // full exoplayer library
-    compile 'com.google.android.exoplayer:exoplayer:2.8.1'
+    implementation 'com.google.android.exoplayer:exoplayer:2.8.1'
 }
 
 

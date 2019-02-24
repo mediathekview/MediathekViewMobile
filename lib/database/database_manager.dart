@@ -38,7 +38,7 @@ create table ''' +
         ''' text primary key, 
          ''' +
         VideoEntity.task_idColumn +
-        ''' text not null,
+        ''' VARCHAR ( 256 ) not null,
        ''' +
         VideoEntity.channelColumn +
         ''' text not null,
@@ -53,6 +53,9 @@ create table ''' +
         ''' text not null,
        ''' +
         VideoEntity.timestampColumn +
+        ''' integer,
+       ''' +
+        VideoEntity.timestamp_video_savedColumn +
         ''' integer,
        ''' +
         VideoEntity.durationColumn +
@@ -92,7 +95,11 @@ create table ''' +
   }
 
   Future insert(VideoEntity video) async {
-    await db.insert(VideoEntity.TABLE_NAME, video.toMap());
+    Map<String, dynamic> map = video.toMap();
+    map.update("timestamp_video_saved",
+        (old) => new DateTime.now().millisecondsSinceEpoch);
+
+    await db.insert(VideoEntity.TABLE_NAME, map);
   }
 
   Future<int> deleteVideoEntity(String id) async {
@@ -102,10 +109,13 @@ create table ''' +
 
   Future<Set<VideoEntity>> getAllDownloadedVideos() async {
     //Downloaded videos have a filename set when the download finished, otherwise they are current downloads
-    List<Map> result = await db.query(VideoEntity.TABLE_NAME,
-        columns: getColums(),
-        where: VideoEntity.fileNameColumn + " != ?",
-        whereArgs: ['']);
+    List<Map> result = await db.query(
+      VideoEntity.TABLE_NAME,
+      columns: getColums(),
+      where: VideoEntity.fileNameColumn + " != ?",
+      orderBy: VideoEntity.timestamp_video_savedColumn + " DESC",
+      whereArgs: [''],
+    );
     if (result != null && result.length > 0) {
       return result.map((raw) => new VideoEntity.fromMap(raw)).toSet();
     }
@@ -198,6 +208,7 @@ create table ''' +
       VideoEntity.descriptionColumn,
       VideoEntity.titleColumn,
       VideoEntity.timestampColumn,
+      VideoEntity.timestamp_video_savedColumn,
       VideoEntity.durationColumn,
       VideoEntity.sizeColumn,
       VideoEntity.url_websiteColumn,

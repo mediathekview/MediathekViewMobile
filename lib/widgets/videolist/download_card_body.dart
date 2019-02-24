@@ -106,7 +106,9 @@ class DownloadCardBodyState extends State<DownloadCardBody> {
                                         style: subHeaderTextStyle.copyWith(
                                             color: Colors.black)),
                                     Colors.white,
-                                    Colors.grey)
+                                    Colors.grey,
+                                    height: 40.0,
+                                  )
                                 : new Text(
                                     getVideoDownloadText(
                                         widget.isDownloadedAlready),

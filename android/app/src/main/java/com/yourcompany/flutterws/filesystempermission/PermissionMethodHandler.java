@@ -1,17 +1,14 @@
-package com.yourcompany.flutterws.download;
+package com.yourcompany.flutterws.filesystempermission;
 
 import android.annotation.TargetApi;
-import android.app.DownloadManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Log;
-import android.webkit.MimeTypeMap;
 
 import com.yourcompany.flutterws.MainActivity;
 
 import java.util.HashMap;
-import java.util.Map;
 
 import androidx.core.app.ActivityCompat;
 import io.flutter.plugin.common.MethodCall;

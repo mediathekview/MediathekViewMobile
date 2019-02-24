@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/util/row_adapter.dart';
+import 'package:flutter_ws/widgets/videolist/loading_list_view.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 
@@ -13,26 +15,32 @@ class ScrollPositionHolder {
 class VideoListView extends StatefulWidget {
   final Logger logger = new Logger('VideoListView');
   final int pageThreshold = 25;
-  final ScrollPositionHolder offset = new ScrollPositionHolder();
+  // final ScrollPositionHolder offset = new ScrollPositionHolder();
 
   List<Video> videos;
   var queryEntries;
+  var refreshList;
   int amountOfVideosFetched;
+  int totalResultSize;
+  int currentQuerySkip;
 
   VideoListView({
     Key key,
     @required this.queryEntries,
     @required this.amountOfVideosFetched,
     @required this.videos,
+    @required this.refreshList,
+    @required this.totalResultSize,
+    @required this.currentQuerySkip,
   }) : super(key: key);
 
-  double getOffsetMethod() {
+  /*double getOffsetMethod() {
     return offset.value;
   }
 
   void setOffsetMethod(double val) {
     offset.value = val;
-  }
+  }*/
 
   @override
   _VideoListViewState createState() => _VideoListViewState();
@@ -45,7 +53,7 @@ class _VideoListViewState extends State<VideoListView> {
   void initState() {
     super.initState();
 
-    if (widget.getOffsetMethod() != null) {
+    /* if (widget.getOffsetMethod() != null) {
       widget.logger.fine(
           "Video List View get offset: " + widget.getOffsetMethod().toString());
       scrollController =
@@ -53,7 +61,7 @@ class _VideoListViewState extends State<VideoListView> {
     } else {
       widget.logger.fine("Video List View: Not Setting scroll offset -> NULL");
       scrollController = new ScrollController();
-    }
+    }*/
   }
 
   @override
@@ -67,42 +75,44 @@ class _VideoListViewState extends State<VideoListView> {
     } else if (widget.videos.length == 0) {
       widget.logger.fine("Searching: video list legth : 0 & amountFetched: " +
           widget.amountOfVideosFetched.toString());
-      return new Container(
-        alignment: Alignment.center,
-        child: new CircularProgressIndicator(
-            valueColor:
-                new AlwaysStoppedAnimation<Color>(new Color(0xffffbf00)),
-            strokeWidth: 5.0,
-            backgroundColor: Colors.white),
-      );
+
+      return new Stack(children: <Widget>[
+        new LoadingListPage(),
+        new Center(
+            child: SpinKitCubeGrid(
+          size: 100.0,
+          color: Color(0xffffbf00),
+          duration: const Duration(milliseconds: 500),
+        )),
+      ]);
     }
 
-    return new ListView.builder(
+    return ListView.builder(
         controller: scrollController,
         itemBuilder: itemBuilder,
         itemCount: widget.videos.length);
   }
 
   Widget itemBuilder(BuildContext context, int index) {
-    if (Scrollable.of(context) != null &&
+    /* if (Scrollable.of(context) != null &&
         Scrollable.of(context).position != null &&
-        Scrollable.of(context).position.pixels != null)
+        Scrollable.of(context).position.pixels != null &&
+        mounted)
       widget.setOffsetMethod(Scrollable.of(context).position.pixels);
     else
       widget.logger
           .severe("Video List View: Error could not set pixel position");
-
+*/
     if (index + widget.pageThreshold > widget.videos.length) {
       widget.queryEntries();
     }
 
-    if (widget.videos.length == index + 1) {
-      widget.logger.fine("Return progress indicator. Video list length is " +
-          widget.videos.length.toString() +
-          " and index is " +
-          index.toString() +
-          " Amount Fetched: " +
-          widget.amountOfVideosFetched.toString());
+    if (widget.currentQuerySkip + widget.pageThreshold >=
+            widget.totalResultSize &&
+        widget.videos.length == index + 1) {
+      widget.logger.info("ResultList - reached last position of result list.");
+    } else if (widget.videos.length == index + 1) {
+      widget.logger.info("Reached last position in list for query");
       return new Container(
           alignment: Alignment.center,
           width: 20.0,

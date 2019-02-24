@@ -1,16 +1,8 @@
-package com.yourcompany.flutterws.download;
+package com.yourcompany.flutterws.filesystempermission;
 
-import android.app.DownloadManager;
 import android.util.Log;
 
-import com.yourcompany.flutterws.MainActivity;
-
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import io.flutter.plugin.common.EventChannel;
 
