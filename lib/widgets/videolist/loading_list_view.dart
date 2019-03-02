@@ -15,9 +15,10 @@ class LoadingListPage extends StatelessWidget {
     int num = determineNumberOfNeededTilesToFillScreen(context, 130);
     List<int> children = new List(num);
 
-    return Container(
-      width: double.infinity,
-      child: Column(
+    return new SingleChildScrollView(
+      child: new Column(
+        mainAxisSize: MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: children
             .map(
               (_) => Column(

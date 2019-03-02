@@ -30,11 +30,11 @@ class _DownloadProgressbarStatefulState
   @override
   void dispose() {
     super.dispose();
-    widget.logger.fine("Cancle subscription in dowlnload section");
+    widget.logger.info("Cancle subscription in dowlnload section");
     widget.downloadManager.cancelSubscription(widget.video.id);
   }
 
-  @override
+/*  @override
   void initState() {
     widget.downloadManager
         .isCurrentlyDownloading(widget.video.id)
@@ -44,7 +44,7 @@ class _DownloadProgressbarStatefulState
             downloadTask.progress.toDouble());
       }
     });
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -88,14 +88,14 @@ class _DownloadProgressbarStatefulState
     widget.logger
         .info("Download video: " + videoId + " received 'failed' signal");
     _updateStatus(DownloadTaskStatus.failed, videoId);
-    widget.onDownloadFinished();
+    widget.onDownloadFinished(videoId);
   }
 
   void onDownloaderComplete(String videoId) {
     widget.logger
         .info("Download video: " + videoId + " received 'complete' signal");
     _updateStatus(DownloadTaskStatus.complete, videoId);
-    widget.onDownloadFinished();
+    widget.onDownloadFinished(videoId);
   }
 
   void onSubscriptionCanceled(String videoId) {
@@ -103,12 +103,12 @@ class _DownloadProgressbarStatefulState
         .info("Download video: " + videoId + " received 'concaled' signal");
     widget.onDownloadFinished();
     _updateStatus(DownloadTaskStatus.canceled, videoId);
-    widget.onDownloadFinished();
+    widget.onDownloadFinished(videoId);
   }
 
   void onDownloadStateChanged(String videoId, DownloadTaskStatus updatedStatus,
       double updatedProgress) {
-    widget.logger.fine("Download: " +
+    widget.logger.info("Download: " +
         widget.video.title +
         " status: " +
         updatedStatus.toString() +

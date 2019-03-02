@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/enum/channels.dart';
@@ -39,6 +37,7 @@ class DownloadSectionState extends State<DownloadSection> {
   Widget build(BuildContext context) {
     appState = AppSharedStateContainer.of(context).appState;
 
+    appState.downloadManager.syncCompletedDownloads();
     loadAlreadyDownloadedVideosFromDb();
     loadCurrentDownloads();
 
@@ -85,14 +84,14 @@ class DownloadSectionState extends State<DownloadSection> {
 
   Widget itemBuilder(BuildContext context, int index) {
     VideoEntity entity;
-    int length = currentDownloads.length;
+    int currentDownloadsLength = currentDownloads.length;
     bool isDownloadedAlready = true;
 
-    if (index <= length - 1 && length > 0) {
+    if (index <= currentDownloadsLength - 1 && currentDownloadsLength > 0) {
       entity = currentDownloads.elementAt(index);
     } else {
       //index already in downloaded videos
-      int downloadedVideoIndex = index - length;
+      int downloadedVideoIndex = index - currentDownloadsLength;
       entity = downloadedVideos.elementAt(downloadedVideoIndex);
       isDownloadedAlready = false;
     }
@@ -109,7 +108,8 @@ class DownloadSectionState extends State<DownloadSection> {
         new Stack(
           children: <Widget>[
             new Positioned(
-              child: (index <= length - 1 && length > 0)
+              child: (index <= currentDownloadsLength - 1 &&
+                      currentDownloadsLength > 0)
                   ? new VideoPreviewAdapter(entity.id,
                       video: Video.fromMap(entity.toMap()),
                       showLoadingIndicator: false)
@@ -187,34 +187,20 @@ class DownloadSectionState extends State<DownloadSection> {
       ]),
     );
 
-    return new AnimatedOpacity(
-        opacity:
-            userDeletedAppId != null && userDeletedAppId.contains(entity.id)
-                ? 0.0
-                : 1.0,
-        // Fade out when user just deleted the app
-        curve: Curves.easeOut,
-        duration: new Duration(milliseconds: milliseconds),
-        child: listRow);
+    return listRow;
   }
 
   //Cancels active download (remove from task schema), removes the file from local storage & deletes the entry in VideoEntity schema
   void deleteDownload(BuildContext context, String id) {
-    setState(() {
-      userDeletedAppId.add(id);
-    });
-
-    new Timer(new Duration(milliseconds: milliseconds), () {
-      appState.downloadManager.deleteVideo(id).then((bool deletedSuccessfully) {
-        if (deletedSuccessfully && mounted) {
-          setState(() {
-            userDeletedAppId.remove(id);
-          });
-          return;
-        }
-        SnackbarActions.showErrorWithTryAgain(context, ERROR_MSG, TRY_AGAIN_MSG,
-            appState.downloadManager.deleteVideo, id);
-      });
+    appState.downloadManager.deleteVideo(id).then((bool deletedSuccessfully) {
+      if (deletedSuccessfully && mounted) {
+        setState(() {
+          SnackbarActions.showSuccess(context, "Successfully deleted ");
+        });
+        return;
+      }
+      SnackbarActions.showErrorWithTryAgain(context, ERROR_MSG, TRY_AGAIN_MSG,
+          appState.downloadManager.deleteVideo, id);
     });
   }
 
@@ -241,8 +227,10 @@ class DownloadSectionState extends State<DownloadSection> {
     }
   }
 
-  void OnDownloadFinished() {
+  void OnDownloadFinished(String videoId) {
+    widget.logger.info("Download Successfull");
     if (mounted) {
+      widget.logger.info("Successfull and mounted");
       setState(() {});
     }
   }

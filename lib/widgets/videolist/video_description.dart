@@ -61,18 +61,41 @@ class VideoDescription extends StatelessWidget {
                   children: <Widget>[
                     getVerticalDividerLine(bottom: 15.0),
                     getCaption("Titel"),
-                    getSpacedContentRow(video.title),
+                    new Text(
+                      video.title,
+                      style: Theme.of(context)
+                          .textTheme
+                          .title
+                          .copyWith(color: Colors.black, fontSize: 15.0),
+                    ),
+                    //getSpacedContentRow(video.title),
                     getDivider(),
                     getCaption("Thema"),
-                    getSpacedContentRow(video.topic),
+                    new Text(
+                      video.topic,
+                      style: Theme.of(context)
+                          .textTheme
+                          .title
+                          .copyWith(color: Colors.black, fontSize: 15.0),
+                    ),
                     getDivider(),
                     getCaption("Länge"),
-                    getSpacedContentRow(
-                        Calculator.calculateDuration(video.duration)),
+                    new Text(
+                      Calculator.calculateDuration(video.duration),
+                      style: Theme.of(context)
+                          .textTheme
+                          .title
+                          .copyWith(color: Colors.black, fontSize: 15.0),
+                    ),
                     getDivider(),
                     getCaption("Ausgestrahlt"),
-                    getSpacedContentRow(
-                        Calculator.calculateTimestamp(video.timestamp)),
+                    new Text(
+                      Calculator.calculateTimestamp(video.timestamp),
+                      style: Theme.of(context)
+                          .textTheme
+                          .title
+                          .copyWith(color: Colors.black, fontSize: 15.0),
+                    ),
                     video.description != null && video.description.isNotEmpty
                         ? getDivider()
                         : new Container(),
@@ -117,36 +140,6 @@ class VideoDescription extends StatelessWidget {
       caption,
       style: Theme.of(context).textTheme.title.copyWith(
           color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20.0),
-    );
-  }
-
-  Padding getSpacedContentRow(String content) {
-    return new Padding(
-      padding: EdgeInsets.only(left: 15.0),
-      child: new Row(
-        children: <Widget>[
-          new Container(
-            height: 10.0,
-            width: 10.0,
-            decoration: new BoxDecoration(
-              color: Colors.black,
-              shape: BoxShape.circle,
-            ),
-          ),
-          new Padding(
-            padding: EdgeInsets.only(left: 10.0),
-            child: new Text(
-              content,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context)
-                  .textTheme
-                  .title
-                  .copyWith(color: Colors.black, fontSize: 15.0),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

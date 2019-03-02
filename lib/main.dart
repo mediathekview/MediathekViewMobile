@@ -24,6 +24,7 @@ import 'package:flutter_ws/widgets/bars/status_bar.dart';
 import 'package:flutter_ws/widgets/filterMenu/filter_menu.dart';
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
 import 'package:flutter_ws/widgets/videolist/video_list_view.dart';
+import 'package:flutter_ws/widgets/videolist/videolist_util.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 
@@ -378,7 +379,10 @@ class HomePageState extends State<MyHomePage>
     });
   }
 
-  // gets triggered whenever TabController changes page. This can be due to a user's swipe or via tab on the BottomNavigationBar
+  /*
+    Gets triggered whenever TabController changes page.
+    This can be due to a user's swipe or via tab on the BottomNavigationBar
+   */
   onUISectionChange() {
     if (this._page != _controller.index) {
       logger
@@ -456,10 +460,11 @@ class HomePageState extends State<MyHomePage>
 
       List<Video> newVideosFromQuery = queryResult.videos;
       totalQueryResults = queryResult.queryInfo.totalResults;
-
       lastAmountOfVideosRetrieved = newVideosFromQuery.length;
 
-      int newVideosCount = addVideos(newVideosFromQuery);
+      int videoListLengthOld = videos.length;
+      videos = VideoListUtil.sanitizeVideos(newVideosFromQuery, videos);
+      int newVideosCount = videos.length - videoListLengthOld;
 
       if (newVideosCount == 0 && scrolledToEndOfList == false) {
         logger.fine("Scrolled to end of list & mounted: " + mounted.toString());
@@ -498,37 +503,6 @@ class HomePageState extends State<MyHomePage>
     } else {
       logger.info("Received pong");
     }
-  }
-
-  int addVideos(List<Video> newVideosFromQuery) {
-    int newVideosCount = 0;
-    for (int i = 0; i < newVideosFromQuery.length; i++) {
-      Video currentVideo = newVideosFromQuery[i];
-      bool hasDuplicate = false;
-      for (int b = i + 1; b < newVideosFromQuery.length + videos.length; b++) {
-        Video video;
-
-        if (b > newVideosFromQuery.length - 1) {
-          int index = b - newVideosFromQuery.length;
-          video = videos[index];
-        } else {
-          video = newVideosFromQuery[b];
-        }
-        if (video.id == currentVideo.id ||
-            video.title == currentVideo.title &&
-                video.duration == currentVideo.duration) {
-          hasDuplicate = true;
-          break;
-        }
-      }
-      if (hasDuplicate == false) {
-        //TODO exclude ORF atm
-        if (currentVideo.channel == "ORF") continue;
-        videos.add(currentVideo);
-        newVideosCount++;
-      }
-    }
-    return newVideosCount;
   }
 
   // ----------CALLBACKS: From List View ----------------

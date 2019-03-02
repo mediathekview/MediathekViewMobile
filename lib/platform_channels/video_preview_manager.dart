@@ -17,6 +17,7 @@ class VideoPreviewManager {
   StreamSubscription<dynamic> streamSubscription;
 
   //management inside of Manager, that it can update the correct widgets! -> simple solution
+  //videoId -> VideoWidgetState
   Map<String, VideoWidgetState> _widgetsWaitingForPreview;
 
   VideoPreviewManager(BuildContext context) {

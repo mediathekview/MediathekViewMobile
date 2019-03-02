@@ -103,8 +103,9 @@ class AppSharedState extends State<AppSharedStateContainer> {
     //appState.databaseManager.deleteDb(path);
     //appState.databaseManager.deleteDb(join(documentsDirectory.path, "task.db"));
     return appState.databaseManager.open(path).then(
-        (dynamic) => logger.info("Successfully opened database"),
-        onError: (e) => logger.severe("Error when opening database"));
+          (dynamic) => logger.info("Successfully opened database"),
+          onError: (e) => logger.severe("Error when opening database"),
+        );
   }
 
   void _initializeListState() {

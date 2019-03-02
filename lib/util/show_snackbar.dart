@@ -5,7 +5,22 @@ class SnackbarActions {
     Scaffold.of(context).showSnackBar(
       new SnackBar(
         backgroundColor: Colors.red,
-        content: new Text(msg),
+        content: new Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[new Text(msg)],
+        ),
+      ),
+    );
+  }
+
+  static void showSuccess(BuildContext context, String msg) {
+    Scaffold.of(context).showSnackBar(
+      new SnackBar(
+        backgroundColor: Colors.green,
+        content: new Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[new Text(msg)],
+        ),
       ),
     );
   }
