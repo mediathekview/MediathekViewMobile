@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ws/widgets/filterMenu/channel_picker.dart';
 import 'package:flutter_ws/widgets/filterMenu/filtermenu_channel_edit_button.dart';
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
-import 'package:flutter_ws/global_state/appBar_state_container.dart';
-import 'package:meta/meta.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 
 class FilterMenu extends StatelessWidget {
   final Logger logger = new Logger('FilterMenu');
@@ -39,55 +38,52 @@ class FilterMenu extends StatelessWidget {
         ? new TextEditingController(text: searchFilters['Thema'].filterValue)
         : new TextEditingController();
 
-    return new GestureDetector(
-      onTap: () {
-        FilterBarSharedState.of(context).updateAppBarState();
-      },
-      child: new Container(
-        decoration: new BoxDecoration(
-          color: Colors.grey[800],
-        ),
-        child: new Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            getFilterMenuRow("Thema", "Thema", _themaFieldController),
-
-            getFilterMenuRow("Titel", "Titel", _titleFieldController),
-            //Sender row
-            new Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              mainAxisSize: MainAxisSize.max,
-//            crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                new Container(
-                    width: 80.0,
-                    child: new Padding(
-                        padding: new EdgeInsets.only(right: 15.0),
-                        child: new Text(
-                          "Sender",
-                          style: theme.textTheme.body2,
-                          textAlign: TextAlign.start,
-                        ))),
-                searchFilters["Sender"] == null ||
-                        searchFilters["Sender"].filterValue.isEmpty
-                    ? new Switch(
-                        value: false,
-                        onChanged: (bool isEnabled) {
-                          if (isEnabled) {
-                            logger.fine("User enabled channel switch");
-                            _openAddEntryDialog(context);
-                          }
-                        })
-                    : new FilterMenuChannelEditButton(
-                        handleTabCallback: _openAddEntryDialog,
-                        icon: new Icon(Icons.edit, size: 50.0),
-                        displayText: "Sender"),
-              ],
-            ),
-          ],
-        ),
+    return new Container(
+      decoration: new BoxDecoration(
+        color: Colors.grey[800],
       ),
+      child: new Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          getFilterMenuRow("Thema", "Thema", _themaFieldController),
+          getFilterMenuRow("Titel", "Titel", _titleFieldController),
+          getChannelRow(context),
+        ],
+      ),
+    );
+  }
+
+  Row getChannelRow(BuildContext context) {
+    return new Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisSize: MainAxisSize.max,
+//            crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        new Container(
+            width: 80.0,
+            child: new Padding(
+                padding: new EdgeInsets.only(right: 15.0),
+                child: new Text(
+                  "Sender",
+                  style: theme.textTheme.body2,
+                  textAlign: TextAlign.start,
+                ))),
+        searchFilters["Sender"] == null ||
+                searchFilters["Sender"].filterValue.isEmpty
+            ? new Switch(
+                value: false,
+                onChanged: (bool isEnabled) {
+                  if (isEnabled) {
+                    logger.fine("User enabled channel switch");
+                    _openAddEntryDialog(context);
+                  }
+                })
+            : new FilterMenuChannelEditButton(
+                handleTabCallback: _openAddEntryDialog,
+                icon: new Icon(Icons.edit, size: 50.0),
+                displayText: "Sender"),
+      ],
     );
   }
 

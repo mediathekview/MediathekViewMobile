@@ -25,6 +25,9 @@ class VideoEntity {
   String fileName;
   String mimeType;
 
+  //local rating
+  double rating;
+
   //column names
   static final String idColumn = "id";
   static final String task_idColumn = "task_id";
@@ -42,6 +45,7 @@ class VideoEntity {
   static final String filmlisteTimestampColumn = "filmlisteTimestamp";
   static final String url_videoColumn = "url_video";
   static final String url_subtitleColumn = "url_subtitle";
+  static final String ratingColumn = "rating";
   static final String filePathColumn = "filePath";
   static final String fileNameColumn = "fileName";
   static final String mimeTypeColumn = "mimeType";
@@ -65,7 +69,8 @@ class VideoEntity {
       this.url_subtitle,
       {this.filePath,
       this.fileName,
-      this.mimeType});
+      this.mimeType,
+      this.rating});
 
   static VideoEntity fromVideo(Video video) {
     return new VideoEntity(
@@ -106,6 +111,7 @@ class VideoEntity {
         url_subtitle = json['url_subtitle'],
         filePath = json['filePath'],
         fileName = json['fileName'],
+        rating = json['rating'],
         mimeType = json['mimeType'];
 
   Map<String, dynamic> toMap() {
@@ -129,6 +135,7 @@ class VideoEntity {
       'filePath': filePath,
       'fileName': fileName,
       'mimeType': mimeType,
+      'rating': rating,
     };
     return map;
   }

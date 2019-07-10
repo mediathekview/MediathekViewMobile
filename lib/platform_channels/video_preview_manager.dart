@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/widgets/videolist/video_widget.dart';
 import 'package:logging/logging.dart';
+import 'package:quiver/collection.dart';
 
 class VideoPreviewManager {
   final Logger logger = new Logger('VideoPreviewManager');
@@ -18,19 +19,23 @@ class VideoPreviewManager {
 
   //management inside of Manager, that it can update the correct widgets! -> simple solution
   //videoId -> VideoWidgetState
-  Map<String, VideoWidgetState> _widgetsWaitingForPreview;
+  Multimap<String, VideoWidgetState> _widgetsWaitingForPreview;
 
   VideoPreviewManager(BuildContext context) {
-    _eventChannel = const EventChannel('samples.flutter.io/videoEvent');
-    _methodChannel = const MethodChannel('samples.flutter.io/video');
+    _eventChannel = const EventChannel('com.mediathekview.mobile/videoEvent');
+    _methodChannel = const MethodChannel('com.mediathekview.mobile/video');
     _appWideState = AppSharedStateContainer.of(context);
-    _widgetsWaitingForPreview = new Map();
-    _getBroadcastStream().listen(
-      (raw) => _onPreviewReceived(raw),
-      onError: (e) {
-        logger.severe("Preview generation failed. Reason " + e.toString());
-      },
-    );
+    _widgetsWaitingForPreview = new Multimap();
+    streamSubscription = _getBroadcastStream()
+        .listen((raw) => _onPreviewReceived(raw), onError: (e) {
+      logger.severe("Preview generation failed. Reason " + e.toString());
+    }, onDone: () {
+      logger.info("Preview event channel is done.");
+    }, cancelOnError: false);
+
+    if (streamSubscription.isPaused) {
+      logger.info("IS PAUSED.");
+    }
   }
 
   _onPreviewReceived(raw) {
@@ -39,19 +44,18 @@ class VideoPreviewManager {
     Uint8List bytes = raw['image'];
 
     _createImage(bytes).then((image) {
+      logger.fine("Flutter received preview for video: " + videoId);
       //add to global state
       _appWideState.addImagePreview(videoId, image);
 
-      VideoWidgetState widgetToUpdate = _widgetsWaitingForPreview[videoId];
-
-      if (widgetToUpdate != null) {
-        logger.fine("Updating image preview for video: " + videoId);
-        widgetToUpdate.previewImage = image;
-
-        if (widgetToUpdate.mounted) widgetToUpdate.setState(() {});
-
-        _widgetsWaitingForPreview.remove(videoId);
-      }
+      List<VideoWidgetState> widgetToUpdate =
+          _widgetsWaitingForPreview[videoId];
+      widgetToUpdate.forEach((widget) {
+        if (widget.previewImage == null) {
+          widget.previewImage = image;
+          if (widget.mounted) widget.setState(() {});
+        }
+      });
     });
   }
 
@@ -64,7 +68,14 @@ class VideoPreviewManager {
 
   Future startPreviewGeneration(VideoWidgetState state, String videoId,
       {String url, String fileName}) async {
-    _widgetsWaitingForPreview.putIfAbsent(videoId, () => state);
+    _widgetsWaitingForPreview.add(videoId, state);
+    generatePreview(videoId, url: url, fileName: fileName);
+  }
+
+  Future generatePreview(String videoId, {String url, String fileName}) async {
+    if (_appWideState.videoListState.previewImages.containsKey(videoId)) {
+      return;
+    }
 
     Map<String, String> requestArguments = new Map();
     requestArguments.putIfAbsent("videoId", () => videoId);
@@ -79,8 +90,6 @@ class VideoPreviewManager {
     } on PlatformException catch (e) {
       logger
           .severe("Starting Preview generation failed. Reason " + e.toString());
-
-      return;
     }
   }
 
@@ -92,5 +101,12 @@ class VideoPreviewManager {
 
     return new Image.memory(pictureRaw,
         fit: BoxFit.cover, height: height.toDouble(), width: width.toDouble());
+  }
+
+  void disableListeningForPreview() {
+    if (streamSubscription != null) {
+      streamSubscription.cancel();
+      streamSubscription = null;
+    }
   }
 }

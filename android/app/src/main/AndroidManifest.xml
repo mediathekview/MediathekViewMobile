@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.yourcompany.flutterws">
+          package="com.mediathekview.mobile">
 
     <!-- The INTERNET permission is required for development. Specifically,
          flutter needs it to communicate with the running application
@@ -50,9 +50,11 @@
             </intent-filter>
         </activity>
         <activity android:name=".activity.VideoPlayerActivity"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|fontScale"
             android:launchMode="singleTop"
-            android:theme="@style/PlayerTheme">
+            android:theme="@style/PlayerTheme"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="com.google.android.exoplayer.demo.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>

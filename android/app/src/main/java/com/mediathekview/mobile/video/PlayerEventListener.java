@@ -1,5 +1,7 @@
-package com.yourcompany.flutterws.video;
+package com.mediathekview.mobile.video;
 
+import android.app.Activity;
+import android.content.Context;
 import android.view.View;
 import android.widget.ProgressBar;
 
@@ -14,9 +16,14 @@ import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 public class PlayerEventListener extends Player.DefaultEventListener {
 
     ProgressBar progressBar;
+    ExoPlayer exoPlayer;
+    Activity activity;
 
-    public PlayerEventListener(ProgressBar progressBar) {
+
+    public PlayerEventListener(ProgressBar progressBar, ExoPlayer exoPlayer, Activity activity) {
         this.progressBar = progressBar;
+        this.exoPlayer = exoPlayer;
+        this.activity = activity;
     }
 
     @Override
@@ -41,6 +48,11 @@ public class PlayerEventListener extends Player.DefaultEventListener {
         } else {
             progressBar.setVisibility(View.INVISIBLE);
         }
+
+        if (playbackState == ExoPlayer.STATE_ENDED){
+            exoPlayer.release();
+            activity.finish();
+        }
     }
 
     @Override
@@ -50,7 +62,7 @@ public class PlayerEventListener extends Player.DefaultEventListener {
 
     @Override
     public void onPlayerError(ExoPlaybackException error) {
-
+        // TODO close activity and raise an error
     }
 
 

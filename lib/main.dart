@@ -14,6 +14,7 @@ import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/section/about_section.dart';
 import 'package:flutter_ws/section/download_section.dart';
 import 'package:flutter_ws/section/live_tv_section.dart';
+import 'package:flutter_ws/section/overview_section.dart';
 import 'package:flutter_ws/util/json_parser.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/websocket/websocket.dart';
@@ -47,6 +48,7 @@ class MyApp extends StatelessWidget {
     });
 
     Uuid uuid = new Uuid();
+
     return new MaterialApp(
       theme: new ThemeData(
         textTheme: new TextTheme(
@@ -92,7 +94,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<MyHomePage>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   List<Video> videos;
   final Logger logger;
 
@@ -268,6 +270,7 @@ class HomePageState extends State<MyHomePage>
       body: new TabBarView(
         controller: _controller,
         children: <Widget>[
+          new OverviewSection(),
           new SafeArea(child: getVideoSearchListWidget()),
           //liveTVSection == null ? new LiveTVSection() : liveTVSection,
           downloadSection == null ? new DownloadSection() : downloadSection,
@@ -282,48 +285,47 @@ class HomePageState extends State<MyHomePage>
           BubbleBottomBarItem(
               backgroundColor: Colors.red,
               icon: Icon(
-                Icons.search,
+                Icons.home,
                 color: Colors.black,
               ),
               activeIcon: Icon(
-                Icons.search,
+                Icons.home,
                 color: Colors.red,
               ),
-              title: Text("Suche")),
-          /*BubbleBottomBarItem(
-            backgroundColor: Colors.deepPurple,
-            icon: Icon(
-              Icons.live_tv,
-              color: Colors.black,
-            ),
-            activeIcon: Icon(
-              Icons.live_tv,
-              color: Colors.deepPurple,
-            ),
-            title: Text("Live"),
-          ),*/
+              title: Text("Home")),
+          BubbleBottomBarItem(
+              backgroundColor: Colors.blue,
+              icon: Icon(
+                Icons.live_tv,
+                color: Colors.black,
+              ),
+              activeIcon: Icon(
+                Icons.live_tv,
+                color: Colors.blue,
+              ),
+              title: Text("Mediathek")),
           BubbleBottomBarItem(
               backgroundColor: Colors.green,
               icon: Icon(
-                Icons.file_download,
+                Icons.folder,
                 color: Colors.black,
               ),
               activeIcon: Icon(
-                Icons.file_download,
+                Icons.folder,
                 color: Colors.green,
               ),
-              title: Text("Saved")),
+              title: Text("Bibliothek")),
           BubbleBottomBarItem(
-              backgroundColor: Colors.indigo,
+              backgroundColor: Colors.purple,
               icon: Icon(
                 Icons.info_outline,
                 color: Colors.black,
               ),
               activeIcon: Icon(
                 Icons.info_outline,
-                color: Colors.indigo,
+                color: Colors.purple,
               ),
-              title: Text("Info"))
+              title: Text("About"))
         ],
       ),
     );
@@ -334,6 +336,7 @@ class HomePageState extends State<MyHomePage>
     Widget videoSearchList = new Column(children: <Widget>[
       new FilterBarSharedState(
         child: new GradientAppBar(
+            this,
             searchFieldController,
             new FilterMenu(
                 searchFilters: searchFilters,
@@ -345,13 +348,16 @@ class HomePageState extends State<MyHomePage>
       ),
       new Flexible(
         child: new RefreshIndicator(
-            child: new VideoListView(
-              key: videoListKey,
-              videos: videos,
-              amountOfVideosFetched: lastAmountOfVideosRetrieved,
-              queryEntries: onQueryEntries,
-              currentQuerySkip: websocketController.getCurrentSkip(),
-              totalResultSize: totalQueryResults,
+            child: new Scrollbar(
+              child: new VideoListView(
+                key: videoListKey,
+                videos: videos,
+                amountOfVideosFetched: lastAmountOfVideosRetrieved,
+                queryEntries: onQueryEntries,
+                currentQuerySkip: websocketController.getCurrentSkip(),
+                totalResultSize: totalQueryResults,
+                mixin: this,
+              ),
             ),
             onRefresh: _handleListRefresh),
       ),

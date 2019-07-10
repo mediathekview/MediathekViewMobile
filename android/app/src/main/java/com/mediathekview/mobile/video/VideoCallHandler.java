@@ -1,15 +1,14 @@
-package com.yourcompany.flutterws.video;
+package com.mediathekview.mobile.video;
 
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
 
-import com.yourcompany.flutterws.MainActivity;
-import com.yourcompany.flutterws.activity.VideoPlayerActivity;
+import com.mediathekview.mobile.MainActivity;
+import com.mediathekview.mobile.activity.VideoPlayerActivity;
 
 import java.io.File;
 
@@ -20,11 +19,12 @@ public class VideoCallHandler implements MethodChannel.MethodCallHandler {
 
     private static final String TAG = "VIDEO_CALL_HANDLER";
     public static final String FILE_PATH = "FILE_PATH";
-    public static final String MIME_TYPE = "MIME_TYPE";
+    public static final String VIDEO_ID = "VIDEO_ID";
+    public static final String PROGRESS = "PROGRESS";
     Context context;
-    VideoStreamHandler downloadStreamHandler;
+    com.mediathekview.mobile.video.VideoStreamHandler downloadStreamHandler;
 
-    public VideoCallHandler(Context context, VideoStreamHandler streamHandler) {
+    public VideoCallHandler(Context context, com.mediathekview.mobile.video.VideoStreamHandler streamHandler) {
         this.context = context;
         this.downloadStreamHandler = streamHandler;
     }
@@ -32,26 +32,23 @@ public class VideoCallHandler implements MethodChannel.MethodCallHandler {
     @TargetApi(Build.VERSION_CODES.GINGERBREAD)
     @Override
     public void onMethodCall(MethodCall call, MethodChannel.Result result) {
-
-
         Log.i("VIDEO Call Handler", "Method call with identifier " + call.method + " received");
 
         if (call.method.equals("playVideo")) {
             String filePath = call.argument("filePath");
+            String videoId = call.argument("videoId");
+            String progress = call.argument("progress");
 
-            Log.i(TAG, "Opening video with  filePath : " + filePath);
-
-
+            Log.i(TAG, "Opening video with  filePath : " + filePath + " at playback position: " + progress);
 
             Intent intent = new Intent(context, VideoPlayerActivity.class);
             intent.putExtra(FILE_PATH, filePath);
+            intent.putExtra(VIDEO_ID, videoId);
+            intent.putExtra(VIDEO_ID, videoId);
+            intent.putExtra(PROGRESS, Long.parseLong(progress));
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             MainActivity.context.startActivity(intent);
-
-
-
-
 
             /*Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(filePath));
 

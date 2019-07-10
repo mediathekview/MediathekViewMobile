@@ -15,9 +15,15 @@ class GradientAppBar extends StatelessWidget {
   FilterMenu filterMenu;
   List<SearchFilter> searchFilters;
   StateContainerAppBarState state;
+  TickerProviderStateMixin mixin;
 
-  GradientAppBar(this.controller, this.filterMenu, this.isFilterMenuOpen,
-      this.currentAmountOfVideosInList, this.totalAmountOfVideosForSelection);
+  GradientAppBar(
+      this.mixin,
+      this.controller,
+      this.filterMenu,
+      this.isFilterMenuOpen,
+      this.currentAmountOfVideosInList,
+      this.totalAmountOfVideosForSelection);
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +56,14 @@ class GradientAppBar extends StatelessWidget {
             child: new Row(
               mainAxisSize: MainAxisSize.max,
               children: [
+                new IconButton(
+                  color: isFilterMenuOpen ? Colors.red : Colors.white,
+                  icon: new Icon(Icons.menu),
+                  iconSize: 30.0,
+                  onPressed: () {
+                    state.updateAppBarState();
+                  },
+                ),
                 new Theme(
                   data: theme.copyWith(
                       primaryColor: new Color(0xffffbf00),
@@ -59,9 +73,14 @@ class GradientAppBar extends StatelessWidget {
                     child: new Container(
                       padding: new EdgeInsets.only(right: 20.0),
                       child: new TextField(
+                        autofocus: true,
                         style: inputTextStyle,
                         controller: controller,
                         decoration: new InputDecoration(
+                          hintStyle: TextStyle(
+                              fontSize: 15.0,
+                              color: Colors.grey[100],
+                              fontStyle: FontStyle.italic),
                           suffixIcon: new IconButton(
                               color: controller.text.isNotEmpty
                                   ? Colors.red
@@ -73,11 +92,18 @@ class GradientAppBar extends StatelessWidget {
                                 Icons.clear,
                                 size: 30.0,
                               )),
-                          labelStyle: hintTextStyle.copyWith(
-                              color: theme.indicatorColor),
-                          icon: new Icon(Icons.search, size: 30.0),
+                          labelStyle:
+                              hintTextStyle.copyWith(color: Colors.blue[300]),
+                          icon: new IconButton(
+                            color: new Color(0xffffbf00),
+                            icon: new Icon(Icons.search),
+                            iconSize: 30.0,
+                            onPressed: () {
+                              state.updateAppBarState();
+                            },
+                          ),
                           isDense: true,
-//                        hintText: 'Suche',
+                          hintText: 'Suche ...',
                         ),
                       ),
                     ),
@@ -87,21 +113,6 @@ class GradientAppBar extends StatelessWidget {
                     currentAmountOfVideosInList.toString() +
                     " / " +
                     totalAmountOfVideosForSelection.toString()),
-                new Center(
-                  child: new FloatingActionButton(
-                    mini: true,
-                    onPressed: () {
-                      state.updateAppBarState();
-                    },
-                    backgroundColor: Color(0xffffbf00),
-                    highlightElevation: 10.0,
-                    isExtended: true,
-                    foregroundColor: Colors.black,
-                    elevation: 7.0,
-                    tooltip: "Filter Menü öffnen",
-                    child: new Icon(Icons.edit, color: Colors.white),
-                  ),
-                ),
               ],
             ),
           ),
@@ -119,12 +130,16 @@ class GradientAppBar extends StatelessWidget {
                   ),
                 )
               : new Container(),
-
-          isFilterMenuOpen
-              ? new Padding(
-                  padding: new EdgeInsets.only(bottom: 10.0, top: 10.0),
-                  child: filterMenu)
-              : new Container(),
+          AnimatedSize(
+            duration: Duration(milliseconds: 300),
+            vsync: mixin,
+            child: isFilterMenuOpen
+                ? new Padding(
+                    padding: new EdgeInsets.only(bottom: 10.0, top: 10.0),
+                    child: filterMenu,
+                  )
+                : new Container(),
+          ),
         ],
       ),
     );

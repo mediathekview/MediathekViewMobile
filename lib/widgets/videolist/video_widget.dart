@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/database/video_entity.dart';
+import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/platform_channels/video_manager.dart';
@@ -12,10 +13,13 @@ class VideoWidget extends StatefulWidget {
   String videoId;
   VideoEntity entity;
   Video video;
+  VideoProgressEntity videoProgressEntity;
   String mimeType;
   String defaultImageAssetPath;
   Image previewImage;
   bool showLoadingIndicator;
+  Size size;
+  double presetAspectRatio;
 
   VideoWidget(
       {this.videoId,
@@ -24,7 +28,10 @@ class VideoWidget extends StatefulWidget {
       this.video,
       this.mimeType,
       this.defaultImageAssetPath,
-      this.showLoadingIndicator});
+      this.showLoadingIndicator,
+      this.size,
+      this.presetAspectRatio,
+      this.videoProgressEntity});
 
   @override
   VideoWidgetState createState() => new VideoWidgetState(previewImage);
@@ -44,8 +51,10 @@ class VideoWidgetState extends State<VideoWidget> {
   @override
   Widget build(BuildContext context) {
     appWideState = AppSharedStateContainer.of(context);
+    widget.logger.fine("Rendering Image for " + widget.videoId);
 
     if (previewImage == null) {
+      widget.logger.info("Image for video " + widget.videoId + " is null");
       VideoPreviewManager previewController =
           appWideState.appState.videoPreviewManager;
       //Manager will update state of this widget!
@@ -61,17 +70,16 @@ class VideoWidgetState extends State<VideoWidget> {
       }
     }
 
-    final size = MediaQuery.of(context).size;
     //Always fill full width & calc height accordingly
-
-    double totalWidth = size.width - 36.0; //Intendation: 28 left, 8 right
-    double screenAspectRatio = size.width > size.height
-        ? size.width / size.height
-        : size.height / size.width;
-    ("Aspect ratio: " + screenAspectRatio.toString());
+    double totalWidth =
+        widget.size.width - 36.0; //Intendation: 28 left, 8 right
     double height;
 
-    if (previewImage != null) {
+    if (previewImage != null && widget.presetAspectRatio != null) {
+      height = totalWidth / widget.presetAspectRatio;
+    } else if (previewImage == null && widget.presetAspectRatio != null) {
+      height = totalWidth / widget.presetAspectRatio;
+    } else if (previewImage != null) {
       double originalWidth = previewImage.width;
       double originalHeight = previewImage.height;
       double aspectRatioVideo = originalWidth / originalHeight;
@@ -79,6 +87,7 @@ class VideoWidgetState extends State<VideoWidget> {
       //calc height
       double shrinkFactor = totalWidth / originalWidth;
       height = originalHeight * shrinkFactor;
+
       widget.logger.fine("Aspect ratio video: " +
           aspectRatioVideo.toString() +
           " Shrink factor: " +
@@ -105,11 +114,9 @@ class VideoWidgetState extends State<VideoWidget> {
                 opacity: previewImage == null ? 1.0 : 0.0,
                 duration: new Duration(milliseconds: 750),
                 curve: Curves.easeInOut,
-//                  child: new Center(child: previewImage),
                 child: widget.defaultImageAssetPath != null
                     ? new Image.asset(
                         'assets/img/' + widget.defaultImageAssetPath,
-//                        fit: BoxFit.cover,
                         width: totalWidth,
                         height: height,
                         alignment: Alignment.center,
@@ -133,7 +140,6 @@ class VideoWidgetState extends State<VideoWidget> {
                 opacity: previewImage != null ? 1.0 : 0.0,
                 duration: new Duration(milliseconds: 750),
                 curve: Curves.easeInOut,
-//                  child: new Center(child: previewImage),
                 child: previewImage,
               ),
               new Container(
@@ -155,10 +161,15 @@ class VideoWidgetState extends State<VideoWidget> {
       onTap: () {
         widget.logger.fine("Opening video player");
 
-        NativeVideoPlayer nativeVideoPlayer = new NativeVideoPlayer();
+        NativeVideoPlayer nativeVideoPlayer =
+            new NativeVideoPlayer(appWideState.appState.databaseManager);
         widget.entity != null
-            ? nativeVideoPlayer.playVideo(entity: widget.entity)
-            : nativeVideoPlayer.playVideo(video: widget.video);
+            ? nativeVideoPlayer.playVideo(
+                videoEntity: widget.entity,
+                playbackProgress: widget.videoProgressEntity)
+            : nativeVideoPlayer.playVideo(
+                video: widget.video,
+                playbackProgress: widget.videoProgressEntity);
       },
     );
   }

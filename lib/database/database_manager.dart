@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_ws/database/channel_favorite_entity.dart';
 import 'package:flutter_ws/database/video_entity.dart';
+import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:logging/logging.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -16,12 +17,16 @@ class DatabaseManager {
   Future open(String path) async {
     db = await openDatabase(path, version: 1,
         onCreate: (Database db, int version) async {
-      String videoTableSQL = getVideoTableSQL();
-      String channelFavoritesSQL = getChannelFavoriteSQL();
-      logger.fine("DB MANAGER: Executing " + videoTableSQL);
-      await db.execute(videoTableSQL);
-      logger.fine("DB MANAGER: Executing " + channelFavoritesSQL);
-      await db.execute(channelFavoritesSQL);
+      String createVideoTableSQL = getVideoTableSQL();
+      String createFavoriteLiveTVChannelsTable = getChannelFavoriteSQL();
+      String videoProgressCreateTableSQL = getProgressTableSQL();
+
+      logger.fine("DB MANAGER: Executing " + createVideoTableSQL);
+      await db.execute(createVideoTableSQL);
+      logger.fine("DB MANAGER: Executing " + createFavoriteLiveTVChannelsTable);
+      await db.execute(createFavoriteLiveTVChannelsTable);
+      logger.fine("DB MANAGER: Executing " + videoProgressCreateTableSQL);
+      await db.execute(videoProgressCreateTableSQL);
     });
   }
 
@@ -89,7 +94,10 @@ create table ''' +
         ''' text DEFAULT '',
        ''' +
         VideoEntity.mimeTypeColumn +
-        ''' text)
+        ''' text,
+       ''' +
+        VideoEntity.ratingColumn +
+        ''' REAL)
      ''';
     return sql;
   }
@@ -122,12 +130,27 @@ create table ''' +
     return new Set();
   }
 
-  Future<int> updateVideoEntity(VideoEntity entity) async {
+  /*
+  Needs to have a task id assigned
+   */
+  Future<int> updateDownloadingVideoEntity(VideoEntity entity) async {
     return await db.update(VideoEntity.TABLE_NAME, entity.toMap(),
         where: VideoEntity.task_idColumn + " = ?", whereArgs: [entity.task_id]);
   }
 
+  /*
+  General Update on entity. eg to insert or update rating
+   */
+  Future<int> updateVideoEntity(VideoEntity entity) async {
+    return await db.update(VideoEntity.TABLE_NAME, entity.toMap(),
+        where: VideoEntity.idColumn + " = ?", whereArgs: [entity.id]);
+  }
+
   Future<VideoEntity> getVideoEntity(String id) async {
+    if (db == null || !db.isOpen) {
+      return null;
+    }
+
     List<Map> maps = await db.query(VideoEntity.TABLE_NAME,
         columns: getColums(),
         where: VideoEntity.idColumn + " = ?",
@@ -186,6 +209,10 @@ create table ''' +
   }
 
   Future<VideoEntity> getDownloadedVideo(id) async {
+    if (db == null || !db.isOpen) {
+      return null;
+    }
+
     List<Map> maps = await db.query(VideoEntity.TABLE_NAME,
         columns: getColums(),
         where: VideoEntity.idColumn +
@@ -218,7 +245,8 @@ create table ''' +
       VideoEntity.url_videoColumn,
       VideoEntity.filePathColumn,
       VideoEntity.fileNameColumn,
-      VideoEntity.mimeTypeColumn
+      VideoEntity.mimeTypeColumn,
+      VideoEntity.ratingColumn
     ];
   }
 
@@ -268,5 +296,136 @@ create table ''' +
 
   Future insertChannelFavorite(ChannelFavoriteEntity entity) async {
     await db.insert(ChannelFavoriteEntity.TABLE_NAME, entity.toMap());
+  }
+
+  // &&&&&&&&&&&&&&&&&&&&   VIDEO PROGRESS  &&&&&&&&&&&&&&&&&&&&&&&
+  String getProgressTableSQL() {
+    var sql = '''
+        create table ''' +
+        VideoProgressEntity.TABLE_NAME +
+        ''' ( 
+       ''' +
+        VideoProgressEntity.idColumn +
+        ''' text primary key, 
+         ''' +
+        VideoProgressEntity.progressColumn +
+        ''' integer,
+       ''' +
+        VideoProgressEntity.channelColumn +
+        ''' text not null,
+       ''' +
+        VideoProgressEntity.topicColumn +
+        ''' text not null,
+       ''' +
+        VideoProgressEntity.descriptionColumn +
+        ''' text,
+       ''' +
+        VideoProgressEntity.titleColumn +
+        ''' text not null,
+       ''' +
+        VideoProgressEntity.timestampColumn +
+        ''' integer,
+       ''' +
+        VideoProgressEntity.timestampLastViewedColumn +
+        ''' integer,
+       ''' +
+        VideoProgressEntity.durationColumn +
+        ''' text,
+       ''' +
+        VideoProgressEntity.sizeColumn +
+        ''' integer,
+       ''' +
+        VideoProgressEntity.url_websiteColumn +
+        ''' text,
+       ''' +
+        VideoProgressEntity.url_video_lowColumn +
+        ''' text,
+       ''' +
+        VideoProgressEntity.url_video_hdColumn +
+        ''' text,
+       ''' +
+        VideoProgressEntity.filmlisteTimestampColumn +
+        ''' text,
+       ''' +
+        VideoProgressEntity.url_videoColumn +
+        ''' text not null,
+       ''' +
+        VideoProgressEntity.url_subtitleColumn +
+        ''' text)
+     ''';
+    return sql;
+  }
+
+  Future<int> insertVideoProgress(VideoProgressEntity entity) async {
+    entity.timestampLastViewed = new DateTime.now().millisecondsSinceEpoch;
+    Map<String, dynamic> map = entity.toMap();
+
+    return await db.insert(VideoProgressEntity.TABLE_NAME, map);
+  }
+
+  Future<int> deleteVideoProgressEntity(String id) async {
+    return db.delete(VideoProgressEntity.TABLE_NAME,
+        where: VideoProgressEntity.idColumn + " = ?", whereArgs: [id]);
+  }
+
+  Future<int> updateVideoProgressEntity(VideoProgressEntity entity) async {
+    entity.timestampLastViewed = new DateTime.now().millisecondsSinceEpoch;
+    return await db.update(
+        VideoProgressEntity.TABLE_NAME,
+        {
+          'progress': entity.progress,
+          'timestampLastViewed': entity.timestampLastViewed
+        },
+        where: VideoProgressEntity.idColumn + " = ?",
+        whereArgs: [entity.id]);
+  }
+
+  Future<VideoProgressEntity> getVideoProgressEntity(String id) async {
+    if (db == null || !db.isOpen) {
+      return null;
+    }
+
+    List<Map> maps = await db.query(VideoProgressEntity.TABLE_NAME,
+        columns: getVideoProgressColumns(),
+        where: VideoProgressEntity.idColumn + " = ?",
+        whereArgs: [id]);
+    if (maps.length > 0) {
+      return new VideoProgressEntity.fromMap(maps.first);
+    }
+    return null;
+  }
+
+  List<String> getVideoProgressColumns() {
+    return [
+      VideoProgressEntity.idColumn,
+      VideoProgressEntity.progressColumn,
+      VideoProgressEntity.channelColumn,
+      VideoProgressEntity.topicColumn,
+      VideoProgressEntity.descriptionColumn,
+      VideoProgressEntity.titleColumn,
+      VideoProgressEntity.timestampColumn,
+      VideoProgressEntity.timestampLastViewedColumn,
+      VideoProgressEntity.durationColumn,
+      VideoProgressEntity.sizeColumn,
+      VideoProgressEntity.url_websiteColumn,
+      VideoProgressEntity.url_video_lowColumn,
+      VideoProgressEntity.url_video_hdColumn,
+      VideoProgressEntity.filmlisteTimestampColumn,
+      VideoProgressEntity.url_videoColumn,
+    ];
+  }
+
+  Future<Set<VideoProgressEntity>> getAllVideoProgressEntities() async {
+    if (db == null || !db.isOpen) {
+      return null;
+    }
+
+    List<Map> result = await db.query(VideoProgressEntity.TABLE_NAME,
+        orderBy: VideoProgressEntity.timestampLastViewedColumn + " DESC",
+        columns: getVideoProgressColumns());
+    if (result != null && result.length > 0) {
+      return result.map((raw) => new VideoProgressEntity.fromMap(raw)).toSet();
+    }
+    return new Set();
   }
 }

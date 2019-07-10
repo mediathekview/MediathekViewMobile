@@ -23,6 +23,15 @@ class VideoListUtil {
 
     for (int i = 0; i < newVideos.length; i++) {
       Video currentVideo = newVideos[i];
+
+      logger.info("Video ID : " +
+          currentVideo.id +
+          " URL: " +
+          currentVideo.url_video +
+          " Duration: " +
+          currentVideo.duration.toString() +
+          " Size: " +
+          currentVideo.size.toString());
       bool hasDuplicate =
           _hasDuplicate(i, newVideos, currentVideos, currentVideo);
       if (hasDuplicate == false) {

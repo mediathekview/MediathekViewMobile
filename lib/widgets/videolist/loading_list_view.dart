@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
 
 class LoadingListPage extends StatelessWidget {
   int determineNumberOfNeededTilesToFillScreen(
@@ -60,37 +59,77 @@ class LoadingListPage extends StatelessWidget {
           new Container(height: 4.0),
           new Flexible(
             child: new Container(
-              margin: new EdgeInsets.only(left: 40.0, right: 12.0),
-              child: new Text(
-                "Dummy Text",
+              margin: new EdgeInsets.only(left: 40.0, right: 9.0),
+              child: new Container(
+                color: Colors.grey,
+                constraints: BoxConstraints.expand(width: 50, height: 10),
               ),
             ),
           ),
-          new Container(height: 10.0),
+          new Container(height: 20.0),
           new Flexible(
             child: new Container(
-              margin: new EdgeInsets.only(left: 40.0, right: 12.0),
-              child: new Text("Long Video Title"),
+              margin: new EdgeInsets.only(left: 40.0, right: 40.0),
+              child: new Container(
+                color: Colors.grey,
+                constraints: BoxConstraints.expand(height: 11),
+              ),
             ),
           ),
-          new Container(padding: new EdgeInsets.only(left: 40.0, right: 12.0)),
-          new Container(height: 20.0),
+          new Container(
+              padding: new EdgeInsets.only(left: 40.0, right: 12.0),
+              height: 10),
+          new Flexible(
+              child: new Container(
+                  margin:
+                      new EdgeInsets.symmetric(vertical: 8.0, horizontal: 40.0),
+                  height: 2.0,
+                  color: Colors.grey)),
+          new Container(height: 4.0),
+          new Container(
+            constraints: BoxConstraints.loose(Size.fromHeight(20.0)),
+            padding: new EdgeInsets.only(left: 40.0, right: 5.0),
+            child: new Row(
+              children: <Widget>[
+                new Expanded(
+                    child: _getMetadataRow(
+                  width: 20,
+                  icon: new Icon(
+                    Icons.spa,
+                    color: Colors.grey,
+                  ),
+                )),
+                new Expanded(
+                    child: _getMetadataRow(
+                  width: 40,
+                  icon: new Icon(
+                    Icons.access_time,
+                    color: Colors.grey,
+                  ),
+                ))
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Shimmer getListCard(Container cardContent) {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey[300],
-      highlightColor: Colors.grey[100],
-      child: new Container(
-        child: cardContent,
-        margin: new EdgeInsets.only(left: 20.0),
-        decoration: new BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.rectangle,
-        ),
+  Widget _getMetadataRow({double width, Icon icon}) {
+    return new Row(children: <Widget>[
+      icon,
+      new Container(width: 8.0),
+      new Container(width: width, height: 6, color: Colors.grey[300]),
+    ]);
+  }
+
+  Container getListCard(Container cardContent) {
+    return new Container(
+      child: cardContent,
+      margin: new EdgeInsets.only(left: 20.0),
+      decoration: new BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.rectangle,
       ),
     );
   }

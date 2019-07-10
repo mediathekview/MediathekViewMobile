@@ -46,7 +46,6 @@ class _LiveTVSectionState extends State<LiveTVSection> {
     //Insert into DB -> last time updated
 
     //  TODO load recent list https://github.com/jnk22/kodinerds-iptv/blob/master/iptv/kodi/kodi_tv.m3u
-    nativeVideoPlayer = new NativeVideoPlayer();
     listData = new List();
     allChannels = new List();
     localChannels = new List();
@@ -89,10 +88,11 @@ class _LiveTVSectionState extends State<LiveTVSection> {
     size = MediaQuery.of(context).size;
 
     appWideState = AppSharedStateContainer.of(context);
-    favChannels = appWideState.appState.favoritChannels;
+    favChannels = appWideState.appState.favoriteChannels;
 //    widget.logger.fine("Amount of Fav channels: " + favChannels.length.toString());
 //    favChannels.forEach((string, channel) => widget.logger.fine("Saved Key: " + string));
     databaseManager = appWideState.appState.databaseManager;
+    nativeVideoPlayer = new NativeVideoPlayer(databaseManager);
 
     Widget allChannelsListView =
         buildListView(allChannels, itemBuilderAllChannels, true);
@@ -299,7 +299,7 @@ class _LiveTVSectionState extends State<LiveTVSection> {
     databaseManager.insertChannelFavorite(entity).then((dynamic) {
       widget.logger.fine("added favorite CHannel to DB");
       setState(() {
-        appWideState.appState.favoritChannels
+        appWideState.appState.favoriteChannels
             .putIfAbsent(channel.name, () => entity);
       });
     });
@@ -310,7 +310,7 @@ class _LiveTVSectionState extends State<LiveTVSection> {
     databaseManager.deleteChannelFavorite(senderName).then((dynamic) {
       widget.logger.fine("removed favorite Channel from DB");
       setState(() {
-        appWideState.appState.favoritChannels.remove(senderName);
+        appWideState.appState.favoriteChannels.remove(senderName);
       });
     });
   }

@@ -1,4 +1,4 @@
-package com.yourcompany.flutterws;
+package com.mediathekview.mobile;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -7,26 +7,25 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.yourcompany.flutterws.filesystempermission.FilesystemPermissionStreamHandler;
-import com.yourcompany.flutterws.filesystempermission.PermissionMethodHandler;
-import com.yourcompany.flutterws.video.VideoCallHandler;
-import com.yourcompany.flutterws.video.VideoStreamHandler;
-
-import java.util.concurrent.ConcurrentHashMap;
+import com.mediathekview.mobile.video.VideoCallHandler;
+import com.mediathekview.mobile.ffmpeg.FFMPEGDownloader;
+import com.mediathekview.mobile.filesystempermission.FilesystemPermissionStreamHandler;
+import com.mediathekview.mobile.filesystempermission.PermissionMethodHandler;
+import com.mediathekview.mobile.video.VideoProgressStreamHandler;
+import com.mediathekview.mobile.video.VideoStreamHandler;
 
 import io.flutter.app.FlutterActivity;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugins.GeneratedPluginRegistrant;
 
-//import io.flutter.plugins.GeneratedPluginRegistrant;
-
 @TargetApi(Build.VERSION_CODES.GINGERBREAD)
 public class MainActivity extends FlutterActivity{
-  private static final String VIDEO_METHOD_CHANNEL = "samples.flutter.io/video";
-  private static final String VIDEO_EVENT_CHANNEL = "samples.flutter.io/videoEvent";
-  private static final String PERMISSION_METHOD_CHANNEL = "samples.flutter.io/permission";
-  private static final String PERMISSION_EVENT_CHANNEL = "samples.flutter.io/permissionEvent";
+  private static final String VIDEO_METHOD_CHANNEL = "com.mediathekview.mobile/video";
+  private static final String VIDEO_EVENT_CHANNEL = "com.mediathekview.mobile/videoEvent";
+  private static final String VIDEO_PROGRESS_EVENT_CHANNEL = "com.mediathekview.mobile/videoProgressEvent";
+  private static final String PERMISSION_METHOD_CHANNEL = "com.mediathekview.mobile/permission";
+  private static final String PERMISSION_EVENT_CHANNEL = "com.mediathekview.mobile/permissionEvent";
 
   public static Context context;
   public static MainActivity mainActivity;
@@ -35,6 +34,10 @@ public class MainActivity extends FlutterActivity{
   EventChannel videoEventChannel;
   MethodChannel permissionMethodChannel;
   EventChannel permissionEventChannel;
+  EventChannel progressEventChannel;
+
+  public static VideoProgressStreamHandler videoProgressStreamHandler;
+
 
   //Handler
   FilesystemPermissionStreamHandler filesystemPermissionStreamHandler;
@@ -45,6 +48,8 @@ public class MainActivity extends FlutterActivity{
     GeneratedPluginRegistrant.registerWith(this);
 
     context = this.getApplicationContext();
+    //init ffmpeg lib
+    //FFMPEGDownloader.initialize(context);
     mainActivity = this;
 
     //video player
@@ -55,7 +60,10 @@ public class MainActivity extends FlutterActivity{
     videoMethodChannel = new MethodChannel(getFlutterView(), VIDEO_METHOD_CHANNEL);
     videoMethodChannel.setMethodCallHandler(new VideoCallHandler(context, videoStreamHandler));
 
-
+    // video progress
+    progressEventChannel = new EventChannel(getFlutterView(), VIDEO_PROGRESS_EVENT_CHANNEL);
+    videoProgressStreamHandler = new VideoProgressStreamHandler();
+    progressEventChannel.setStreamHandler(videoProgressStreamHandler);
     //Permissions
     permissionEventChannel = new EventChannel(getFlutterView(), PERMISSION_EVENT_CHANNEL);
     filesystemPermissionStreamHandler = new FilesystemPermissionStreamHandler();
@@ -66,8 +74,7 @@ public class MainActivity extends FlutterActivity{
   }
 
   @Override
-  public void onRequestPermissionsResult(int requestCode,
-                                         String permissions[], int[] grantResults) {
+  public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
     switch (requestCode) {
       case 0: {
         // If request is cancelled, the result arrays are empty.

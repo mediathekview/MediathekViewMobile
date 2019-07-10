@@ -1,4 +1,4 @@
-package com.yourcompany.flutterws.filesystempermission;
+package com.mediathekview.mobile.filesystempermission;
 
 import android.util.Log;
 

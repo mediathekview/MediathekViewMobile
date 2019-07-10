@@ -1,4 +1,4 @@
-package com.yourcompany.flutterws.filesystempermission;
+package com.mediathekview.mobile.filesystempermission;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -6,7 +6,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Log;
 
-import com.yourcompany.flutterws.MainActivity;
+import com.mediathekview.mobile.MainActivity;
 
 import java.util.HashMap;
 

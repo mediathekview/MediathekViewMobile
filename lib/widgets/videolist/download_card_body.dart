@@ -157,8 +157,11 @@ class DownloadCardBodyState extends State<DownloadCardBody> {
                   height: 2.0,
                   color: Colors.grey)),
           new MetadataBar(widget.video.duration, widget.video.timestamp),
-          new DownloadProgressBar(
-              widget.video, widget.currentStatus, widget.progress),
+          new Padding(
+            padding: EdgeInsets.only(top: 5),
+            child: new DownloadProgressBar(
+                widget.video, widget.currentStatus, widget.progress),
+          ),
         ]);
   }
 

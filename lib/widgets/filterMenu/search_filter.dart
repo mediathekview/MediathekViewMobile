@@ -40,8 +40,7 @@ class SearchFilter extends StatelessWidget {
               children: <Widget>[
                 new Padding(
                   padding: new EdgeInsets.only(right: 5.0),
-                  child:
-                      new Icon(Icons.delete, size: 18.0, color: Colors.white),
+                  child: new Icon(Icons.clear, size: 18.0, color: Colors.red),
                 ),
                 new Text(
                     displayText == null || displayText.isEmpty

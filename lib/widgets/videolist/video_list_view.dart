@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter_ws/enum/channels.dart';
 import 'package:flutter_ws/model/video.dart';
+import 'package:flutter_ws/model/video_rating.dart';
 import 'package:flutter_ws/util/row_adapter.dart';
 import 'package:flutter_ws/widgets/videolist/loading_list_view.dart';
 import 'package:logging/logging.dart';
@@ -23,6 +24,7 @@ class VideoListView extends StatefulWidget {
   int amountOfVideosFetched;
   int totalResultSize;
   int currentQuerySkip;
+  TickerProviderStateMixin mixin;
 
   VideoListView({
     Key key,
@@ -32,15 +34,8 @@ class VideoListView extends StatefulWidget {
     @required this.refreshList,
     @required this.totalResultSize,
     @required this.currentQuerySkip,
+    @required this.mixin,
   }) : super(key: key);
-
-  /*double getOffsetMethod() {
-    return offset.value;
-  }
-
-  void setOffsetMethod(double val) {
-    offset.value = val;
-  }*/
 
   @override
   _VideoListViewState createState() => _VideoListViewState();
@@ -48,20 +43,11 @@ class VideoListView extends StatefulWidget {
 
 class _VideoListViewState extends State<VideoListView> {
   ScrollController scrollController;
+  Map<String, VideoRating> ratingCache;
 
   @override
   void initState() {
     super.initState();
-
-    /* if (widget.getOffsetMethod() != null) {
-      widget.logger.fine(
-          "Video List View get offset: " + widget.getOffsetMethod().toString());
-      scrollController =
-          new ScrollController(initialScrollOffset: widget.getOffsetMethod());
-    } else {
-      widget.logger.fine("Video List View: Not Setting scroll offset -> NULL");
-      scrollController = new ScrollController();
-    }*/
   }
 
   @override
@@ -71,20 +57,27 @@ class _VideoListViewState extends State<VideoListView> {
 
     if (widget.videos.length == 0 && widget.amountOfVideosFetched == 0) {
       widget.logger.fine("No Videos found");
-      return new Container(child: new Text("keine Videos gefunden"));
+      return new Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          new Text(
+            "0 Videos zu dieser Suchanfrage",
+            style: new TextStyle(fontSize: 25),
+          ),
+          new Container(
+            height: 50,
+            child: new ListView(
+              scrollDirection: Axis.horizontal,
+              //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: getAllChannelImages(),
+            ),
+          )
+        ],
+      );
     } else if (widget.videos.length == 0) {
       widget.logger.fine("Searching: video list legth : 0 & amountFetched: " +
           widget.amountOfVideosFetched.toString());
-
-      return new Stack(children: <Widget>[
-        new LoadingListPage(),
-        new Center(
-            child: SpinKitCubeGrid(
-          size: 100.0,
-          color: Color(0xffffbf00),
-          duration: const Duration(milliseconds: 500),
-        )),
-      ]);
+      return new LoadingListPage();
     }
 
     return ListView.builder(
@@ -94,15 +87,6 @@ class _VideoListViewState extends State<VideoListView> {
   }
 
   Widget itemBuilder(BuildContext context, int index) {
-    /* if (Scrollable.of(context) != null &&
-        Scrollable.of(context).position != null &&
-        Scrollable.of(context).position.pixels != null &&
-        mounted)
-      widget.setOffsetMethod(Scrollable.of(context).position.pixels);
-    else
-      widget.logger
-          .severe("Video List View: Error could not set pixel position");
-*/
     if (index + widget.pageThreshold > widget.videos.length) {
       widget.queryEntries();
     }
@@ -125,9 +109,28 @@ class _VideoListViewState extends State<VideoListView> {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          RowAdapter.createRow(widget.videos[index]),
+          RowAdapter.createRow(widget.videos[index], widget.mixin),
         ],
       );
     }
+  }
+
+  List<Widget> getAllChannelImages() {
+    List<Widget> images = new List();
+    Channels.channelMap.forEach((name, assetPath) {
+      images.add(new Container(
+        margin: new EdgeInsets.only(left: 2.0, top: 5.0),
+        width: 50.0,
+        height: 50.0,
+        decoration: new BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.grey[300],
+          image: new DecorationImage(
+            image: new AssetImage('assets/img/' + assetPath),
+          ),
+        ),
+      ));
+    });
+    return images;
   }
 }

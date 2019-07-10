@@ -13,8 +13,9 @@ class FilesystemPermissionManager {
   StreamSubscription<dynamic> streamSubscription;
 
   FilesystemPermissionManager(BuildContext context) {
-    _eventChannel = const EventChannel('samples.flutter.io/permissionEvent');
-    _methodChannel = const MethodChannel('samples.flutter.io/permission');
+    _eventChannel =
+        const EventChannel('com.mediathekview.mobile/permissionEvent');
+    _methodChannel = const MethodChannel('com.mediathekview.mobile/permission');
   }
 
   Stream<dynamic> getBroadcastStream() {

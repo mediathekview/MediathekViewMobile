@@ -3,8 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/database/channel_favorite_entity.dart';
 import 'package:flutter_ws/database/database_manager.dart';
+import 'package:flutter_ws/model/video_rating.dart';
 import 'package:flutter_ws/platform_channels/download_manager_flutter.dart';
 import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
+import 'package:flutter_ws/platform_channels/video_progress_manager.dart';
+import 'package:flutter_ws/util/rating_download_util.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
@@ -18,11 +21,30 @@ class VideoListState {
 
 class AppState {
   AppState(this.downloadManager, this.databaseManager, this.videoPreviewManager,
-      this.favoritChannels);
+      this.progressManager, this.favoriteChannels, this.ratingCache);
+
   DownloadManager downloadManager;
   DatabaseManager databaseManager;
+  VideoProgressManager progressManager;
   VideoPreviewManager videoPreviewManager;
-  Map<String, ChannelFavoriteEntity> favoritChannels;
+  Map<String, ChannelFavoriteEntity> favoriteChannels;
+
+  //videoId -> Rating
+  Map<String, VideoRating> ratingCache;
+  Map<String, VideoRating> bestVideosAllTime;
+  Map<String, VideoRating> hotVideosToday;
+
+  void setRatingCache(Map<String, VideoRating> cache) {
+    ratingCache = cache;
+  }
+
+  void setHotVideosToday(Map<String, VideoRating> cache) {
+    hotVideosToday = cache;
+  }
+
+  void setBestVideosAllTime(Map<String, VideoRating> cache) {
+    bestVideosAllTime = cache;
+  }
 }
 
 class _InheritedWidget extends InheritedWidget {
@@ -60,14 +82,35 @@ class AppSharedStateContainer extends StatefulWidget {
 
 class AppSharedState extends State<AppSharedStateContainer> {
   final Logger logger = new Logger('VideoWidget');
+
   VideoListState videoListState;
   AppState appState;
+
+  @override
+  Widget build(BuildContext context) {
+    logger.fine("Rendering StateContainerState");
+    return new _InheritedWidget(
+      data: this,
+      child: widget.child,
+    );
+  }
 
   void initializeState(BuildContext context) {
     if (appState == null) {
       DownloadManager downloadManager = new DownloadManager(context);
-      appState = new AppState(downloadManager, new DatabaseManager(),
-          new VideoPreviewManager(context), new Map());
+
+      DatabaseManager databaseManager = new DatabaseManager();
+      appState = new AppState(
+          downloadManager,
+          databaseManager,
+          new VideoPreviewManager(context),
+          new VideoProgressManager(context, databaseManager),
+          new Map(),
+          new Map());
+
+      //load ratings only once on application start to reduce requests to backend(costly). Operate on cache when doing ratings.
+      loadRatings();
+
       initializeDatabase().then((init) {
         //start subscription to Flutter Download Manager
         downloadManager.startListeningToDownloads();
@@ -86,6 +129,20 @@ class AppSharedState extends State<AppSharedStateContainer> {
     }
   }
 
+  void loadRatings() {
+    // All ratings needed for local rating operations
+    RatingUtil.loadAllRatings().then((ratings) {
+      logger
+          .info("All ratings retrieved. Amount: " + ratings.length.toString());
+
+      if (ratings.length == 0) {
+        return;
+      }
+
+      appState.setRatingCache(ratings);
+    });
+  }
+
   void prefillFavoritedChannels() async {
     Set<ChannelFavoriteEntity> channels =
         await appState.databaseManager.getAllChannelFavorites();
@@ -93,7 +150,7 @@ class AppSharedState extends State<AppSharedStateContainer> {
         channels.length.toString() +
         " favorited channels in the database");
     channels.forEach((entity) =>
-        appState.favoritChannels.putIfAbsent(entity.name, () => entity));
+        appState.favoriteChannels.putIfAbsent(entity.name, () => entity));
   }
 
   Future initializeDatabase() async {
@@ -121,14 +178,5 @@ class AppSharedState extends State<AppSharedStateContainer> {
     videoListState.extendetListTiles.contains(videoId)
         ? videoListState.extendetListTiles.remove(videoId)
         : videoListState.extendetListTiles.add(videoId);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    logger.fine("Rendering StateContainerState");
-    return new _InheritedWidget(
-      data: this,
-      child: widget.child,
-    );
   }
 }

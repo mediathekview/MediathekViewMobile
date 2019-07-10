@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_ws/util/timestamp_calculator.dart';
 import 'package:flutter_ws/util/text_styles.dart';
+import 'package:flutter_ws/util/timestamp_calculator.dart';
 import 'package:logging/logging.dart';
 
 class MetadataBar extends StatelessWidget {
@@ -21,21 +21,25 @@ class MetadataBar extends StatelessWidget {
       child: new Row(
         children: <Widget>[
           new Expanded(
-              child: _getRow(
-                  value: Calculator.calculateDuration(videoDuration),
-                  image: 'assets/img/ic_distance.png')),
+              child: new Text(
+            Calculator.calculateDuration(videoDuration),
+          )),
           new Expanded(
               child: _getRow(
-                  value: Calculator.calculateTimestamp(videoTimestamp),
-                  image: 'assets/img/ic_distance.png'))
+            value: Calculator.calculateTimestamp(videoTimestamp),
+            icon: new Icon(
+              Icons.access_time,
+              color: Colors.grey,
+            ),
+          ))
         ],
       ),
     );
   }
 
-  Widget _getRow({String value, String image}) {
+  Widget _getRow({String value, Icon icon}) {
     return new Row(children: <Widget>[
-      new Image.asset(image, height: 12.0),
+      icon,
       new Container(width: 8.0),
       new Text(value, style: videoMetadataTextStyle),
     ]);

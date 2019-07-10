@@ -10,6 +10,7 @@ import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/platform_channels/filesystem_permission_manager.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:quiver/collection.dart';
 
 typedef void onFailed(String videoId);
 typedef void onComplete(String videoId);
@@ -36,14 +37,15 @@ class DownloadManager {
           DownloadTaskStatus.failed.value.toString();
 
   //Listeners
-  static Map<String, MapEntry<Video, onFailed>> onFailedListeners =
-      new Map<String, MapEntry<Video, onFailed>>();
-  static Map<String, MapEntry<Video, onComplete>> onCompleteListeners =
-      Map<String, MapEntry<Video, onComplete>>();
-  static Map<String, MapEntry<Video, onCanceled>> onCanceledListeners =
-      Map<String, MapEntry<Video, onCanceled>>();
-  static Map<String, MapEntry<Video, onStateChanged>> onStateChangedListeners =
-      new Map<String, MapEntry<Video, onStateChanged>>();
+  static Multimap<String, MapEntry<int, onFailed>> onFailedListeners =
+      new Multimap<String, MapEntry<int, onFailed>>();
+  static Multimap<String, MapEntry<int, onComplete>> onCompleteListeners =
+      Multimap<String, MapEntry<int, onComplete>>();
+  static Multimap<String, MapEntry<int, onCanceled>> onCanceledListeners =
+      Multimap<String, MapEntry<int, onCanceled>>();
+  static Multimap<String, MapEntry<int, onStateChanged>>
+      onStateChangedListeners =
+      new Multimap<String, MapEntry<int, onStateChanged>>();
 
   // VideoId -> VideoEntity
   static Map<String, VideoEntity> cache = new Map();
@@ -153,18 +155,16 @@ class DownloadManager {
           logger.fine(
               "Download for video failed & filesystem permission granted");
           deleteVideo(entity.id);
-          MapEntry<Video, onFailed> entry = onFailedListeners[entity.id];
-          if (entry != null) {
-            entry.value(entity.id);
-          }
+          Iterable<MapEntry<int, onFailed>> entries =
+              onFailedListeners[entity.id];
+          entries.forEach((entry) => {entry.value(entity.id)});
         }
       });
     } else if (status == DownloadTaskStatus.canceled) {
       deleteVideo(entity.id);
-      MapEntry<Video, onCanceled> entry = onCanceledListeners[entity.id];
-      if (entry != null) {
-        entry.value(entity.id);
-      }
+      Iterable<MapEntry<int, onCanceled>> entries =
+          onCanceledListeners[entity.id];
+      entries.forEach((entry) => {entry.value(entity.id)});
     } else if (status == DownloadTaskStatus.complete) {
       //status now includes data that we want to add to the entity
       FlutterDownloader.loadTasksWithRawQuery(
@@ -175,31 +175,33 @@ class DownloadManager {
         entity.fileName = task.filename;
         entity.timestamp_video_saved =
             new DateTime.now().millisecondsSinceEpoch;
-        databaseManager.updateVideoEntity(entity).then((rowsUpdated) {
+        databaseManager
+            .updateDownloadingVideoEntity(entity)
+            .then((rowsUpdated) {
           logger.fine("Updated " + rowsUpdated.toString() + " relations.");
         });
         //also update cache
         cache.update(entity.id, (oldEntity) => entity);
       });
 
-      MapEntry<Video, onComplete> entry = onCompleteListeners[entity.id];
-      if (entry != null) {
-        entry.value(entity.id);
-      }
+      Iterable<MapEntry<int, onComplete>> entries =
+          onCompleteListeners[entity.id];
+      entries.forEach((entry) => {entry.value(entity.id)});
     } else if (status == DownloadTaskStatus.enqueued ||
         status == DownloadTaskStatus.running ||
         status == DownloadTaskStatus.paused &&
             onStateChangedListeners.isNotEmpty) {
-      MapEntry<Video, onStateChanged> entry =
+      Iterable<MapEntry<int, onStateChanged>> entries =
           onStateChangedListeners[entity.id];
-      if (entry != null) {
-        entry.value(entity.id, status, progress.toDouble());
-      } else {
-        logger.fine("No subscriber found for progress update. Video: " +
+      if (entries.length == 0) {
+        logger.info("No subscriber found for progress update. Video: " +
             entity.title +
             " id: " +
             entity.id);
       }
+
+      entries.forEach(
+          (entry) => {entry.value(entity.id, status, progress.toDouble())});
     }
   }
 
@@ -344,28 +346,45 @@ class DownloadManager {
       onStateChanged onDownloadStateChanged,
       onComplete onDownloadComplete,
       onFailed onDownloadFailed,
-      onCanceled onDownloadCanceled) {
-    logger.fine("Subscribing on updates for video with name: " +
+      onCanceled onDownloadCanceled,
+      // used to differentiate between download section & list view section as both need to listen for updates!
+      int identifier) {
+    logger.info("Subscribing on updates for video with name: " +
         video.title +
         " and id " +
         video.id);
-    onFailedListeners.putIfAbsent(
-        video.id, () => new MapEntry(video, onDownloadFailed));
-    onCompleteListeners.putIfAbsent(
-        video.id, () => new MapEntry(video, onDownloadComplete));
-    onStateChangedListeners.putIfAbsent(
-        video.id, () => new MapEntry(video, onDownloadStateChanged));
-    onCanceledListeners.putIfAbsent(
-        video.id, () => new MapEntry(video, onDownloadCanceled));
+    onFailedListeners.add(video.id, new MapEntry(identifier, onDownloadFailed));
+    onCompleteListeners.add(video.id, MapEntry(identifier, onDownloadComplete));
+    onStateChangedListeners.add(
+        video.id, MapEntry(identifier, onDownloadStateChanged));
+    onCanceledListeners.add(
+        video.id, new MapEntry(identifier, onDownloadCanceled));
   }
 
-  void cancelSubscription(String videoId) {
-    logger.fine("Cancel subscribtion on updates for video with id: " + videoId);
+  void cancelSubscription(String videoId, int identifier) {
+    logger.info("Cancel subscribtion on updates for video with id: " + videoId);
 
-    onFailedListeners.remove(videoId);
-    onCompleteListeners.remove(videoId);
-    onStateChangedListeners.remove(videoId);
-    onCanceledListeners.remove(videoId);
+    _removeValueFromMultimap(onFailedListeners, videoId, identifier);
+    _removeValueFromMultimap(onCompleteListeners, videoId, identifier);
+    _removeValueFromMultimap(onCanceledListeners, videoId, identifier);
+    _removeValueFromMultimap(onStateChangedListeners, videoId, identifier);
+  }
+
+  _removeValueFromMultimap(Multimap multimap, String videoId, int identifier) {
+    String keyToRemove;
+    MapEntry valueToRemove;
+
+    // cannot break out of for each
+    multimap.forEach((id, value) {
+      if (videoId == id && value.key == identifier) {
+        keyToRemove = id;
+        valueToRemove = value;
+      }
+    });
+    //do not modify during iteration
+    if (keyToRemove != null && keyToRemove.isNotEmpty) {
+      multimap.remove(keyToRemove, valueToRemove);
+    }
   }
 
   Future<Set<VideoEntity>> getCurrentDownloads() async {
@@ -408,7 +427,7 @@ class DownloadManager {
             .getVideoEntityForTaskId(task.taskId)
             .then((VideoEntity entity) {
           if (entity == null) {
-            logger.severe(
+            logger.fine(
                 "Startup sync for completed downloads: task that we do not know of - Ignoring. URL: : " +
                     task.url);
             return;
@@ -419,7 +438,9 @@ class DownloadManager {
                     entity.title);
             entity.filePath = task.savedDir;
             entity.fileName = task.filename;
-            databaseManager.updateVideoEntity(entity).then((rowsUpdated) {
+            databaseManager
+                .updateDownloadingVideoEntity(entity)
+                .then((rowsUpdated) {
               logger.fine("Updated " + rowsUpdated.toString() + " relations.");
             });
           }
@@ -474,23 +495,39 @@ class DownloadManager {
         " and url " +
         video.url_video);
 
-    //Insert into db with taskId. Once finsihed downloading, the filepath and filename will be updated
     DatabaseManager databaseManager = appWideState.appState.databaseManager;
-    VideoEntity entity = VideoEntity.fromVideo(video);
-    entity.task_id = taskId;
-    //make sure to not insert duplicate if not deleted properly before
-    _deleteFromVideoSchema(entity.id).then((int rowsDeleted) {
-      if (rowsDeleted > 0) {
-        logger.warning(
-            "Had to delete video from 'Video' schema before downloading new video - this should not happen. It should have been deleted before.");
-      }
-    });
-    databaseManager.insert(entity).then((data) {
-      logger.fine("Added currently downloading video to Database");
-      cache.putIfAbsent(video.id, () {
-        return entity;
-      });
-    });
+
+    /*
+    First check if there is already a VideoEntity.
+    Once finished downloading, the filepath and filename will be updated.
+     */
+    _getEntityForId(video.id).then(
+      (alreadyExistingEntity) {
+        if (alreadyExistingEntity != null) {
+          //perform update
+          logger.info(
+              "Video to download already exist in db (possibly due to previous rating). Upadting entity with download information");
+          alreadyExistingEntity.task_id = taskId;
+          databaseManager
+              .updateVideoEntity(alreadyExistingEntity)
+              .then((rowsUpdated) {
+            logger.info("Updated " +
+                rowsUpdated.toString() +
+                " rows when starting download for already existing entity");
+          });
+        } else {
+          VideoEntity entity = VideoEntity.fromVideo(video);
+          entity.task_id =
+              taskId; //set TaskId to associate with running download
+          databaseManager.insert(entity).then((data) {
+            logger.fine("Inserted new currently downloading video to Database");
+            cache.putIfAbsent(video.id, () {
+              return entity;
+            });
+          });
+        }
+      },
+    );
 
     cacheTask.putIfAbsent(taskId, () {
       return video.id;

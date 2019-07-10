@@ -1,4 +1,4 @@
-package com.yourcompany.flutterws.activity;
+package com.mediathekview.mobile.activity;
 
 import android.app.ActionBar;
 import android.app.Activity;
@@ -27,11 +27,17 @@ import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
 import com.google.android.exoplayer2.upstream.*;
 import com.google.android.exoplayer2.upstream.cache.*;
 import com.google.android.exoplayer2.util.Util;
-import com.yourcompany.flutterws.R;
-import com.yourcompany.flutterws.video.PlayerEventListener;
-import com.yourcompany.flutterws.video.VideoCallHandler;
+import com.mediathekview.mobile.MainActivity;
+import com.mediathekview.mobile.R;
+import com.mediathekview.mobile.video.PlayerEventListener;
+import com.mediathekview.mobile.video.VideoCallHandler;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
+
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
 
 //Based of mainly from  https://github.com/yusufcakmak/ExoPlayerSample
 public class VideoPlayerActivity extends Activity {
@@ -46,6 +52,8 @@ public class VideoPlayerActivity extends Activity {
 
     private ImageView ivHideControllerButton;
     private Uri filePath;
+    private String videoId;
+    private long playbackPosition;
 
     //Cache functionality
     private static final DefaultBandwidthMeter BANDWIDTH_METER = new DefaultBandwidthMeter();
@@ -54,10 +62,15 @@ public class VideoPlayerActivity extends Activity {
     private static File downloadDirectory;
     private static final String DOWNLOAD_CONTENT_DIRECTORY = "mediathekviewcache";
 
+
+    public Observable<Long> progressObservable = Observable.interval(5, TimeUnit.SECONDS).map((second) -> player.getCurrentPosition() )
+            .observeOn(AndroidSchedulers.mainThread());
+    private Disposable playbackDisposable;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
+
         if (Build.VERSION.SDK_INT < 16) {
             getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -79,13 +92,14 @@ public class VideoPlayerActivity extends Activity {
 
 
         String fileUrl = getIntent().getStringExtra(VideoCallHandler.FILE_PATH);
+        videoId = getIntent().getStringExtra(VideoCallHandler.VIDEO_ID);
+        playbackPosition = getIntent().getLongExtra(VideoCallHandler.PROGRESS, 0);
         filePath = Uri.parse(fileUrl);
 
         shouldAutoPlay = true;
         //bandwidthMeter = new DefaultBandwidthMeter();
         mediaDataSourceFactory = buildDataSourceFactory(true);
         ivHideControllerButton = (ImageView) findViewById(R.id.exo_controller);
-
     }
 
     private void initializePlayer() {
@@ -104,13 +118,19 @@ public class VideoPlayerActivity extends Activity {
 
         MediaSource mediaSource = buildMediaSource(filePath);
 
-        player.addListener(new PlayerEventListener(findViewById(R.id.exo_player_progress_bar)));
+        player.seekTo(playbackPosition);
+
+        player.addListener(new PlayerEventListener(findViewById(R.id.exo_player_progress_bar), player, this));
 
         simpleExoPlayerView.setPlayer(player);
 
+        //simpleExoPlayerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
+        simpleExoPlayerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
+
+        //player.setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING);
         player.setPlayWhenReady(shouldAutoPlay);
 
-        player.prepare(mediaSource);
+        player.prepare(mediaSource, false, false);
 
         Log.i("VideoPlayer", "Opening url " + filePath);
 
@@ -123,6 +143,19 @@ public class VideoPlayerActivity extends Activity {
         });
     }
 
+    private void trackProgress() {
+         playbackDisposable = progressObservable.subscribe(progress -> {
+                    Log.i("VideoPlayer", "Playback position: " + progress);
+                    MainActivity.videoProgressStreamHandler.updateProgress(videoId, progress);
+                });
+    }
+
+    private void stopTrackingProgress() {
+        if (playbackDisposable != null) {
+            playbackDisposable.dispose();
+        }
+    }
+
     private void releasePlayer() {
         if (player != null) {
             shouldAutoPlay = player.getPlayWhenReady();
@@ -130,6 +163,7 @@ public class VideoPlayerActivity extends Activity {
             player = null;
             trackSelector = null;
         }
+        stopTrackingProgress();
     }
 
     @Override
@@ -137,6 +171,7 @@ public class VideoPlayerActivity extends Activity {
         super.onStart();
         if (Util.SDK_INT > 23) {
             initializePlayer();
+            trackProgress();
         }
     }
 
@@ -145,6 +180,7 @@ public class VideoPlayerActivity extends Activity {
         super.onResume();
         if ((Util.SDK_INT <= 23 || player == null)) {
             initializePlayer();
+            trackProgress();
         }
     }
 
@@ -153,6 +189,7 @@ public class VideoPlayerActivity extends Activity {
         super.onPause();
         if (Util.SDK_INT <= 23) {
             releasePlayer();
+            stopTrackingProgress();
         }
     }
 
@@ -161,8 +198,11 @@ public class VideoPlayerActivity extends Activity {
         super.onStop();
         if (Util.SDK_INT > 23) {
             releasePlayer();
+            stopTrackingProgress();
         }
     }
+
+
 
     // _________________The FOLLOWING IS TAKEN FROM https://github.com/google/ExoPlayer/blob/release-v2/demos/main/src/main/java/com/google/android/exoplayer2/demo/PlayerActivity.java  ------------------
 
