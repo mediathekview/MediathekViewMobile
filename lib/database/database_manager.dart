@@ -415,7 +415,22 @@ create table ''' +
     ];
   }
 
-  Future<Set<VideoProgressEntity>> getAllVideoProgressEntities() async {
+  Future<Set<VideoProgressEntity>> getLastViewedVideos(int amount) async {
+    if (db == null || !db.isOpen) {
+      return null;
+    }
+
+    List<Map> result = await db.query(VideoProgressEntity.TABLE_NAME,
+        orderBy: VideoProgressEntity.timestampLastViewedColumn + " DESC",
+        columns: getVideoProgressColumns(),
+        limit: amount);
+    if (result != null && result.length > 0) {
+      return result.map((raw) => new VideoProgressEntity.fromMap(raw)).toSet();
+    }
+    return new Set();
+  }
+
+  Future<Set<VideoProgressEntity>> getAllLastViewedVideos() async {
     if (db == null || !db.isOpen) {
       return null;
     }

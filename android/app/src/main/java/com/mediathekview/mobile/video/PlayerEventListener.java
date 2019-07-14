@@ -12,6 +12,7 @@ import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
+import com.mediathekview.mobile.MainActivity;
 
 public class PlayerEventListener extends Player.DefaultEventListener {
 
@@ -62,7 +63,9 @@ public class PlayerEventListener extends Player.DefaultEventListener {
 
     @Override
     public void onPlayerError(ExoPlaybackException error) {
-        // TODO close activity and raise an error
+        MainActivity.videoProgressStreamHandler.reportError(error);
+        exoPlayer.release();
+        activity.finish();
     }
 
 

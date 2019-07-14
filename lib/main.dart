@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     AppSharedStateContainer.of(context).initializeState(context);
 
-    final title = 'MediathekView';
+    final title = 'MediathekViewMobile';
 
     //Setup global log levels
     Logger.root.level = Level.INFO;
@@ -272,13 +272,12 @@ class HomePageState extends State<MyHomePage>
         children: <Widget>[
           new OverviewSection(),
           new SafeArea(child: getVideoSearchListWidget()),
-          //liveTVSection == null ? new LiveTVSection() : liveTVSection,
           downloadSection == null ? new DownloadSection() : downloadSection,
           aboutSection == null ? new AboutSection() : aboutSection
         ],
       ),
       bottomNavigationBar: BubbleBottomBar(
-        opacity: .2, //sets the background opacity of active BubbleBottomBarItem
+        opacity: .2,
         currentIndex: _page,
         onTap: navigationTapped,
         items: [

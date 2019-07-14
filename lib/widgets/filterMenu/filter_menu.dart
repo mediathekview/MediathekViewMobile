@@ -155,7 +155,8 @@ class FilterMenu extends StatelessWidget {
             builder: (BuildContext context) {
               return new ChannelPickerDialog(searchFilters["Sender"]);
             },
-            fullscreenDialog: true));
+            fullscreenDialog: true,
+            settings: RouteSettings(name: "ChannelPicker")));
 
     logger.fine("Channel selection received");
 

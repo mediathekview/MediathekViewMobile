@@ -5,11 +5,13 @@ import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:flutter_ws/enum/channels.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
+import 'package:flutter_ws/platform_channels/video_progress_manager.dart';
 import 'package:flutter_ws/util/show_snackbar.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/util/timestamp_calculator.dart';
 import 'package:flutter_ws/widgets/bars/download_progress_bar.dart';
 import 'package:flutter_ws/widgets/bars/playback_progress_bar.dart';
+import 'package:flutter_ws/widgets/downloadSection/watch_history.dart';
 import 'package:flutter_ws/widgets/overviewSection/util.dart';
 import 'package:flutter_ws/widgets/videolist/channel_thumbnail.dart';
 import 'package:flutter_ws/widgets/videolist/circular_progress_with_text.dart';
@@ -18,6 +20,7 @@ import 'package:logging/logging.dart';
 
 const ERROR_MSG = "Deletion of video failed.";
 const TRY_AGAIN_MSG = "Try again.";
+const recentlyWatchedVideosLimit = 5;
 
 class DownloadSection extends StatefulWidget {
   final Logger logger = new Logger('DownloadSection');
@@ -40,8 +43,14 @@ class DownloadSectionState extends State<DownloadSection> {
   Map<String, DownloadTaskStatus> currentStatus = new Map();
   Map<String, double> progress = new Map();
   Map<String, VideoProgressEntity> videosWithPlaybackProgress = new Map();
+  VideoProgressManager videoProgressManager;
 
   DownloadSectionState(this.userDeletedAppId);
+
+  @override
+  void dispose() {
+    videoProgressManager = null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +61,9 @@ class DownloadSectionState extends State<DownloadSection> {
     loadAlreadyDownloadedVideosFromDb();
     loadCurrentDownloads();
     loadVideosWithPlaybackProgress();
+    // video progress manager needs to have correct context to display error messages
+    videoProgressManager =
+        new VideoProgressManager(context, appState.databaseManager);
 
     Widget loadingIndicator;
     if (currentDownloads.length == 1) {
@@ -74,6 +86,9 @@ class DownloadSectionState extends State<DownloadSection> {
       loadingIndicator = new Container();
     }
 
+    List<Widget> watchHistoryItems =
+        Util.getWatchHistoryItems(videosWithPlaybackProgress, size.width / 2);
+
     return new Scaffold(
       backgroundColor: Colors.grey[800],
       body: new SafeArea(
@@ -86,7 +101,7 @@ class DownloadSectionState extends State<DownloadSection> {
                     padding:
                         EdgeInsets.only(left: 20.0, top: 5.0, bottom: 16.0),
                     child: new Text(
-                      "Weiter ansehen",
+                      "Kürzlich angesehen",
                       style: new TextStyle(
                           fontSize: 25.0,
                           color: Colors.white,
@@ -98,10 +113,35 @@ class DownloadSectionState extends State<DownloadSection> {
               height: size.width / 2 / 16 * 9,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                children: Util.getWatchHistoryItems(
-                    videosWithPlaybackProgress, size.width / 2),
+                children: watchHistoryItems,
               ),
             ),
+            videosWithPlaybackProgress.isNotEmpty
+                ? Padding(
+                    padding: EdgeInsets.only(top: 5.0, bottom: 4.0),
+                    child: new ListTile(
+                      leading: new Icon(
+                        Icons.history,
+                        size: 30.0,
+                      ),
+                      title: new Text(
+                        "Komplette History",
+                        style: new TextStyle(
+                            fontSize: 16.0,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600),
+                      ),
+                      onTap: () async {
+                        await Navigator.of(context).push(new MaterialPageRoute(
+                            builder: (BuildContext context) {
+                              return new WatchHistory();
+                            },
+                            settings: RouteSettings(name: "WatchHistory"),
+                            fullscreenDialog: true));
+                      },
+                    ),
+                  )
+                : new Container(),
             videosWithPlaybackProgress.isNotEmpty
                 ? Padding(
                     padding: EdgeInsets.only(left: 20.0, top: 20.0),
@@ -191,6 +231,7 @@ class DownloadSectionState extends State<DownloadSection> {
               left: 0.0,
               child: new Center(
                 child: new FloatingActionButton(
+                  heroTag: index.toString(),
                   mini: true,
                   onPressed: () {
                     deleteOrStopDownload(context, entity.id);
@@ -387,7 +428,9 @@ class DownloadSectionState extends State<DownloadSection> {
   Future loadVideosWithPlaybackProgress() async {
     //check for playback progress
     if (videosWithPlaybackProgress.isEmpty) {
-      return appState.databaseManager.getAllVideoProgressEntities().then((all) {
+      return appState.databaseManager
+          .getLastViewedVideos(recentlyWatchedVideosLimit)
+          .then((all) {
         if (all != null && all.isNotEmpty) {
           all.forEach((entity) =>
               videosWithPlaybackProgress.putIfAbsent(entity.id, () => entity));

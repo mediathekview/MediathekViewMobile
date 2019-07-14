@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_ws/database/database_manager.dart';
 import 'package:flutter_ws/database/video_progress_entity.dart';
+import 'package:flutter_ws/util/connectivity_util.dart';
+import 'package:flutter_ws/util/show_snackbar.dart';
 import 'package:logging/logging.dart';
 
 class VideoProgressManager {
@@ -15,12 +17,21 @@ class VideoProgressManager {
 
   VideoProgressManager(BuildContext context, DatabaseManager dbManager) {
     databaseManager = dbManager;
+
     _eventChannel =
         const EventChannel('com.mediathekview.mobile/videoProgressEvent');
     streamSubscription =
         _getBroadcastStream().listen((raw) => _onProgress(raw), onError: (e) {
       logger.severe(
           "Receiving video play progress failed. Reason " + e.toString());
+      ConnectivityUtil.HasInternetConnectivity().then((isConnected) {
+        if (isConnected) {
+          SnackbarActions.showError(
+              context, "Das Video wurde womöglich aus der Mediathek entfernt");
+        } else {
+          SnackbarActions.showError(context, "Keine Verbindung zum Internet");
+        }
+      });
     }, onDone: () {
       logger.info("Video play progress event channel is done.");
     }, cancelOnError: false);

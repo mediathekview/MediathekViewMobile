@@ -107,8 +107,6 @@ public class VideoPlayerActivity extends Activity {
         simpleExoPlayerView = (SimpleExoPlayerView) findViewById(R.id.player_view);
         simpleExoPlayerView.requestFocus();
 
-//        simpleExoPlayerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
-
         TrackSelection.Factory videoTrackSelectionFactory =
                 new AdaptiveTrackSelection.Factory(BANDWIDTH_METER);
 
@@ -121,13 +119,9 @@ public class VideoPlayerActivity extends Activity {
         player.seekTo(playbackPosition);
 
         player.addListener(new PlayerEventListener(findViewById(R.id.exo_player_progress_bar), player, this));
-
         simpleExoPlayerView.setPlayer(player);
-
-        //simpleExoPlayerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
         simpleExoPlayerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
 
-        //player.setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING);
         player.setPlayWhenReady(shouldAutoPlay);
 
         player.prepare(mediaSource, false, false);

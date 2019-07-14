@@ -40,7 +40,7 @@ class VideoDescription extends StatelessWidget {
       child: new BackdropFilter(
         filter: new ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
         child: new Padding(
-          padding: const EdgeInsets.only(left: 50.0, right: 50.0, top: 10),
+          padding: const EdgeInsets.only(left: 30.0, right: 10.0, top: 10),
           child: new Container(
             //height: 400.0,
             decoration: new BoxDecoration(

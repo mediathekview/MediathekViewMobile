@@ -15,12 +15,12 @@ class Util {
       Map<String, VideoRating> videos,
       Map<String, VideoProgressEntity> videosWithPlaybackProgress,
       double width) {
-    List<ClipRRect> result = [];
+    List<Widget> result = [];
     for (var i = 0; i < videos.length; i++) {
       var videoRating = videos.values.toList()[i];
       String assetPath = getAssetPath(videoRating.channel.toUpperCase());
 
-      ClipRRect rect = getSliderWidget(videoRating, assetPath,
+      Widget rect = getSliderWidget(videoRating, assetPath,
           videosWithPlaybackProgress[videoRating.video_id], width, 17, 14);
       result.add(rect);
     }
@@ -29,17 +29,21 @@ class Util {
 
   static List<Widget> getWatchHistoryItems(
       Map<String, VideoProgressEntity> videos, double width) {
-    List<ClipRRect> result = [];
+    List<Widget> result = [];
     var videoProgressEntities = videos.values.toList();
     for (var i = 0; i < videos.length; i++) {
-      VideoProgressEntity videoProgress = videoProgressEntities[i];
-      String assetPath = getAssetPath(videoProgress.channel.toUpperCase());
-
-      ClipRRect rect =
-          getWatchHistoryWidget(assetPath, videoProgress, width, 13, 11);
+      Widget rect = getWatchHistoryItem(videoProgressEntities[i], width);
       result.add(rect);
     }
     return result;
+  }
+
+  static Widget getWatchHistoryItem(
+      VideoProgressEntity videoProgress, double width) {
+    String assetPath = getAssetPath(videoProgress.channel.toUpperCase());
+    Widget rect =
+        getWatchHistoryWidget(assetPath, videoProgress, width, 13, 11);
+    return rect;
   }
 
   static String getAssetPath(String channel) {
@@ -53,105 +57,17 @@ class Util {
     return assetPath;
   }
 
-  static ClipRRect getSliderWidget(
+  static Widget getSliderWidget(
       VideoRating videoRating,
       String channelPictureImagePath,
       VideoProgressEntity playbackProgress,
       double width,
       double headingFontSize,
       double metaFontSize) {
-    return ClipRRect(
-      borderRadius: BorderRadius.all(Radius.circular(5.0)),
-      child: new Container(
-        color: Colors.grey[100],
-        width: width,
-        child: Stack(
-          children: <Widget>[
-            new VideoPreviewAdapter(
-              true,
-              videoRating.video_id,
-              video: Video.fromMap(videoRating.toMap()),
-              defaultImageAssetPath: channelPictureImagePath,
-              showLoadingIndicator: false,
-              presetAspectRatio: 16 / 9,
-              videoProgressEntity: playbackProgress,
-              //size: new Size.fromWidth(1000),
-            ),
-            new Positioned(
-              bottom: 0.0,
-              left: 0.0,
-              right: 0.0,
-              child: new Opacity(
-                opacity: 0.7,
-                child: new Container(
-                  color: Colors.grey[700],
-                  child: new Column(
-                    children: <Widget>[
-                      // Playback Progress
-                      playbackProgress != null
-                          ? PlaybackProgressBar(playbackProgress.progress,
-                              int.parse(videoRating.duration.toString()), false)
-                          : new Container(),
-                      // Meta Information
-                      new ListTile(
-                        trailing: new Text(
-                          videoRating.duration != null
-                              ? Calculator.calculateDuration(
-                                  videoRating.duration)
-                              : "",
-                          style: videoMetadataTextStyle.copyWith(
-                              color: Colors.white, fontSize: metaFontSize),
-                        ),
-                        leading: channelPictureImagePath.isNotEmpty
-                            ? new ChannelThumbnail(
-                                channelPictureImagePath, false)
-                            : new Container(),
-                        title: new Text(
-                          videoRating.title,
-                          style: videoMetadataTextStyle.copyWith(
-                              color: Colors.white, fontSize: headingFontSize),
-                        ),
-                        subtitle: new Text(
-                          videoRating.topic != null ? videoRating.topic : "",
-                          style: videoMetadataTextStyle.copyWith(
-                              color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            new Positioned(
-              bottom: 0.0,
-              //left: 70.0,
-              right: 5.0,
-              child: new RatingBar(
-                true,
-                videoRating,
-                Video.fromMap(videoRating.toMap()),
-                videoMetadataTextStyle.copyWith(color: Colors.white),
-                true,
-                false,
-                size: 25.0,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static ClipRRect getWatchHistoryWidget(
-      String channelPictureImagePath,
-      VideoProgressEntity playbackProgress,
-      double width,
-      double headingFontSize,
-      double metaFontSize) {
-    return ClipRRect(
-      borderRadius: BorderRadius.all(Radius.circular(5.0)),
-      child: new Padding(
-        padding: EdgeInsets.only(left: 10),
+    return new Padding(
+      padding: EdgeInsets.only(right: 5.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.all(Radius.circular(10.0)),
         child: new Container(
           color: Colors.grey[100],
           width: width,
@@ -159,8 +75,8 @@ class Util {
             children: <Widget>[
               new VideoPreviewAdapter(
                 true,
-                playbackProgress.id,
-                video: Video.fromMap(playbackProgress.toMap()),
+                videoRating.video_id,
+                video: Video.fromMap(videoRating.toMap()),
                 defaultImageAssetPath: channelPictureImagePath,
                 showLoadingIndicator: false,
                 presetAspectRatio: 16 / 9,
@@ -178,15 +94,19 @@ class Util {
                     child: new Column(
                       children: <Widget>[
                         // Playback Progress
-                        PlaybackProgressBar(
-                            playbackProgress.progress,
-                            int.parse(playbackProgress.duration.toString()),
-                            false),
+                        playbackProgress != null
+                            ? PlaybackProgressBar(
+                                playbackProgress.progress,
+                                int.parse(videoRating.duration.toString()),
+                                false)
+                            : new Container(),
                         // Meta Information
                         new ListTile(
                           trailing: new Text(
-                            Calculator.calculateDuration(
-                                playbackProgress.duration),
+                            videoRating.duration != null
+                                ? Calculator.calculateDuration(
+                                    videoRating.duration)
+                                : "",
                             style: videoMetadataTextStyle.copyWith(
                                 color: Colors.white, fontSize: metaFontSize),
                           ),
@@ -195,14 +115,12 @@ class Util {
                                   channelPictureImagePath, false)
                               : new Container(),
                           title: new Text(
-                            playbackProgress.title,
+                            videoRating.title,
                             style: videoMetadataTextStyle.copyWith(
                                 color: Colors.white, fontSize: headingFontSize),
                           ),
                           subtitle: new Text(
-                            playbackProgress.topic != null
-                                ? playbackProgress.topic
-                                : "",
+                            videoRating.topic != null ? videoRating.topic : "",
                             style: videoMetadataTextStyle.copyWith(
                                 color: Colors.white),
                           ),
@@ -212,7 +130,102 @@ class Util {
                   ),
                 ),
               ),
+              new Positioned(
+                bottom: 0.0,
+                //left: 70.0,
+                right: 5.0,
+                child: new RatingBar(
+                  true,
+                  videoRating,
+                  Video.fromMap(videoRating.toMap()),
+                  videoMetadataTextStyle.copyWith(color: Colors.white),
+                  true,
+                  false,
+                  size: 25.0,
+                ),
+              ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Widget getWatchHistoryWidget(
+      String channelPictureImagePath,
+      VideoProgressEntity playbackProgress,
+      double width,
+      double headingFontSize,
+      double metaFontSize) {
+    return new Padding(
+      padding: EdgeInsets.only(right: 5.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.all(Radius.circular(5.0)),
+        child: new Padding(
+          padding: EdgeInsets.only(left: 10),
+          child: new Container(
+            color: Colors.grey[100],
+            width: width,
+            child: Stack(
+              children: <Widget>[
+                new VideoPreviewAdapter(
+                  true,
+                  playbackProgress.id,
+                  video: Video.fromMap(playbackProgress.toMap()),
+                  defaultImageAssetPath: channelPictureImagePath,
+                  showLoadingIndicator: false,
+                  presetAspectRatio: 16 / 9,
+                  videoProgressEntity: playbackProgress,
+                  //size: new Size.fromWidth(1000),
+                ),
+                new Positioned(
+                  bottom: 0.0,
+                  left: 0.0,
+                  right: 0.0,
+                  child: new Opacity(
+                    opacity: 0.7,
+                    child: new Container(
+                      color: Colors.grey[700],
+                      child: new Column(
+                        children: <Widget>[
+                          // Playback Progress
+                          PlaybackProgressBar(
+                              playbackProgress.progress,
+                              int.parse(playbackProgress.duration.toString()),
+                              false),
+                          // Meta Information
+                          new ListTile(
+                            trailing: new Text(
+                              Calculator.calculateDuration(
+                                  playbackProgress.duration),
+                              style: videoMetadataTextStyle.copyWith(
+                                  color: Colors.white, fontSize: metaFontSize),
+                            ),
+                            leading: channelPictureImagePath.isNotEmpty
+                                ? new ChannelThumbnail(
+                                    channelPictureImagePath, false)
+                                : new Container(),
+                            title: new Text(
+                              playbackProgress.title,
+                              style: videoMetadataTextStyle.copyWith(
+                                  color: Colors.white,
+                                  fontSize: headingFontSize),
+                            ),
+                            subtitle: new Text(
+                              playbackProgress.topic != null
+                                  ? playbackProgress.topic
+                                  : "",
+                              style: videoMetadataTextStyle.copyWith(
+                                  color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

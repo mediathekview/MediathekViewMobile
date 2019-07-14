@@ -146,7 +146,7 @@ class _OverviewSectionState extends State<OverviewSection> {
   Future loadVideosWithPlaybackProgress() async {
     //check for playback progress
     if (videosWithPlaybackProgress.isEmpty) {
-      return appState.databaseManager.getAllVideoProgressEntities().then((all) {
+      return appState.databaseManager.getAllLastViewedVideos().then((all) {
         if (all != null && all.isNotEmpty) {
           all.forEach((entity) =>
               videosWithPlaybackProgress.putIfAbsent(entity.id, () => entity));
