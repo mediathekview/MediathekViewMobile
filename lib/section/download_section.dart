@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
+import 'package:flutter_swiper/flutter_swiper.dart';
 import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:flutter_ws/enum/channels.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/platform_channels/video_progress_manager.dart';
+import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/util/show_snackbar.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/util/timestamp_calculator.dart';
@@ -86,93 +88,11 @@ class DownloadSectionState extends State<DownloadSection> {
       loadingIndicator = new Container();
     }
 
-    List<Widget> watchHistoryItems =
-        Util.getWatchHistoryItems(videosWithPlaybackProgress, size.width / 2);
-
-    return new Scaffold(
-      backgroundColor: Colors.grey[800],
-      body: new SafeArea(
-        child: new Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            loadingIndicator,
-            videosWithPlaybackProgress.isNotEmpty
-                ? Padding(
-                    padding:
-                        EdgeInsets.only(left: 20.0, top: 5.0, bottom: 16.0),
-                    child: new Text(
-                      "Kürzlich angesehen",
-                      style: new TextStyle(
-                          fontSize: 25.0,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800),
-                    ),
-                  )
-                : new Container(),
-            new Container(
-              height: size.width / 2 / 16 * 9,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: watchHistoryItems,
-              ),
-            ),
-            videosWithPlaybackProgress.isNotEmpty
-                ? Padding(
-                    padding: EdgeInsets.only(top: 5.0, bottom: 4.0),
-                    child: new ListTile(
-                      leading: new Icon(
-                        Icons.history,
-                        size: 30.0,
-                      ),
-                      title: new Text(
-                        "Komplette History",
-                        style: new TextStyle(
-                            fontSize: 16.0,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600),
-                      ),
-                      onTap: () async {
-                        await Navigator.of(context).push(new MaterialPageRoute(
-                            builder: (BuildContext context) {
-                              return new WatchHistory();
-                            },
-                            settings: RouteSettings(name: "WatchHistory"),
-                            fullscreenDialog: true));
-                      },
-                    ),
-                  )
-                : new Container(),
-            videosWithPlaybackProgress.isNotEmpty
-                ? Padding(
-                    padding: EdgeInsets.only(left: 20.0, top: 20.0),
-                    child: new Text(
-                      "Meine Downloads",
-                      style: new TextStyle(
-                          fontSize: 25.0,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800),
-                    ),
-                  )
-                : new Container(),
-            new Flexible(
-              child: new GridView.builder(
-                  gridDelegate: new SliverGridDelegateWithFixedCrossAxisCount(
-                      mainAxisSpacing: 5.0,
-                      childAspectRatio: 16 / 9,
-                      crossAxisCount:
-                          (orientation == Orientation.portrait) ? 2 : 3),
-                  // Create a grid with 2 columns. If you change the scrollDirection to
-                  // horizontal, this produces 2 rows.
-                  padding: const EdgeInsets.all(5.0),
-                  shrinkWrap: true,
-                  // Generate 100 widgets that display their index in the List.
-                  itemBuilder: itemBuilder,
-                  itemCount: currentDownloads.length + downloadedVideos.length),
-            ),
-          ],
-        ),
-      ),
-    );
+    if (DeviceInformation.isTablet(context)) {
+      return _buildTablet(size, orientation, context);
+    } else {
+      return _buildMobile(size, orientation, context);
+    }
   }
 
   Widget itemBuilder(BuildContext context, int index) {
@@ -448,6 +368,247 @@ class DownloadSectionState extends State<DownloadSection> {
         message,
         style: new TextStyle(
             fontSize: 25.0, color: Colors.white, fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+
+  Widget _buildTablet(
+      Size size, Orientation orientation, BuildContext context) {
+    return new Scaffold(
+      backgroundColor: Colors.black87,
+      body: new SafeArea(
+        child: CustomScrollView(
+          slivers: <Widget>[
+            SliverPadding(
+              padding: EdgeInsets.only(left: 20.0, top: 5.0, bottom: 16.0),
+              sliver: new SliverList(
+                delegate: new SliverChildListDelegate(
+                  [
+                    videosWithPlaybackProgress.isNotEmpty
+                        ? new Text(
+                            "Kürzlich angesehen",
+                            style: new TextStyle(
+                                fontSize: 25.0,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800),
+                          )
+                        : new Container(),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: new Container(
+                height: (orientation == Orientation.portrait)
+                    ? size.width / 2 / 16 * 9
+                    : size.width / 3 / 16 * 9,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: Util.getWatchHistoryItems(
+                      videosWithPlaybackProgress,
+                      (orientation == Orientation.portrait)
+                          ? size.width / 2
+                          : size.width / 3),
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: EdgeInsets.only(top: 5.0, bottom: 4.0),
+              sliver: new SliverList(
+                delegate: new SliverChildListDelegate(
+                  [
+                    videosWithPlaybackProgress.isNotEmpty
+                        ? Padding(
+                            padding: EdgeInsets.only(top: 5.0, bottom: 4.0),
+                            child: new ListTile(
+                              leading: new Icon(
+                                Icons.history,
+                                size: 30.0,
+                              ),
+                              title: new Text(
+                                "Komplette History",
+                                style: new TextStyle(
+                                    fontSize: 16.0,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                              onTap: () async {
+                                await Navigator.of(context).push(
+                                    new MaterialPageRoute(
+                                        builder: (BuildContext context) {
+                                          return new WatchHistory();
+                                        },
+                                        settings:
+                                            RouteSettings(name: "WatchHistory"),
+                                        fullscreenDialog: true));
+                              },
+                            ),
+                          )
+                        : new Container(),
+                    videosWithPlaybackProgress.isNotEmpty
+                        ? Padding(
+                            padding: EdgeInsets.only(left: 20.0, top: 20.0),
+                            child: new Text(
+                              "Meine Downloads",
+                              style: new TextStyle(
+                                  fontSize: 25.0,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800),
+                            ),
+                          )
+                        : new Container(),
+                  ],
+                ),
+              ),
+            ),
+            SliverGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: (orientation == Orientation.portrait) ? 2 : 3,
+                childAspectRatio: 16 / 9,
+                mainAxisSpacing: 5.0,
+                crossAxisSpacing: 5.0,
+              ),
+              // padding: const EdgeInsets.all(5.0),
+              delegate: SliverChildBuilderDelegate(itemBuilder,
+                  childCount:
+                      currentDownloads.length + downloadedVideos.length),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobile(
+      Size size, Orientation orientation, BuildContext context) {
+    List<Widget> watchHistoryItems = orientation == Orientation.portrait
+        ? Util.getWatchHistoryItems(videosWithPlaybackProgress, size.width)
+        : Util.getWatchHistoryItems(videosWithPlaybackProgress, size.width / 2);
+
+    return new Scaffold(
+      backgroundColor: Colors.black87,
+      body: new SafeArea(
+        child: CustomScrollView(
+          slivers: <Widget>[
+            SliverPadding(
+              padding: EdgeInsets.only(left: 10.0, top: 5.0, bottom: 13.0),
+              sliver: new SliverList(
+                delegate: new SliverChildListDelegate(
+                  [
+                    videosWithPlaybackProgress.isNotEmpty
+                        ? new Text(
+                            "Kürzlich angesehen",
+                            style: new TextStyle(
+                                fontSize: 25.0,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800),
+                          )
+                        : new Container(),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: new Container(
+                child: orientation == Orientation.portrait
+                    ? new Container(
+                        height: size.width / 16 * 9,
+                        child: new Swiper(
+                          itemBuilder: (BuildContext context, int index) {
+                            return watchHistoryItems[index];
+                          },
+                          itemCount: watchHistoryItems.length,
+                          pagination: new SwiperPagination(),
+                          control: new SwiperControl(),
+                        ),
+                      )
+                    : new Container(
+                        height: size.width / 2 / 16 * 9,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: watchHistoryItems,
+                        ),
+                      ),
+              ),
+            ),
+            new SliverList(
+              delegate: new SliverChildListDelegate(
+                [
+                  videosWithPlaybackProgress.isNotEmpty
+                      ? new Text(
+                          "Kürzlich angesehen",
+                          style: new TextStyle(
+                              fontSize: 25.0,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800),
+                        )
+                      : new Container(),
+                ],
+              ),
+            ),
+            SliverPadding(
+              padding: EdgeInsets.only(top: 5.0, bottom: 4.0),
+              sliver: new SliverList(
+                delegate: new SliverChildListDelegate(
+                  [
+                    videosWithPlaybackProgress.isNotEmpty
+                        ? Padding(
+                            padding: EdgeInsets.only(top: 5.0, bottom: 4.0),
+                            child: new ListTile(
+                              leading: new Icon(
+                                Icons.history,
+                                size: 30.0,
+                              ),
+                              title: new Text(
+                                "Komplette History",
+                                style: new TextStyle(
+                                    fontSize: 16.0,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                              onTap: () async {
+                                await Navigator.of(context).push(
+                                    new MaterialPageRoute(
+                                        builder: (BuildContext context) {
+                                          return new WatchHistory();
+                                        },
+                                        settings:
+                                            RouteSettings(name: "WatchHistory"),
+                                        fullscreenDialog: true));
+                              },
+                            ),
+                          )
+                        : new Container(),
+                    videosWithPlaybackProgress.isNotEmpty
+                        ? Padding(
+                            padding: EdgeInsets.only(left: 20.0, top: 20.0),
+                            child: new Text(
+                              "Meine Downloads",
+                              style: new TextStyle(
+                                  fontSize: 25.0,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800),
+                            ),
+                          )
+                        : new Container(),
+                  ],
+                ),
+              ),
+            ),
+            SliverGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: (orientation == Orientation.portrait) ? 1 : 2,
+                childAspectRatio: 16 / 9,
+                mainAxisSpacing: 5.0,
+                crossAxisSpacing: 5.0,
+              ),
+              // padding: const EdgeInsets.all(5.0),
+              delegate: SliverChildBuilderDelegate(itemBuilder,
+                  childCount:
+                      currentDownloads.length + downloadedVideos.length),
+            )
+          ],
+        ),
       ),
     );
   }

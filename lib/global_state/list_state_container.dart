@@ -7,7 +7,7 @@ import 'package:flutter_ws/model/video_rating.dart';
 import 'package:flutter_ws/platform_channels/download_manager_flutter.dart';
 import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
 import 'package:flutter_ws/platform_channels/video_progress_manager.dart';
-import 'package:flutter_ws/util/rating_download_util.dart';
+import 'package:flutter_ws/util/rating_util.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';

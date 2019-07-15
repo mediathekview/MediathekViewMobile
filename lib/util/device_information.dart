@@ -4,7 +4,7 @@ import 'package:device_info/device_info.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:logging/logging.dart';
 
-class OsChecker {
+class DeviceInformation {
   static final Logger logger = new Logger('OsChecker');
   static TargetPlatform platform;
 
@@ -30,5 +30,14 @@ class OsChecker {
       logger.severe("Running NOT on IOS - OS unknown. Return default: Android");
       return TargetPlatform.android;
     }
+  }
+
+  static bool isTablet(BuildContext context) {
+    // The equivalent of the "smallestWidth" qualifier on Android.
+    var shortestSide = MediaQuery.of(context).size.shortestSide;
+
+    // Determine if we should use mobile layout or not, 600 here is
+    // a common breakpoint for a typical 7-inch tablet.
+    return shortestSide > 600;
   }
 }

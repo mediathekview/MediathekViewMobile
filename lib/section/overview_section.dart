@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
-import 'package:flutter_ws/util/rating_download_util.dart';
+import 'package:flutter_ws/util/device_information.dart';
+import 'package:flutter_ws/util/rating_util.dart';
 import 'package:flutter_ws/widgets/overviewSection/carousel_slider.dart';
 import 'package:flutter_ws/widgets/overviewSection/util.dart';
 import 'package:logging/logging.dart';
@@ -26,28 +27,46 @@ class _OverviewSectionState extends State<OverviewSection> {
 
     //load ratings after the database access to avoid requesting ratings multiple times & starting preview generation multiple times
     loadVideosWithPlaybackProgress().then((v) => loadRatings());
+    return _buildMobile(size, orientation, DeviceInformation.isTablet(context));
+  }
+
+  Widget _buildMobile(Size size, Orientation orientation, bool isTablet) {
+    int crossAxisCount;
+    if (orientation == Orientation.portrait && isTablet) {
+      crossAxisCount = 2;
+    } else if (orientation == Orientation.portrait && !isTablet) {
+      crossAxisCount = 1;
+    } else if (orientation == Orientation.landscape && isTablet) {
+      crossAxisCount = 3;
+    } else if (orientation == Orientation.landscape && !isTablet) {
+      crossAxisCount = 2;
+    }
+
     return MaterialApp(
       home: Scaffold(
         backgroundColor: Colors.black87,
         body: new SafeArea(
-          child: new Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              new CarouselWithIndicator(
-                videosWithRatingInformation: appState.bestVideosAllTime,
-                viewportFraction: 1.0,
-                autoPlay: true,
-                enlargeCenterPage: false,
-                showIndexBar: true,
-                videosWithPlaybackProgress: videosWithPlaybackProgress,
-                width: size.width,
-                orientation: orientation,
-              ),
-              appState.hotVideosToday == null ||
-                      appState.hotVideosToday.isNotEmpty
-                  ? getHeading("Heute beliebt")
-                  : new Container(),
-              /* new CarouselWithIndicator(
+          child: Container(
+            child: CustomScrollView(
+              slivers: <Widget>[
+                new SliverList(
+                    delegate: new SliverChildListDelegate(
+                  [
+                    new CarouselWithIndicator(
+                      videosWithRatingInformation: appState.bestVideosAllTime,
+                      viewportFraction: 1.0,
+                      autoPlay: true,
+                      enlargeCenterPage: false,
+                      showIndexBar: true,
+                      videosWithPlaybackProgress: videosWithPlaybackProgress,
+                      width: size.width,
+                      orientation: orientation,
+                    ),
+                    appState.hotVideosToday == null ||
+                            appState.hotVideosToday.isNotEmpty
+                        ? getHeading("Heute beliebt")
+                        : new Container(),
+                    /* new CarouselWithIndicator(
               videosWithRatingInformation: appState.hotVideosToday,
               viewportFraction: 0.8,
               autoPlay: false,
@@ -56,33 +75,39 @@ class _OverviewSectionState extends State<OverviewSection> {
               videosWithPlaybackProgress: videosWithPlaybackProgress,
               width: size.width,
             ),*/
-              new Flexible(
-                child: appState.hotVideosToday != null
-                    ? new GridView.count(
-                        childAspectRatio: 16 / 9,
-                        mainAxisSpacing: 5.0,
-                        crossAxisSpacing: 5.0,
-                        padding: const EdgeInsets.all(5.0),
-                        shrinkWrap: true,
-                        crossAxisCount:
-                            (orientation == Orientation.portrait) ? 2 : 3,
-                        children: Util.getSliderItems(appState.hotVideosToday,
-                            videosWithPlaybackProgress, size.width / 2),
+                  ],
+                )),
+                appState.hotVideosToday != null
+                    ? SliverGrid(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          childAspectRatio: 16 / 9,
+                          mainAxisSpacing: 5.0,
+                          crossAxisSpacing: 5.0,
+                        ),
+                        // padding: const EdgeInsets.all(5.0),
+                        delegate: SliverChildListDelegate(
+                          Util.getSliderItems(appState.hotVideosToday,
+                              videosWithPlaybackProgress, size.width / 2),
+                        ),
                       )
-                    : new Container(
-                        width: size.width,
-                        height: size.width / 16 * 9,
-                        child: new Center(
-                          child: new CircularProgressIndicator(
-                            valueColor:
-                                new AlwaysStoppedAnimation<Color>(Colors.red),
-                            strokeWidth: 2.0,
-                            backgroundColor: Colors.white,
+                    : new SliverList(
+                        delegate: new SliverChildListDelegate([
+                        new Container(
+                          width: size.width,
+                          height: size.width / 16 * 9,
+                          child: new Center(
+                            child: new CircularProgressIndicator(
+                              valueColor:
+                                  new AlwaysStoppedAnimation<Color>(Colors.red),
+                              strokeWidth: 2.0,
+                              backgroundColor: Colors.white,
+                            ),
                           ),
                         ),
-                      ),
-              ),
-            ],
+                      ])),
+              ],
+            ),
           ),
         ),
       ),
@@ -108,7 +133,7 @@ class _OverviewSectionState extends State<OverviewSection> {
     ratingsAlreadyRequested = true;
 
     if (appState.hotVideosToday == null) {
-      RatingUtil.loadHotRatingsToday().then((ratings) {
+      RatingUtil.loadBestRatingsToday().then((ratings) {
         widget.logger.info(
             "Hot ratings retrieved. Amount: " + ratings.length.toString());
 
@@ -124,7 +149,7 @@ class _OverviewSectionState extends State<OverviewSection> {
     }
 
     if (appState.bestVideosAllTime == null) {
-      RatingUtil.loadBestRatedAllTime().then((ratings) {
+      RatingUtil.loadBestRatingsOverall().then((ratings) {
         widget.logger.info(
             "Best ratings retrieved. Amount: " + ratings.length.toString());
 

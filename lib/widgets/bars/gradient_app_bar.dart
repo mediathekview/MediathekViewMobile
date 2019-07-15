@@ -73,7 +73,6 @@ class GradientAppBar extends StatelessWidget {
                     child: new Container(
                       padding: new EdgeInsets.only(right: 20.0),
                       child: new TextField(
-                        autofocus: true,
                         style: inputTextStyle,
                         controller: controller,
                         decoration: new InputDecoration(

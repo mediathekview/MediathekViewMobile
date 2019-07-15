@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_ws/util/os_checker.dart';
+import 'package:flutter_ws/util/device_information.dart';
 import 'package:logging/logging.dart';
 
 class FilesystemPermissionManager {
@@ -27,7 +27,7 @@ class FilesystemPermissionManager {
 
   // request permission. Returns true = already Granted, do not grant again, false = asked for permission
   Future<bool> askUserForPermission() async {
-    TargetPlatform os = await OsChecker.getTargetPlatform();
+    TargetPlatform os = await DeviceInformation.getTargetPlatform();
     if (os == TargetPlatform.android) {
       try {
         _methodChannel.invokeMethod('askUserForPermission').then((result) {
@@ -48,7 +48,7 @@ class FilesystemPermissionManager {
   }
 
   Future<bool> hasFilesystemPermission() async {
-    TargetPlatform os = await OsChecker.getTargetPlatform();
+    TargetPlatform os = await DeviceInformation.getTargetPlatform();
     if (os == TargetPlatform.android) {
       try {
         return _methodChannel

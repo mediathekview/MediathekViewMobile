@@ -12,6 +12,7 @@ import 'package:flutter_ws/model/video_rating.dart';
 import 'package:flutter_ws/model/video_rating_insert.dart';
 import 'package:flutter_ws/platform_channels/download_manager_flutter.dart';
 import 'package:flutter_ws/platform_channels/video_manager.dart';
+import 'package:flutter_ws/util/rating_util.dart';
 import 'package:flutter_ws/util/show_snackbar.dart';
 import 'package:flutter_ws/widgets/bars/playback_progress_bar.dart';
 import 'package:flutter_ws/widgets/videolist/channel_thumbnail.dart';
@@ -30,10 +31,6 @@ class ListCard extends StatefulWidget {
   final String channelPictureImagePath;
   final Video video;
   TickerProviderStateMixin mixin;
-  final ratingInsertDifUrl =
-      "https://us-central1-kubernetes-hard-way-227412.cloudfunctions.net/MySQLInsertDif";
-  final ratingInsertUrl =
-      "https://us-central1-kubernetes-hard-way-227412.cloudfunctions.net/MySQLInsert";
 
   ListCard(
       {Key key,
@@ -473,7 +470,7 @@ class _ListCardState extends State<ListCard> {
           rating.local_user_rating.toString());
 
       ratingValue = rating.local_user_rating;
-      insertUrl = widget.ratingInsertUrl;
+      insertUrl = await RatingUtil.getInsertRatingUrl();
     } else if (rating.local_user_rating_saved_from_db != null &&
         rating.local_user_rating != null) {
       var diff =
@@ -484,7 +481,7 @@ class _ListCardState extends State<ListCard> {
           diff.toString());
 
       ratingValue = diff;
-      insertUrl = widget.ratingInsertDifUrl;
+      insertUrl = await RatingUtil.getInsertDifRatingUrl();
     }
 
     if (insertUrl == null) {
