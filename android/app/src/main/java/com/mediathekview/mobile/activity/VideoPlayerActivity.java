@@ -259,7 +259,7 @@ public class VideoPlayerActivity extends Activity {
         return buildDataSourceFactory(useBandwidthMeter ? BANDWIDTH_METER : null);
     }
 
-    public DataSource.Factory buildDataSourceFactory(TransferListener<? super DataSource> listener) {
+    public DataSource.Factory buildDataSourceFactory(TransferListener listener) {
         DefaultDataSourceFactory upstreamFactory =
                 new DefaultDataSourceFactory(this, listener, buildHttpDataSourceFactory(listener));
         return buildReadOnlyCacheDataSource(upstreamFactory, getDownloadCache());
@@ -269,7 +269,7 @@ public class VideoPlayerActivity extends Activity {
      * Returns a {@link HttpDataSource.Factory}.
      */
     public HttpDataSource.Factory buildHttpDataSourceFactory(
-            TransferListener<? super DataSource> listener) {
+            TransferListener listener) {
         return new DefaultHttpDataSourceFactory(userAgent, listener);
     }
 
