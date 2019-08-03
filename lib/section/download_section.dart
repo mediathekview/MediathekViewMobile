@@ -646,7 +646,6 @@ class DownloadSectionState extends State<DownloadSection> {
                       mainAxisSpacing: 1.0,
                       crossAxisSpacing: 5.0,
                     ),
-                    // padding: const EdgeInsets.all(5.0),
                     delegate: SliverChildBuilderDelegate(itemBuilder,
                         childCount: myDownloadsCount),
                   )
@@ -676,7 +675,6 @@ class DownloadSectionState extends State<DownloadSection> {
             child: new ListView(
               shrinkWrap: true,
               scrollDirection: Axis.horizontal,
-              //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: ChannelUtil.getAllChannelImages(),
             ),
           ),

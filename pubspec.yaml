@@ -24,6 +24,7 @@ dependencies:
   video_player: '^0.10.1+5'
   chewie: '^0.9.7'
   wakelock: '^0.1.2+7'
+  flutter_launcher_icons: "^0.7.0"
 
   flutter:
     sdk: flutter
@@ -37,6 +38,10 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+flutter_icons:
+  ios: true
+  image_path: "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+
 # The following section is specific to Flutter.
 flutter:
 
@@ -46,8 +51,6 @@ flutter:
   uses-material-design: true
 
   assets:
-      - assets/img/ic_distance.png
-      - assets/img/tatort_background.jpg
       - assets/img/ard.png
       - assets/img/orf.png
       - assets/img/zdf.png
@@ -64,7 +67,6 @@ flutter:
       - assets/img/phoenix.png
       - assets/img/rbb.png
       - assets/img/srf.png
-      - assets/img/background.jpg
       - assets/img/MediathekViewLoading.png
       - assets/default_live_stream_channels.txt
 
