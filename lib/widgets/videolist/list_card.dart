@@ -12,6 +12,7 @@ import 'package:flutter_ws/model/video_rating.dart';
 import 'package:flutter_ws/model/video_rating_insert.dart';
 import 'package:flutter_ws/platform_channels/download_manager_flutter.dart';
 import 'package:flutter_ws/platform_channels/video_manager.dart';
+import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/util/rating_util.dart';
 import 'package:flutter_ws/util/show_snackbar.dart';
 import 'package:flutter_ws/widgets/bars/playback_progress_bar.dart';
@@ -30,13 +31,9 @@ class ListCard extends StatefulWidget {
   final Logger logger = new Logger('VideoWidget');
   final String channelPictureImagePath;
   final Video video;
-  TickerProviderStateMixin mixin;
 
   ListCard(
-      {Key key,
-      @required this.channelPictureImagePath,
-      @required this.video,
-      @required this.mixin})
+      {Key key, @required this.channelPictureImagePath, @required this.video})
       : super(key: key);
 
   @override
@@ -63,16 +60,13 @@ class _ListCardState extends State<ListCard> {
   @override
   void dispose() {
     super.dispose();
-    widget.logger.info("Disposing list-card for video with title " +
+    widget.logger.fine("Disposing list-card for video with title " +
         widget.video.title +
         " and id " +
         widget.video.id);
 
     downloadManager.cancelSubscription(
         widget.video.id, downloadManagerIdentifier);
-
-    //only once push ratings when list card is disposed to reduce calls to backend
-    insertRating(rating);
   }
 
   @override
@@ -82,6 +76,7 @@ class _ListCardState extends State<ListCard> {
     downloadManager = stateContainer.appState.downloadManager;
     databaseManager = stateContainer.appState.databaseManager;
     VideoListState videoListState = stateContainer.videoListState;
+    Orientation orientation = MediaQuery.of(context).orientation;
     NativeVideoPlayer nativeVideoPlayer =
         new NativeVideoPlayer(databaseManager);
     rating = stateContainer.appState.ratingCache[widget.video.id];
@@ -174,7 +169,8 @@ class _ListCardState extends State<ListCard> {
                             videoProgressEntity != null
                                 ? PlaybackProgressBar(
                                     videoProgressEntity.progress,
-                                    int.parse(widget.video.duration.toString()),
+                                    int.tryParse(
+                                        widget.video.duration.toString()),
                                     true)
                                 : new Container(),
                           ],
@@ -185,21 +181,25 @@ class _ListCardState extends State<ListCard> {
                 ),
               ),
               new RatingBar(
-                isExtendet,
-                rating,
-                widget.video,
-                Theme.of(context)
-                    .textTheme
-                    .body1
-                    .copyWith(color: Colors.black, fontSize: 14.0),
-                false,
-                true,
-                onRatingChanged: () {
-                  if (mounted) {
-                    setState(() {});
-                  }
-                },
-              ),
+                  isExtendet,
+                  rating,
+                  widget.video,
+                  Theme.of(context)
+                      .textTheme
+                      .body1
+                      .copyWith(color: Colors.black, fontSize: 14.0),
+                  DeviceInformation.isTablet(context)
+                      ? false
+                      : orientation == Orientation.portrait ? true : false,
+                  true, ratingChanged:
+                      (bool needsRemoteSync, VideoRating updatedRating) {
+                if (needsRemoteSync) {
+                  persistRatingInTheCloud(updatedRating);
+                }
+                if (mounted) {
+                  setState(() {});
+                }
+              }),
               new DownloadCardBody(
                   widget.video,
                   downloadManager,
@@ -218,68 +218,67 @@ class _ListCardState extends State<ListCard> {
       ),
     );
 
-    final card = new Container(
-      child: cardContent,
-      margin: new EdgeInsets.only(left: 20.0),
-      decoration: new BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.rectangle,
-        boxShadow: <BoxShadow>[
-          new BoxShadow(
-            color: Colors.black12,
-            blurRadius: 10.0,
-            offset: new Offset(0.0, 10.0),
-          ),
-        ],
+    final card = ClipRRect(
+      borderRadius: BorderRadius.all(Radius.circular(10.0)),
+      child: new Container(
+        child: cardContent,
+        decoration: new BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.rectangle,
+        ),
       ),
     );
 
     //used to determine position on screen to place description popup correctly
     _keyListRow = GlobalKey();
 
-    return AnimatedSize(
-      duration: Duration(milliseconds: isExtendet ? 500 : 0),
-      vsync: widget.mixin,
-      child: new Container(
-        key: _keyListRow,
-        margin: const EdgeInsets.symmetric(
-          vertical: 8.0,
-          horizontal: 8.0,
-        ),
-        child: new Stack(
-          children: <Widget>[
-            new GestureDetector(onTap: _handleTap, child: card),
-            isExtendet
-                ? new Container()
-                : new Positioned.fill(
-                    left: 20.0,
-                    child: new Material(
-                        color: Colors.transparent,
-                        child: new InkWell(
-                            onTap: _handleTap, onLongPress: showDescription)),
+    return new Container(
+      key: _keyListRow,
+      margin: const EdgeInsets.symmetric(
+        vertical: 8.0,
+        horizontal: 8.0,
+      ),
+      child: new Stack(
+        children: <Widget>[
+          new GestureDetector(onTap: _handleTap, child: card),
+          isExtendet
+              ? new Container()
+              : new Positioned.fill(
+                  left: 20.0,
+                  child: new Material(
+                      color: Colors.transparent,
+                      child: new InkWell(
+                          onTap: _handleTap, onLongPress: showDescription)),
+                ),
+          widget.channelPictureImagePath.isNotEmpty
+              ? new Positioned(
+                  left: 5.0,
+                  bottom: 5.0,
+                  child: new ChannelThumbnail(
+                      widget.channelPictureImagePath, isDownloadedAlready),
+                )
+              : new Container(),
+          isExtendet || rating == null
+              ? new Container()
+              : new Positioned(
+                  right: 20.0,
+                  child: new StarRating(
+                    rating,
+                    widget.video,
+                    true,
+                    size: 18.0,
+                    onRatingChanged:
+                        (bool needsRemoteSync, VideoRating updatedRating) {
+                      if (needsRemoteSync) {
+                        persistRatingInTheCloud(updatedRating);
+                      }
+                      if (mounted) {
+                        setState(() {});
+                      }
+                    },
                   ),
-            widget.channelPictureImagePath.isNotEmpty
-                ? new ChannelThumbnail(
-                    widget.channelPictureImagePath, isDownloadedAlready)
-                : new Container(),
-            isExtendet || rating == null
-                ? new Container()
-                : new Positioned(
-                    right: 20.0,
-                    child: new StarRating(
-                      rating,
-                      widget.video,
-                      true,
-                      size: 18.0,
-                      onRatingChanged: () {
-                        if (mounted) {
-                          setState(() {});
-                        }
-                      },
-                    ),
-                  )
-          ],
-        ),
+                )
+        ],
       ),
     );
   }
@@ -329,7 +328,7 @@ class _ListCardState extends State<ListCard> {
         currentStatus = updatedStatus;
       });
     } else {
-      widget.logger.severe("Not updating status for Video  " +
+      widget.logger.fine("Not updating status for Video  " +
           videoId +
           " - downloadCardBody not mounted");
     }
@@ -446,45 +445,56 @@ class _ListCardState extends State<ListCard> {
     });
   }
 
-  void insertRating(VideoRating rating) async {
-    //this video has been rated before by this device, only insert the difference!
+  void persistRatingInTheCloud(VideoRating rating) async {
+    widget.logger.fine("Persisting rating in the cloud");
     if (rating == null) {
       return;
     }
 
-    if (rating.local_user_rating == rating.local_user_rating_saved_from_db) {
-      widget.logger.info("Rating did not change for video " +
-          rating.video_id +
-          " and rating: " +
-          rating.local_user_rating.toString());
+    if (rating.local_user_rating == null) {
+      widget.logger.info("Local user rating is null");
       return;
     }
 
-    String insertUrl;
-    double ratingValue;
-    if (rating.local_user_rating_saved_from_db == null &&
-        rating.local_user_rating != null) {
-      widget.logger.info("Inserting new Rating for video " +
-          rating.video_id +
-          " and rating: " +
-          rating.local_user_rating.toString());
-
-      ratingValue = rating.local_user_rating;
-      insertUrl = await RatingUtil.getInsertRatingUrl();
-    } else if (rating.local_user_rating_saved_from_db != null &&
-        rating.local_user_rating != null) {
-      var diff =
-          rating.local_user_rating - rating.local_user_rating_saved_from_db;
-      widget.logger.info("Rating already on server for video " +
-          rating.video_id +
-          " found diff of: " +
-          diff.toString());
-
-      ratingValue = diff;
-      insertUrl = await RatingUtil.getInsertDifRatingUrl();
+    if (rating.local_user_rating == rating.local_user_rating_saved_from_db) {
+      return;
     }
 
-    if (insertUrl == null) {
+    if (rating.lastRemoteInsertRating != null &&
+        rating.lastRemoteInsertRating == rating.local_user_rating) {
+      widget.logger.info("Stopped duplicate cloud function call");
+      return;
+    }
+
+    rating.lastRemoteInsertRating = rating.local_user_rating;
+
+    String ratingUrl;
+    double ratingValue;
+    if (rating.rating_count == 1 &&
+        rating.local_user_rating_saved_from_db == null) {
+      widget.logger.info(
+          "Add new rating (insert): " + rating.local_user_rating.toString());
+
+      ratingValue = rating.local_user_rating;
+      ratingUrl = await RatingUtil.getInsertRatingUrl();
+    } else if (rating.rating_count > 1 &&
+        rating.local_user_rating_saved_from_db == null) {
+      widget.logger.info(
+          "Add a new rating (update): " + rating.local_user_rating.toString());
+
+      ratingValue = rating.local_user_rating;
+      ratingUrl = await RatingUtil.getUpdateRatingUrl();
+    } else if (rating.local_user_rating_saved_from_db != null) {
+      var diff =
+          rating.local_user_rating - rating.local_user_rating_saved_from_db;
+
+      widget.logger.info("Add a new rating (diff): " + diff.toString());
+
+      ratingValue = diff;
+      ratingUrl = await RatingUtil.getInsertDifRatingUrl();
+    }
+
+    if (ratingUrl == null) {
       widget.logger.warning("Should not happen when inserting rating");
       return;
     }
@@ -501,16 +511,14 @@ class _ListCardState extends State<ListCard> {
         rating.size,
         rating.url_video);
     final response =
-        await http.post(insertUrl, body: json.encode(userRating.toMap()));
+        await http.post(ratingUrl, body: json.encode(userRating.toMap()));
     if (response.statusCode == 200) {
       stateContainer.appState.ratingCache.update(rating.video_id, (old) {
         old.local_user_rating_saved_from_db = old.local_user_rating;
         return old;
       });
 
-      widget.logger.info("Inserted rating successfully for video " +
-          rating.video_id +
-          " and rating: " +
+      widget.logger.info("Remote rating successful for rating: " +
           rating.local_user_rating.toString());
     } else {
       widget.logger.warning("Failed to Insert rating for video " +

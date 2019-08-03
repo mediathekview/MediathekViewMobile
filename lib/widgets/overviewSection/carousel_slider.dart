@@ -39,8 +39,8 @@ class _CarouselWithIndicatorState extends State<CarouselWithIndicator> {
         height: widget.width / 16 * 9,
         child: new Center(
           child: new CircularProgressIndicator(
-            valueColor: new AlwaysStoppedAnimation<Color>(Colors.red),
-            strokeWidth: 2.0,
+            valueColor: new AlwaysStoppedAnimation<Color>(Color(0xffffbf00)),
+            strokeWidth: 5.0,
             backgroundColor: Colors.white,
           ),
         ),

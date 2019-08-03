@@ -21,7 +21,7 @@ class SearchFilter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new Padding(
-        padding: new EdgeInsets.only(left: 10.0),
+        padding: new EdgeInsets.only(left: 10.0, top: 2.0),
         child: new GestureDetector(
           onTap: () {
             handleTabCallback(filterId);
@@ -29,7 +29,7 @@ class SearchFilter extends StatelessWidget {
           child: new Container(
             height: 25.0,
             decoration: new BoxDecoration(
-              color: Colors.grey[700],
+              color: Colors.black,
               shape: BoxShape.rectangle,
               borderRadius: new BorderRadius.circular(8.0),
             ),
@@ -40,13 +40,16 @@ class SearchFilter extends StatelessWidget {
               children: <Widget>[
                 new Padding(
                   padding: new EdgeInsets.only(right: 5.0),
-                  child: new Icon(Icons.clear, size: 18.0, color: Colors.red),
+                  child: new Icon(Icons.clear, size: 22.0, color: Colors.red),
                 ),
                 new Text(
                     displayText == null || displayText.isEmpty
                         ? filterId
                         : displayText,
-                    style: Theme.of(context).textTheme.button,
+                    style: new TextStyle(
+                        fontSize: 12.0,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700),
                     textAlign: TextAlign.start,
                     maxLines: 1)
               ],

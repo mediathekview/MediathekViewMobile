@@ -6,7 +6,7 @@ import 'package:flutter_ws/widgets/videolist/star_rating.dart';
 class RatingBar extends StatelessWidget {
   final VideoRating rating;
   final Video video;
-  var onRatingChanged;
+  onRatingChanged ratingChanged;
   bool isExtendet;
   double size;
   TextStyle textStyle;
@@ -15,7 +15,7 @@ class RatingBar extends StatelessWidget {
 
   RatingBar(this.isExtendet, this.rating, this.video, this.textStyle,
       this.showOnlyRatingCount, this.ratingAllowed,
-      {this.onRatingChanged, this.size});
+      {this.ratingChanged, this.size});
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +38,7 @@ class RatingBar extends StatelessWidget {
             rating,
             video,
             ratingAllowed,
-            onRatingChanged: onRatingChanged,
+            onRatingChanged: ratingChanged,
             size: size,
           ),
           new Container(width: 10.0),

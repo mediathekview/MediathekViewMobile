@@ -1,10 +1,11 @@
 class VideoRating {
-  final String video_id;
+  String video_id;
   double rating_sum;
   int rating_count;
   double local_user_rating;
   double local_user_rating_saved_from_db;
   bool setAlreadyFromDB = false;
+  double lastRemoteInsertRating;
 
   //video information
   String channel;

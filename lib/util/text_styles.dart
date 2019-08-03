@@ -7,9 +7,9 @@ final buttonTextStyle = oldStandardBaseTextStyle.copyWith(
 final hintTextStyle = oldStandardBaseTextStyle.copyWith(
     fontSize: 12.0, color: Colors.grey, fontWeight: FontWeight.w800);
 final inputTextStyle = oldStandardBaseTextStyle.copyWith(
-    fontSize: 20.0, color: Colors.grey[300], fontWeight: FontWeight.w500);
+    fontSize: 20.0, color: Colors.white, fontWeight: FontWeight.w700);
 final filterRowTextStyle = oldStandardBaseTextStyle.copyWith(
-    fontSize: 12.0, color: Color(0xffffbf00), fontWeight: FontWeight.w500);
+    fontSize: 15.0, color: Colors.white, fontWeight: FontWeight.w700);
 final videoMetadataTextStyle = oldStandardBaseTextStyle.copyWith(
     fontSize: 10.0, color: Colors.grey, fontWeight: FontWeight.w600);
 final subHeaderTextStyle = oldStandardBaseTextStyle.copyWith(fontSize: 16.0);

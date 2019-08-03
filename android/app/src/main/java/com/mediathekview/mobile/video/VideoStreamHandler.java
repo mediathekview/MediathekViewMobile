@@ -64,16 +64,6 @@ public class VideoStreamHandler implements EventChannel.StreamHandler {
                     File file = new File(Environment.getExternalStorageDirectory() + "/MediathekView", fileName);
                     Log.i(TAG, "Starting task: preview video with fileName" + fileName + ". File: Can Read: " + file.canRead() + " Lenght: " + file.length());
                     preview = ThumbnailUtils.createVideoThumbnail(Environment.getExternalStorageDirectory() + "/MediathekView/" + fileName, MediaStore.Images.Thumbnails.MINI_KIND);
-
-
-                /*try {
-                    FileInputStream fileInputStream = new FileInputStream(file);
-                    Log.i(TAG, "Available: " + fileInputStream.available());
-                    mmr.setDataSource(fileInputStream.getFD());
-                } catch (java.io.IOException | IllegalArgumentException e) {
-                    events.error(TAG, "File to generate preview from -  does not exist", null);
-                    return;
-                }*/
                 } else {
                     Log.i(TAG, "Starting task: preview video with  url : " + url);
                     try {
@@ -90,10 +80,6 @@ public class VideoStreamHandler implements EventChannel.StreamHandler {
                     }
                 }
 
-
-            /*preview = mmr.getFrameAtTime(1000000, FFmpegMediaMetadataRetriever.OPTION_NEXT_SYNC); // frame at 2 seconds
-            mmr.release();
-            */
                 if (preview == null) {
                     Log.e(TAG, "Could not get preview bitmap");
                     returnArguments.put("videoId", videoId);
@@ -101,25 +87,14 @@ public class VideoStreamHandler implements EventChannel.StreamHandler {
                     return;
                 }
 
-                Log.i(TAG, "Preview - Retrieved Bitmap preview of size " + preview.getByteCount());
-
-
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 preview.compress(Bitmap.CompressFormat.PNG, 100, stream);
                 byte[] byteArray = stream.toByteArray();
                 preview.recycle();
 
-                Log.i(TAG, "Byte array has size " + byteArray.length);
-
                 returnArguments.put("image", byteArray);
                 returnArguments.put("videoId", videoId);
-                if (events == null){
-                    Log.i(TAG, "Events channel is null");
-                } else {
-                    Log.i(TAG, "Events channel is not null");
-                }
 
-                //events.success(byteArray);
                 handler.post(() -> events.success(returnArguments));
             }
         });

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
+import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/widgets/overviewSection/util.dart';
 import 'package:logging/logging.dart';
@@ -22,6 +23,8 @@ class WatchHistoryState extends State<WatchHistory> {
   Widget build(BuildContext context) {
     appState = AppSharedStateContainer.of(context).appState;
     Size size = MediaQuery.of(context).size;
+    var orientation = MediaQuery.of(context).orientation;
+
     loadWatchHistory();
 
     if (history == null) {
@@ -38,70 +41,36 @@ class WatchHistoryState extends State<WatchHistory> {
       );
     }
 
-    List<Widget> watchHistoryWidgets = getHistoryList(size);
+    List<Widget> watchHistoryWidgets;
+    if (DeviceInformation.isTablet(context)) {
+      watchHistoryWidgets = getHistoryGridList(
+          size.width, (orientation == Orientation.portrait) ? 2 : 3);
+    } else {
+      watchHistoryWidgets = getHistoryGridList(
+          size.width, orientation == Orientation.portrait ? 1 : 2);
+    }
+
+    var sliverAppBar = new SliverAppBar(
+      title: new Text('Watch History', style: sectionHeadingTextStyle),
+      backgroundColor: new Color(0xffffbf00),
+      leading: new IconButton(
+        icon: new Icon(Icons.arrow_back, size: 30.0, color: Colors.white),
+        onPressed: () {
+          //return channels when user pressed back
+          return Navigator.pop(context);
+        },
+      ),
+    );
+
+    // add App bar on top
+    watchHistoryWidgets.insert(0, sliverAppBar);
 
     return new Scaffold(
       backgroundColor: Colors.grey[800],
-      body: new Column(
-        children: <Widget>[
-          new AppBar(
-            title: new Text('Watch History', style: sectionHeadingTextStyle),
-            backgroundColor: new Color(0xffffbf00),
-            leading: new IconButton(
-              icon: new Icon(Icons.arrow_back, size: 30.0, color: Colors.white),
-              onPressed: () {
-                //return channels when user pressed back
-                return Navigator.pop(context);
-              },
-            ),
-          ),
-          new Flexible(
-            child: new ListView(children: watchHistoryWidgets),
-          ),
-        ],
+      body: new SafeArea(
+        child: CustomScrollView(slivers: watchHistoryWidgets),
       ),
     );
-  }
-
-  List<Widget> getHistoryList(Size size) {
-    Map<int, bool> sync = new Map();
-    List<Widget> watchHistoryWidgets = new List();
-    history.forEach((progress) {
-      DateTime videoWatchDate =
-          new DateTime.fromMillisecondsSinceEpoch(progress.timestampLastViewed);
-      if (videoWatchDate == null) {
-        return;
-      }
-      Duration differenceToToday =
-          new DateTime.now().difference(videoWatchDate);
-      var daysPassedSinceVideoWatched = differenceToToday.inDays;
-
-      Widget historyItem = Util.getWatchHistoryItem(progress, size.width);
-      // add bottom padding
-      historyItem = new Padding(
-          padding: EdgeInsets.only(bottom: 13.0), child: historyItem);
-
-      if (sync[daysPassedSinceVideoWatched] != null) {
-        watchHistoryWidgets.add(historyItem);
-        return;
-      }
-      sync.putIfAbsent(daysPassedSinceVideoWatched, () => true);
-
-      // add time as item before that in the list
-      String heading =
-          getWatchHistoryHeading(daysPassedSinceVideoWatched, videoWatchDate);
-      watchHistoryWidgets.add(new Padding(
-          padding: EdgeInsets.only(left: 10.0, bottom: 10.0, top: 5),
-          child: new Text(
-            heading,
-            style: new TextStyle(
-                color: Colors.white,
-                fontSize: 25.0,
-                fontWeight: FontWeight.w700),
-          )));
-      watchHistoryWidgets.add(historyItem);
-    });
-    return watchHistoryWidgets;
   }
 
   String getWatchHistoryHeading(
@@ -181,5 +150,82 @@ class WatchHistoryState extends State<WatchHistory> {
         return "Sonntag";
         break;
     }
+  }
+
+  List<Widget> getHistoryGridList(double width, int crossAxisCount) {
+    Map<int, MapEntry<VideoProgressEntity, List<Widget>>> watchHistoryItems =
+        new Map();
+    for (int i = 0; i < history.length; i++) {
+      VideoProgressEntity progress = history.elementAt(i);
+
+      int daysPassedSinceVideoWatched;
+      try {
+        daysPassedSinceVideoWatched =
+            getDaysSinceVideoWatched(progress.timestampLastViewed);
+      } on Exception catch (e) {
+        continue;
+      }
+
+      Widget historyItem = Util.getWatchHistoryItem(progress, width);
+
+      if (watchHistoryItems[daysPassedSinceVideoWatched] == null) {
+        List<Widget> itemList = new List();
+        itemList.add(historyItem);
+
+        watchHistoryItems[daysPassedSinceVideoWatched] =
+            new MapEntry(progress, itemList);
+      } else {
+        watchHistoryItems[daysPassedSinceVideoWatched].value.add(historyItem);
+      }
+    }
+
+    // now for each day group create a grid
+    List<Widget> resultList = new List();
+
+    watchHistoryItems.entries.forEach((entry) {
+      String heading = getWatchHistoryHeading(
+          entry.key,
+          new DateTime.fromMillisecondsSinceEpoch(
+              entry.value.key.timestampLastViewed));
+
+      resultList.add(
+        SliverToBoxAdapter(
+          child: new Padding(
+            padding: EdgeInsets.only(left: 10.0, bottom: 10.0, top: 5),
+            child: new Text(
+              heading,
+              style: new TextStyle(
+                  color: Colors.white,
+                  fontSize: 25.0,
+                  fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
+      );
+      resultList.add(
+        new SliverPadding(
+          padding: EdgeInsets.only(left: 10.0, right: 10.0),
+          sliver: SliverGrid.count(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: 16 / 9,
+            mainAxisSpacing: 8.0,
+            crossAxisSpacing: 8.0,
+            children: entry.value.value,
+          ),
+        ),
+      );
+    });
+
+    return resultList;
+  }
+
+  int getDaysSinceVideoWatched(int timestampLastViewed) {
+    DateTime videoWatchDate =
+        new DateTime.fromMillisecondsSinceEpoch(timestampLastViewed);
+    if (videoWatchDate == null) {
+      throw new Exception();
+    }
+    Duration differenceToToday = new DateTime.now().difference(videoWatchDate);
+    return differenceToToday.inDays;
   }
 }

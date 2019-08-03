@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_ws/enum/channels.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/model/video_rating.dart';
+import 'package:flutter_ws/util/channel_util.dart';
 import 'package:flutter_ws/util/row_adapter.dart';
 import 'package:flutter_ws/widgets/videolist/loading_list_view.dart';
 import 'package:logging/logging.dart';
@@ -57,22 +57,28 @@ class _VideoListViewState extends State<VideoListView> {
 
     if (widget.videos.length == 0 && widget.amountOfVideosFetched == 0) {
       widget.logger.fine("No Videos found");
-      return new Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          new Text(
-            "0 Videos zu dieser Suchanfrage",
-            style: new TextStyle(fontSize: 25),
-          ),
-          new Container(
-            height: 50,
-            child: new ListView(
-              scrollDirection: Axis.horizontal,
-              //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: getAllChannelImages(),
+      return new Center(
+        child: new Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            new Center(
+              child: new Text(
+                "Keine Videos gefunden",
+                style: new TextStyle(fontSize: 25),
+              ),
             ),
-          )
-        ],
+            new Container(
+              height: 50,
+              child: new ListView(
+                shrinkWrap: true,
+                scrollDirection: Axis.horizontal,
+                //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: ChannelUtil.getAllChannelImages(),
+              ),
+            ),
+          ],
+        ),
       );
     } else if (widget.videos.length == 0) {
       widget.logger.fine("Searching: video list legth : 0 & amountFetched: " +
@@ -109,28 +115,9 @@ class _VideoListViewState extends State<VideoListView> {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          RowAdapter.createRow(widget.videos[index], widget.mixin),
+          RowAdapter.createRow(widget.videos[index]),
         ],
       );
     }
-  }
-
-  List<Widget> getAllChannelImages() {
-    List<Widget> images = new List();
-    Channels.channelMap.forEach((name, assetPath) {
-      images.add(new Container(
-        margin: new EdgeInsets.only(left: 2.0, top: 5.0),
-        width: 50.0,
-        height: 50.0,
-        decoration: new BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.grey[300],
-          image: new DecorationImage(
-            image: new AssetImage('assets/img/' + assetPath),
-          ),
-        ),
-      ));
-    });
-    return images;
   }
 }

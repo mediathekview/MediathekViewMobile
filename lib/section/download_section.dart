@@ -7,6 +7,7 @@ import 'package:flutter_ws/enum/channels.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/platform_channels/video_progress_manager.dart';
+import 'package:flutter_ws/util/channel_util.dart';
 import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/util/show_snackbar.dart';
 import 'package:flutter_ws/util/text_styles.dart';
@@ -36,7 +37,7 @@ class DownloadSection extends StatefulWidget {
 class DownloadSectionState extends State<DownloadSection> {
   static const downloadManagerIdentifier = 1;
 
-  Set<VideoEntity> downloadedVideos = new Set();
+  Set<VideoEntity> downloadedVideos;
   Set<VideoEntity> currentDownloads = new Set();
   AppState appState;
   Set<String> userDeletedAppId; //used for fade out animation
@@ -51,6 +52,7 @@ class DownloadSectionState extends State<DownloadSection> {
 
   @override
   void dispose() {
+    super.dispose();
     videoProgressManager = null;
   }
 
@@ -70,11 +72,14 @@ class DownloadSectionState extends State<DownloadSection> {
     Widget loadingIndicator;
     if (currentDownloads.length == 1) {
       loadingIndicator = CircularProgressWithText(
-          new Text("Downloading: '" + currentDownloads.elementAt(0).title + "'",
-              style: connectionLostTextStyle),
+          new Text(
+            "Downloading: '" + currentDownloads.elementAt(0).title + "'",
+            style: connectionLostTextStyle,
+            softWrap: true,
+            maxLines: 3,
+          ),
           Colors.green,
-          Colors.green,
-          height: 50.0);
+          Colors.green);
     } else if (currentDownloads.length > 1) {
       loadingIndicator = CircularProgressWithText(
         new Text(
@@ -89,9 +94,9 @@ class DownloadSectionState extends State<DownloadSection> {
     }
 
     if (DeviceInformation.isTablet(context)) {
-      return _buildTablet(size, orientation, context);
+      return _buildTablet(size, orientation, context, loadingIndicator);
     } else {
-      return _buildMobile(size, orientation, context);
+      return _buildMobile(size, orientation, context, loadingIndicator);
     }
   }
 
@@ -113,7 +118,6 @@ class DownloadSectionState extends State<DownloadSection> {
     subscribeToProgressChannel(entity);
 
     entities.putIfAbsent(entity.id, () => entity);
-
     String assetPath = Channels.channelMap.entries.firstWhere((entry) {
       return entity.channel != null &&
               entity.channel.toUpperCase().contains(entry.key.toUpperCase()) ||
@@ -121,114 +125,120 @@ class DownloadSectionState extends State<DownloadSection> {
     }, orElse: () => new MapEntry("", "")).value;
 
     Widget listRow = new Container(
-      padding: new EdgeInsets.symmetric(horizontal: 5.0),
+      padding: new EdgeInsets.symmetric(horizontal: 3.0),
       child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-        new Stack(
-          children: <Widget>[
-            new Positioned(
-              child: new Container(
-                child: (index <= currentDownloadsLength - 1 &&
-                        currentDownloadsLength > 0)
-                    ? new VideoPreviewAdapter(
-                        true,
-                        entity.id,
-                        video: Video.fromMap(entity.toMap()),
-                        showLoadingIndicator: false,
-                        videoProgressEntity:
-                            videosWithPlaybackProgress[entity.id],
-                      )
-                    : new VideoPreviewAdapter(
-                        true,
-                        entity.id,
-                        showLoadingIndicator: false,
-                        videoProgressEntity:
-                            videosWithPlaybackProgress[entity.id],
-                      ),
-              ),
-            ),
-            new Positioned(
-              top: 12.0,
-              left: 0.0,
-              child: new Center(
-                child: new FloatingActionButton(
-                  heroTag: index.toString(),
-                  mini: true,
-                  onPressed: () {
-                    deleteOrStopDownload(context, entity.id);
-                  },
-                  backgroundColor: Colors.red[800],
-                  highlightElevation: 10.0,
-                  isExtended: true,
-                  foregroundColor: Colors.black,
-                  elevation: 7.0,
-                  tooltip: "Delete",
-                  child: new Icon(Icons.delete_forever, color: Colors.white),
+        ClipRRect(
+          borderRadius: BorderRadius.all(Radius.circular(10.0)),
+          child: new Stack(
+            children: <Widget>[
+              new Positioned(
+                child: new Container(
+                  child: (index <= currentDownloadsLength - 1 &&
+                          currentDownloadsLength > 0)
+                      ? new VideoPreviewAdapter(
+                          true,
+                          entity.id,
+                          video: Video.fromMap(entity.toMap()),
+                          showLoadingIndicator: false,
+                          videoProgressEntity:
+                              videosWithPlaybackProgress[entity.id],
+                        )
+                      : new VideoPreviewAdapter(
+                          true,
+                          entity.id,
+                          showLoadingIndicator: false,
+                          videoProgressEntity:
+                              videosWithPlaybackProgress[entity.id],
+                        ),
                 ),
               ),
-            ),
-            //Overlay Banner
-            new Positioned(
-              bottom: 0,
-              left: 0.0,
-              right: 0.0,
-              child: new Opacity(
-                opacity: 0.7,
-                child: new Container(
-                    color: Colors.grey[700],
-                    child: new Column(
-                      children: <Widget>[
-                        videosWithPlaybackProgress[entity.id] != null
-                            ? PlaybackProgressBar(
-                                videosWithPlaybackProgress[entity.id].progress,
-                                int.parse(entity.duration.toString()),
-                                false)
-                            : new Container(),
-                        new ListTile(
-                          trailing: new Text(
-                            entity.duration != null
-                                ? Calculator.calculateDuration(entity.duration)
-                                : "",
-                            style: videoMetadataTextStyle.copyWith(
-                                color: Colors.white),
-                          ),
-                          leading: assetPath.isNotEmpty
-                              ? new ChannelThumbnail(assetPath, true)
-                              : new Container(),
-                          title: new Text(
-                            entity.title,
-                            style: Theme.of(context)
-                                .textTheme
-                                .subhead
-                                .copyWith(color: Colors.white),
-                          ),
-                          subtitle: new Text(
-                            entity.topic != null ? entity.topic : "",
-                            style: Theme.of(context)
-                                .textTheme
-                                .title
-                                .copyWith(color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    )),
+              new Positioned(
+                top: 12.0,
+                left: 0.0,
+                child: new Center(
+                  child: new FloatingActionButton(
+                    heroTag: index.toString(),
+                    mini: true,
+                    onPressed: () {
+                      deleteOrStopDownload(context, entity.id);
+                    },
+                    backgroundColor: Colors.red[800],
+                    highlightElevation: 10.0,
+                    isExtended: true,
+                    foregroundColor: Colors.black,
+                    elevation: 7.0,
+                    tooltip: "Delete",
+                    child: new Icon(Icons.delete_forever, color: Colors.white),
+                  ),
+                ),
               ),
-            ),
-            isCurrentlyDownloading == true
-                ? new Positioned(
-                    bottom: 0.0,
-                    left: 0.0,
-                    right: 0.0,
-                    child: new DownloadProgressBar(
-                        Video.fromMap(entity.toMap()),
-                        currentStatus[entity.id] != null
-                            ? currentStatus[entity.id]
-                            : DownloadTaskStatus.running,
-                        progress[entity.id] != null && progress[entity.id] > -1
-                            ? progress[entity.id]
-                            : -1),
-                  )
-                : new Container(),
-          ],
+              //Overlay Banner
+              new Positioned(
+                bottom: 0,
+                left: 0.0,
+                right: 0.0,
+                child: new Opacity(
+                  opacity: 0.7,
+                  child: new Container(
+                      color: Colors.grey[700],
+                      child: new Column(
+                        children: <Widget>[
+                          videosWithPlaybackProgress[entity.id] != null
+                              ? PlaybackProgressBar(
+                                  videosWithPlaybackProgress[entity.id]
+                                      .progress,
+                                  int.tryParse(entity.duration.toString()),
+                                  false)
+                              : new Container(),
+                          new ListTile(
+                            trailing: new Text(
+                              entity.duration != null
+                                  ? Calculator.calculateDuration(
+                                      entity.duration)
+                                  : "",
+                              style: videoMetadataTextStyle.copyWith(
+                                  color: Colors.white),
+                            ),
+                            leading: assetPath.isNotEmpty
+                                ? new ChannelThumbnail(assetPath, true)
+                                : new Container(),
+                            title: new Text(
+                              entity.title,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .subhead
+                                  .copyWith(color: Colors.white),
+                            ),
+                            subtitle: new Text(
+                              entity.topic != null ? entity.topic : "",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .title
+                                  .copyWith(color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      )),
+                ),
+              ),
+              isCurrentlyDownloading == true
+                  ? new Positioned(
+                      bottom: 0.0,
+                      left: 0.0,
+                      right: 0.0,
+                      child: new DownloadProgressBar(
+                          Video.fromMap(entity.toMap()),
+                          currentStatus[entity.id] != null
+                              ? currentStatus[entity.id]
+                              : DownloadTaskStatus.running,
+                          progress[entity.id] != null &&
+                                  progress[entity.id] > -1
+                              ? progress[entity.id]
+                              : -1),
+                    )
+                  : new Container(),
+            ],
+          ),
         ),
       ]),
     );
@@ -259,7 +269,8 @@ class DownloadSectionState extends State<DownloadSection> {
   void loadAlreadyDownloadedVideosFromDb() async {
     Set<VideoEntity> downloads =
         await appState.databaseManager.getAllDownloadedVideos();
-    if (downloadedVideos.length != downloads.length) {
+    if (downloadedVideos == null ||
+        downloadedVideos.length != downloads.length) {
       downloadedVideos = downloads;
       if (mounted) {
         setState(() {});
@@ -339,7 +350,7 @@ class DownloadSectionState extends State<DownloadSection> {
     if (mounted) {
       setState(() {});
     } else {
-      widget.logger.severe("Not updating status for Video  " +
+      widget.logger.fine("Not updating status for Video  " +
           videoId +
           " - downloadCardBody not mounted");
     }
@@ -372,13 +383,18 @@ class DownloadSectionState extends State<DownloadSection> {
     );
   }
 
-  Widget _buildTablet(
-      Size size, Orientation orientation, BuildContext context) {
+  Widget _buildTablet(Size size, Orientation orientation, BuildContext context,
+      Widget loadingIndicator) {
+    int myDownloadsCount = currentDownloads.length +
+        (downloadedVideos != null ? downloadedVideos.length : 0);
     return new Scaffold(
-      backgroundColor: Colors.black87,
+      backgroundColor: Colors.grey[800],
       body: new SafeArea(
         child: CustomScrollView(
           slivers: <Widget>[
+            SliverToBoxAdapter(
+              child: loadingIndicator,
+            ),
             SliverPadding(
               padding: EdgeInsets.only(left: 20.0, top: 5.0, bottom: 16.0),
               sliver: new SliverList(
@@ -398,19 +414,21 @@ class DownloadSectionState extends State<DownloadSection> {
               ),
             ),
             SliverToBoxAdapter(
-              child: new Container(
-                height: (orientation == Orientation.portrait)
-                    ? size.width / 2 / 16 * 9
-                    : size.width / 3 / 16 * 9,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: Util.getWatchHistoryItems(
-                      videosWithPlaybackProgress,
-                      (orientation == Orientation.portrait)
-                          ? size.width / 2
-                          : size.width / 3),
-                ),
-              ),
+              child: videosWithPlaybackProgress.isNotEmpty
+                  ? new Container(
+                      height: (orientation == Orientation.portrait)
+                          ? size.width / 2 / 16 * 9
+                          : size.width / 3 / 16 * 9,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: Util.getWatchHistoryItems(
+                            videosWithPlaybackProgress,
+                            (orientation == Orientation.portrait)
+                                ? size.width / 2
+                                : size.width / 3),
+                      ),
+                    )
+                  : new Container(),
             ),
             SliverPadding(
               padding: EdgeInsets.only(top: 5.0, bottom: 4.0),
@@ -423,6 +441,7 @@ class DownloadSectionState extends State<DownloadSection> {
                             child: new ListTile(
                               leading: new Icon(
                                 Icons.history,
+                                color: Color(0xffffbf00),
                                 size: 30.0,
                               ),
                               title: new Text(
@@ -445,51 +464,62 @@ class DownloadSectionState extends State<DownloadSection> {
                             ),
                           )
                         : new Container(),
-                    videosWithPlaybackProgress.isNotEmpty
-                        ? Padding(
-                            padding: EdgeInsets.only(left: 20.0, top: 20.0),
-                            child: new Text(
-                              "Meine Downloads",
-                              style: new TextStyle(
-                                  fontSize: 25.0,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800),
-                            ),
-                          )
+                    downloadedVideos != null
+                        ? currentDownloads.isNotEmpty ||
+                                downloadedVideos.isNotEmpty
+                            ? Padding(
+                                padding: EdgeInsets.only(left: 20.0, top: 20.0),
+                                child: new Text(
+                                  "Meine Downloads",
+                                  style: new TextStyle(
+                                      fontSize: 25.0,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800),
+                                ),
+                              )
+                            : getEmptyDownloadWidget()
                         : new Container(),
                   ],
                 ),
               ),
             ),
-            SliverGrid(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: (orientation == Orientation.portrait) ? 2 : 3,
-                childAspectRatio: 16 / 9,
-                mainAxisSpacing: 5.0,
-                crossAxisSpacing: 5.0,
-              ),
-              // padding: const EdgeInsets.all(5.0),
-              delegate: SliverChildBuilderDelegate(itemBuilder,
-                  childCount:
-                      currentDownloads.length + downloadedVideos.length),
-            )
+            myDownloadsCount != 0
+                ? SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount:
+                          (orientation == Orientation.portrait) ? 2 : 3,
+                      childAspectRatio: 16 / 9,
+                      mainAxisSpacing: 1.0,
+                      crossAxisSpacing: 5.0,
+                    ),
+                    // padding: const EdgeInsets.all(5.0),
+                    delegate: SliverChildBuilderDelegate(itemBuilder,
+                        childCount: myDownloadsCount),
+                  )
+                : new SliverToBoxAdapter(
+                    child: new Container(),
+                  )
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMobile(
-      Size size, Orientation orientation, BuildContext context) {
+  Widget _buildMobile(Size size, Orientation orientation, BuildContext context,
+      Widget loadingIndicator) {
     List<Widget> watchHistoryItems = orientation == Orientation.portrait
         ? Util.getWatchHistoryItems(videosWithPlaybackProgress, size.width)
         : Util.getWatchHistoryItems(videosWithPlaybackProgress, size.width / 2);
-
+    int myDownloadsCount = currentDownloads.length +
+        (downloadedVideos != null ? downloadedVideos.length : 0);
     return new Scaffold(
-      backgroundColor: Colors.black87,
+      backgroundColor: Colors.grey[800],
       body: new SafeArea(
         child: CustomScrollView(
           slivers: <Widget>[
+            SliverToBoxAdapter(
+              child: loadingIndicator,
+            ),
             SliverPadding(
               padding: EdgeInsets.only(left: 10.0, top: 5.0, bottom: 13.0),
               sliver: new SliverList(
@@ -510,40 +540,48 @@ class DownloadSectionState extends State<DownloadSection> {
             ),
             SliverToBoxAdapter(
               child: new Container(
-                child: orientation == Orientation.portrait
-                    ? new Container(
-                        height: size.width / 16 * 9,
-                        child: new Swiper(
-                          itemBuilder: (BuildContext context, int index) {
-                            return watchHistoryItems[index];
-                          },
-                          itemCount: watchHistoryItems.length,
-                          pagination: new SwiperPagination(),
-                          control: new SwiperControl(),
-                        ),
-                      )
-                    : new Container(
-                        height: size.width / 2 / 16 * 9,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: watchHistoryItems,
-                        ),
-                      ),
-              ),
-            ),
-            new SliverList(
-              delegate: new SliverChildListDelegate(
-                [
-                  videosWithPlaybackProgress.isNotEmpty
-                      ? new Text(
-                          "Kürzlich angesehen",
-                          style: new TextStyle(
-                              fontSize: 25.0,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800),
-                        )
-                      : new Container(),
-                ],
+                child: videosWithPlaybackProgress.isNotEmpty
+                    ? orientation == Orientation.portrait
+                        ? new Container(
+                            height: size.width / 16 * 9,
+                            child: new Theme(
+                              //data: new ThemeData(primarySwatch: Colors.red),
+                              data: new ThemeData(
+                                  primarySwatch: new MaterialColor(
+                                0xffffbf00,
+                                const <int, Color>{
+                                  50: Color(0xFFFAFAFA),
+                                  100: Color(0xFFF5F5F5),
+                                  200: Color(0xFFEEEEEE),
+                                  300: Color(0xFFE0E0E0),
+                                  350: Color(0xFFD6D6D6),
+                                  400: Color(0xFFBDBDBD),
+                                  500: Color(0xFF9E9E9E),
+                                  600: Color(0xFF757575),
+                                  700: Color(0xFF616161),
+                                  800: Color(0xFF424242),
+                                  850: Color(0xFF303030),
+                                  900: Color(0xFF212121),
+                                },
+                              )),
+                              child: new Swiper(
+                                itemBuilder: (BuildContext context, int index) {
+                                  return watchHistoryItems[index];
+                                },
+                                itemCount: watchHistoryItems.length,
+                                pagination: new SwiperPagination(),
+                                control: new SwiperControl(),
+                              ),
+                            ),
+                          )
+                        : new Container(
+                            height: size.width / 2 / 16 * 9,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              children: watchHistoryItems,
+                            ),
+                          )
+                    : new Container(),
               ),
             ),
             SliverPadding(
@@ -557,6 +595,7 @@ class DownloadSectionState extends State<DownloadSection> {
                             child: new ListTile(
                               leading: new Icon(
                                 Icons.history,
+                                color: Color(0xffffbf00),
                                 size: 30.0,
                               ),
                               title: new Text(
@@ -579,36 +618,69 @@ class DownloadSectionState extends State<DownloadSection> {
                             ),
                           )
                         : new Container(),
-                    videosWithPlaybackProgress.isNotEmpty
-                        ? Padding(
-                            padding: EdgeInsets.only(left: 20.0, top: 20.0),
-                            child: new Text(
-                              "Meine Downloads",
-                              style: new TextStyle(
-                                  fontSize: 25.0,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800),
-                            ),
-                          )
+                    downloadedVideos != null
+                        ? currentDownloads.isNotEmpty ||
+                                downloadedVideos.isNotEmpty
+                            ? Padding(
+                                padding: EdgeInsets.only(left: 20.0, top: 20.0),
+                                child: new Text(
+                                  "Meine Downloads",
+                                  style: new TextStyle(
+                                      fontSize: 25.0,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800),
+                                ),
+                              )
+                            : getEmptyDownloadWidget()
                         : new Container(),
                   ],
                 ),
               ),
             ),
-            SliverGrid(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: (orientation == Orientation.portrait) ? 1 : 2,
-                childAspectRatio: 16 / 9,
-                mainAxisSpacing: 5.0,
-                crossAxisSpacing: 5.0,
-              ),
-              // padding: const EdgeInsets.all(5.0),
-              delegate: SliverChildBuilderDelegate(itemBuilder,
-                  childCount:
-                      currentDownloads.length + downloadedVideos.length),
-            )
+            myDownloadsCount != 0
+                ? SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount:
+                          (orientation == Orientation.portrait) ? 1 : 2,
+                      childAspectRatio: 16 / 9,
+                      mainAxisSpacing: 1.0,
+                      crossAxisSpacing: 5.0,
+                    ),
+                    // padding: const EdgeInsets.all(5.0),
+                    delegate: SliverChildBuilderDelegate(itemBuilder,
+                        childCount: myDownloadsCount),
+                  )
+                : new SliverToBoxAdapter(
+                    child: new Container(),
+                  )
           ],
         ),
+      ),
+    );
+  }
+
+  Center getEmptyDownloadWidget() {
+    return new Center(
+      child: new Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          new Center(
+            child: new Text(
+              "Keine Downloads",
+              style: new TextStyle(fontSize: 25),
+            ),
+          ),
+          new Container(
+            height: 50,
+            child: new ListView(
+              shrinkWrap: true,
+              scrollDirection: Axis.horizontal,
+              //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: ChannelUtil.getAllChannelImages(),
+            ),
+          ),
+        ],
       ),
     );
   }

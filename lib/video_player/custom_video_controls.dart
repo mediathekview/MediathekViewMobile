@@ -7,10 +7,10 @@ import 'package:chewie/src/cupertino_progress_bar.dart';
 import 'package:chewie/src/utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_ws/video_player/custom_chewie_player.dart';
 import 'package:open_iconic_flutter/open_iconic_flutter.dart';
 import 'package:video_player/video_player.dart';
-
-import 'custom_chewie_player.dart';
+import 'package:wakelock/wakelock.dart';
 
 class CustomVideoControls extends StatefulWidget {
   const CustomVideoControls({
@@ -197,6 +197,7 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
                   chewieController.toggleFullScreen();
                   chewieController.dispose();
                   Navigator.of(context).pop();
+                  Wakelock.disable();
                 },
               ),
             ),

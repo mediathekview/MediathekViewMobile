@@ -13,6 +13,10 @@ class PlaybackProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (totalVideoLengthInSeconds == null) {
+      return new Container();
+    }
+
     return new Container(
         constraints: BoxConstraints.expand(height: 10.0),
         child: new LinearProgressIndicator(

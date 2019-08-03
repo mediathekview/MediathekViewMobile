@@ -15,5 +15,6 @@ class Channels {
     'MDR': 'mdr.png',
     'RBB': 'rbb.png',
     'SRF': 'srf.png',
+    'PHOENIX': 'phoenix.png',
   };
 }

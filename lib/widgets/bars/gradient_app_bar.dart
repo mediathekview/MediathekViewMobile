@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/global_state/appBar_state_container.dart';
+import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/widgets/filterMenu/filter_menu.dart';
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
@@ -29,7 +30,6 @@ class GradientAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     logger.fine("Rendering App Bar");
 
-    final theme = Theme.of(context);
     state = FilterBarSharedState.of(context);
     searchFilters = filterMenu.searchFilters.values.toList();
 
@@ -38,14 +38,7 @@ class GradientAppBar extends StatelessWidget {
     return new Container(
       padding: const EdgeInsets.only(left: 16.0, right: 32.0),
       decoration: new BoxDecoration(
-        color: Colors.grey[800],
-        boxShadow: <BoxShadow>[
-          new BoxShadow(
-            color: Colors.black12,
-            blurRadius: 10.0,
-            offset: new Offset(0.0, 10.0),
-          )
-        ],
+        color: Color(0xffffbf00),
       ),
       child: new Column(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -64,54 +57,63 @@ class GradientAppBar extends StatelessWidget {
                     state.updateAppBarState();
                   },
                 ),
-                new Theme(
-                  data: theme.copyWith(
-                      primaryColor: new Color(0xffffbf00),
-                      brightness: Brightness.dark,
-                      accentColor: new Color(0xffffbf00)),
-                  child: new Expanded(
-                    child: new Container(
-                      padding: new EdgeInsets.only(right: 20.0),
-                      child: new TextField(
-                        style: inputTextStyle,
-                        controller: controller,
-                        decoration: new InputDecoration(
-                          hintStyle: TextStyle(
-                              fontSize: 15.0,
-                              color: Colors.grey[100],
-                              fontStyle: FontStyle.italic),
-                          suffixIcon: new IconButton(
-                              color: controller.text.isNotEmpty
-                                  ? Colors.red
-                                  : Colors.transparent,
-                              onPressed: () {
-                                controller.text = "";
-                              },
-                              icon: new Icon(
-                                Icons.clear,
-                                size: 30.0,
-                              )),
-                          labelStyle:
-                              hintTextStyle.copyWith(color: Colors.blue[300]),
-                          icon: new IconButton(
-                            color: new Color(0xffffbf00),
-                            icon: new Icon(Icons.search),
-                            iconSize: 30.0,
-                            onPressed: () {
-                              state.updateAppBarState();
-                            },
-                          ),
-                          isDense: true,
-                          hintText: 'Suche ...',
+                new Expanded(
+                  child: new Container(
+                    padding: new EdgeInsets.only(right: 20.0),
+                    child: new TextField(
+                      style: new TextStyle(
+                          color: Colors.white,
+                          fontSize: 18.0,
+                          fontWeight: FontWeight.w700),
+                      controller: controller,
+                      decoration: new InputDecoration(
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white),
                         ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white),
+                        ),
+                        hintStyle: TextStyle(
+                            fontSize: 18.0,
+                            color: Colors.white,
+                            fontStyle: FontStyle.italic),
+                        suffixIcon: new IconButton(
+                            color: controller.text.isNotEmpty
+                                ? Colors.red
+                                : Colors.transparent,
+                            onPressed: () {
+                              controller.text = "";
+                            },
+                            icon: new Icon(
+                              Icons.clear,
+                              size: 30.0,
+                            )),
+                        labelStyle: hintTextStyle.copyWith(color: Colors.white),
+                        icon: new IconButton(
+                          color: Colors.black,
+                          icon: new Icon(Icons.search),
+                          iconSize: 30.0,
+                          onPressed: () {
+                            state.updateAppBarState();
+                          },
+                        ),
+                        isDense: true,
+                        hintText: DeviceInformation.isTablet(context)
+                            ? 'Suche ...'
+                            : '',
                       ),
                     ),
                   ),
                 ),
-                new Text("Videos: " +
-                    currentAmountOfVideosInList.toString() +
-                    " / " +
-                    totalAmountOfVideosForSelection.toString()),
+                DeviceInformation.isTablet(context)
+                    ? new Text(
+                        "Videos: " +
+                            currentAmountOfVideosInList.toString() +
+                            " / " +
+                            totalAmountOfVideosForSelection.toString(),
+                        style: new TextStyle(color: Colors.white),
+                      )
+                    : new Container(),
               ],
             ),
           ),
@@ -124,7 +126,21 @@ class GradientAppBar extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       new Text('Filter: ', style: filterRowTextStyle),
-                      new Row(children: searchFilters),
+                      !DeviceInformation.isTablet(context) &&
+                              searchFilters.length > 3
+                          ? new Column(
+                              children: <Widget>[
+                                new Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: searchFilters.sublist(0, 2)),
+                                new Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: searchFilters.sublist(2)),
+                              ],
+                            )
+                          : new Row(children: searchFilters),
                     ],
                   ),
                 )

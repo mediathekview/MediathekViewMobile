@@ -42,72 +42,63 @@ class _OverviewSectionState extends State<OverviewSection> {
       crossAxisCount = 2;
     }
 
-    return MaterialApp(
-      home: Scaffold(
-        backgroundColor: Colors.black87,
-        body: new SafeArea(
-          child: Container(
-            child: CustomScrollView(
-              slivers: <Widget>[
-                new SliverList(
-                    delegate: new SliverChildListDelegate(
-                  [
-                    new CarouselWithIndicator(
-                      videosWithRatingInformation: appState.bestVideosAllTime,
-                      viewportFraction: 1.0,
-                      autoPlay: true,
-                      enlargeCenterPage: false,
-                      showIndexBar: true,
-                      videosWithPlaybackProgress: videosWithPlaybackProgress,
-                      width: size.width,
-                      orientation: orientation,
-                    ),
-                    appState.hotVideosToday == null ||
-                            appState.hotVideosToday.isNotEmpty
-                        ? getHeading("Heute beliebt")
-                        : new Container(),
-                    /* new CarouselWithIndicator(
-              videosWithRatingInformation: appState.hotVideosToday,
-              viewportFraction: 0.8,
-              autoPlay: false,
-              enlargeCenterPage: true,
-              showIndexBar: false,
-              videosWithPlaybackProgress: videosWithPlaybackProgress,
-              width: size.width,
-            ),*/
-                  ],
-                )),
-                appState.hotVideosToday != null
-                    ? SliverGrid(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          childAspectRatio: 16 / 9,
-                          mainAxisSpacing: 5.0,
-                          crossAxisSpacing: 5.0,
-                        ),
-                        // padding: const EdgeInsets.all(5.0),
-                        delegate: SliverChildListDelegate(
-                          Util.getSliderItems(appState.hotVideosToday,
-                              videosWithPlaybackProgress, size.width / 2),
-                        ),
-                      )
-                    : new SliverList(
-                        delegate: new SliverChildListDelegate([
-                        new Container(
-                          width: size.width,
-                          height: size.width / 16 * 9,
-                          child: new Center(
-                            child: new CircularProgressIndicator(
-                              valueColor:
-                                  new AlwaysStoppedAnimation<Color>(Colors.red),
-                              strokeWidth: 2.0,
-                              backgroundColor: Colors.white,
-                            ),
+    return new Scaffold(
+      backgroundColor: Colors.grey[800],
+      body: new SafeArea(
+        child: Container(
+          child: CustomScrollView(
+            slivers: <Widget>[
+              new SliverList(
+                  delegate: new SliverChildListDelegate(
+                [
+                  new CarouselWithIndicator(
+                    videosWithRatingInformation: appState.bestVideosAllTime,
+                    viewportFraction: 1.0,
+                    autoPlay: true,
+                    enlargeCenterPage: false,
+                    showIndexBar: true,
+                    videosWithPlaybackProgress: videosWithPlaybackProgress,
+                    width: size.width,
+                    orientation: orientation,
+                  ),
+                  appState.hotVideosToday == null ||
+                          appState.hotVideosToday.isNotEmpty
+                      ? getHeading("Heute beliebt")
+                      : new Container(),
+                ],
+              )),
+              appState.hotVideosToday != null
+                  ? appState.hotVideosToday.isNotEmpty
+                      ? new SliverGrid(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            childAspectRatio: 16 / 9,
+                            mainAxisSpacing: 8.0,
+                            crossAxisSpacing: 8.0,
+                          ),
+                          delegate: SliverChildListDelegate(
+                            Util.getSliderItems(appState.hotVideosToday,
+                                videosWithPlaybackProgress, size.width / 2),
+                          ),
+                        )
+                      : SliverToBoxAdapter(child: new Container())
+                  : new SliverList(
+                      delegate: new SliverChildListDelegate([
+                      new Container(
+                        width: size.width,
+                        height: size.width / 16 * 9,
+                        child: new Center(
+                          child: new CircularProgressIndicator(
+                            valueColor: new AlwaysStoppedAnimation<Color>(
+                                Color(0xffffbf00)),
+                            strokeWidth: 5.0,
+                            backgroundColor: Colors.white,
                           ),
                         ),
-                      ])),
-              ],
-            ),
+                      ),
+                    ])),
+            ],
           ),
         ),
       ),

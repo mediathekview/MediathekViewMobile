@@ -49,9 +49,13 @@ import AVFoundation
                 // either url or filename is set
                 if let url = myArgs["url"] as? String {
                     DispatchQueue.global(qos: .userInitiated).async {
-                        let url = URL(string: url)!
-                        self.createThumbnailOfVideoFromRemoteUrl(url: url, videoId: videoId as String, videoEventStreamHandler: videoEventStreamHandler)
-                    }
+                        let url = URL(string: url)
+                        if url != nil {
+                            self.createThumbnailOfVideoFromRemoteUrl(url: url!, videoId: videoId as String, videoEventStreamHandler: videoEventStreamHandler)
+                        } else {
+                            NSLog("URL to create thumbnail form is nil")
+                        }
+                                     }
                 } else if let fileName = myArgs["fileName"] as? String {
                     let paths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
                     let documentsDirectory = paths[0]

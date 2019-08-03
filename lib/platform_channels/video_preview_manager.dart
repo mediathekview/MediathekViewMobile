@@ -20,21 +20,30 @@ class VideoPreviewManager {
   //management inside of Manager, that it can update the correct widgets! -> simple solution
   //videoId -> VideoWidgetState
   Multimap<String, VideoWidgetState> _widgetsWaitingForPreview;
+  Map<String, bool> requestedVideoPreview = new Map();
 
   VideoPreviewManager(BuildContext context) {
     _eventChannel = const EventChannel('com.mediathekview.mobile/videoEvent');
     _methodChannel = const MethodChannel('com.mediathekview.mobile/video');
     _appWideState = AppSharedStateContainer.of(context);
     _widgetsWaitingForPreview = new Multimap();
-    streamSubscription = _getBroadcastStream()
-        .listen((raw) => _onPreviewReceived(raw), onError: (e) {
-      logger.severe("Preview generation failed. Reason " + e.toString());
-    }, onDone: () {
-      logger.info("Preview event channel is done.");
-    }, cancelOnError: false);
 
-    if (streamSubscription.isPaused) {
-      logger.info("IS PAUSED.");
+    var stream;
+    try {
+      stream = _getBroadcastStream();
+      streamSubscription =
+          stream.listen((raw) => _onPreviewReceived(raw), onError: (e) {
+        logger.severe("Preview generation failed. Reason " + e.toString());
+      }, onDone: () {
+        logger.info("Preview event channel is done.");
+      }, cancelOnError: false);
+
+      if (streamSubscription.isPaused) {
+        logger.info("IS PAUSED.");
+      }
+    } catch (MissingPluginException) {
+      logger.info("Cannot generate preview. Missing Plugin Exception.");
+      return;
     }
   }
 
@@ -77,12 +86,24 @@ class VideoPreviewManager {
       return;
     }
 
+    if (requestedVideoPreview.containsKey(videoId)) {
+      return;
+    }
+
     Map<String, String> requestArguments = new Map();
     requestArguments.putIfAbsent("videoId", () => videoId);
 
-    if (url != null) requestArguments.putIfAbsent("url", () => url);
-    if (fileName != null)
+    if (url != null && url.isNotEmpty) {
+      requestArguments.putIfAbsent("url", () => url);
+    } else if (fileName != null && fileName.isNotEmpty) {
       requestArguments.putIfAbsent("fileName", () => fileName);
+    } else {
+      return;
+    }
+
+    requestedVideoPreview.putIfAbsent(videoId, () {
+      return true;
+    });
 
     try {
       await _methodChannel.invokeMethod(
@@ -90,6 +111,8 @@ class VideoPreviewManager {
     } on PlatformException catch (e) {
       logger
           .severe("Starting Preview generation failed. Reason " + e.toString());
+    } on MissingPluginException catch (e) {
+      logger.severe("Video Preview cannot be generated. Missing Plugin.");
     }
   }
 

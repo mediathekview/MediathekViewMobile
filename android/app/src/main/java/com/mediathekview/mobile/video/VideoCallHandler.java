@@ -32,8 +32,6 @@ public class VideoCallHandler implements MethodChannel.MethodCallHandler {
     @TargetApi(Build.VERSION_CODES.GINGERBREAD)
     @Override
     public void onMethodCall(MethodCall call, MethodChannel.Result result) {
-        Log.i("VIDEO Call Handler", "Method call with identifier " + call.method + " received");
-
         if (call.method.equals("playVideo")) {
             String filePath = call.argument("filePath");
             String videoId = call.argument("videoId");

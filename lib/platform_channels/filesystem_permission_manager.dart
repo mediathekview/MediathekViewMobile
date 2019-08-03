@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/util/device_information.dart';
 import 'package:logging/logging.dart';
 
@@ -11,8 +12,10 @@ class FilesystemPermissionManager {
   MethodChannel _methodChannel;
   Stream<dynamic> _updateStream;
   StreamSubscription<dynamic> streamSubscription;
+  AppSharedState appWideState;
 
-  FilesystemPermissionManager(BuildContext context) {
+  FilesystemPermissionManager(
+      BuildContext context, AppSharedState appWideState) {
     _eventChannel =
         const EventChannel('com.mediathekview.mobile/permissionEvent');
     _methodChannel = const MethodChannel('com.mediathekview.mobile/permission');
@@ -27,8 +30,7 @@ class FilesystemPermissionManager {
 
   // request permission. Returns true = already Granted, do not grant again, false = asked for permission
   Future<bool> askUserForPermission() async {
-    TargetPlatform os = await DeviceInformation.getTargetPlatform();
-    if (os == TargetPlatform.android) {
+    if (appWideState.appState.targetPlatform == TargetPlatform.android) {
       try {
         _methodChannel.invokeMethod('askUserForPermission').then((result) {
           String res = result['AlreadyGranted'];

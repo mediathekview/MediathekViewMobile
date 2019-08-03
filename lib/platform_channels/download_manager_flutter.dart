@@ -107,7 +107,7 @@ class DownloadManager {
       //_deleteVideo(entity);
 
       FilesystemPermissionManager filesystemPermissionManager =
-          new FilesystemPermissionManager(_context);
+          new FilesystemPermissionManager(_context, appWideState);
 
       filesystemPermissionManager
           .hasFilesystemPermission()
@@ -137,7 +137,6 @@ class DownloadManager {
               logger.severe(
                   "Listening to User Action regarding Android file system permission failed. Reason " +
                       e.toString());
-              //TODO cancel subscription to stream
             },
           );
 
@@ -171,6 +170,8 @@ class DownloadManager {
               query: SQL_GET_SINGEL_TASK + "'" + taskId + "'")
           .then((List<DownloadTask> list) {
         DownloadTask task = list.elementAt(0);
+
+        // for ios, saving the directory is useless as the base directory gets mounted to a unique id every restart
         entity.filePath = task.savedDir;
         entity.fileName = task.filename;
         entity.timestamp_video_saved =
@@ -294,14 +295,17 @@ class DownloadManager {
       return true;
     }
 
-    Directory storageDirectory = Directory(entity.filePath);
-
-    if (!await storageDirectory.exists()) {
-      logger.severe("Trying to delete video from path that does not exist: " +
-          storageDirectory.uri.toString());
+    Uri filepath;
+    if (appWideState.appState.targetPlatform == TargetPlatform.iOS) {
+      filepath = new Uri.file(appWideState.appState.iOsDocumentsDirectory.path +
+          "/MediathekView" +
+          "/" +
+          entity.fileName);
+    } else {
+      filepath = new Uri.file(entity.filePath + "/" + entity.fileName);
     }
-    Uri filepath =
-        new Uri.file(storageDirectory.uri.toFilePath() + "/" + entity.fileName);
+
+    print("file to be deleted uri: " + filepath.toString());
     File fileToBeDeleted = File.fromUri(filepath);
 
     if (!await fileToBeDeleted.exists()) {
@@ -349,7 +353,7 @@ class DownloadManager {
       onCanceled onDownloadCanceled,
       // used to differentiate between download section & list view section as both need to listen for updates!
       int identifier) {
-    logger.info("Subscribing on updates for video with name: " +
+    logger.fine("Subscribing on updates for video with name: " +
         video.title +
         " and id " +
         video.id);
@@ -362,7 +366,7 @@ class DownloadManager {
   }
 
   void cancelSubscription(String videoId, int identifier) {
-    logger.info("Cancel subscribtion on updates for video with id: " + videoId);
+    logger.fine("Cancel subscribtion on updates for video with id: " + videoId);
 
     _removeValueFromMultimap(onFailedListeners, videoId, identifier);
     _removeValueFromMultimap(onCompleteListeners, videoId, identifier);
@@ -419,7 +423,7 @@ class DownloadManager {
     });
   }
 
-  //sync completeed DownloadTasks from DownloadManager with VideoEntity - filename and storage location
+  //sync completed DownloadTasks from DownloadManager with VideoEntity - filename and storage location
   syncCompletedDownloads() {
     _getCompletedTasks().then((List<DownloadTask> task) {
       task.forEach((DownloadTask task) {
@@ -475,8 +479,17 @@ class DownloadManager {
   Future<Video> downloadFile(Video video) async {
     Uri videoUrl = Uri.parse(video.url_video);
 
-    Directory externalDir = await getExternalStorageDirectory();
-    Directory storageDirectory = Directory(externalDir.path + "/MediathekView");
+    Directory directory;
+    var targetPlatform = appWideState.appState.targetPlatform;
+    if (targetPlatform == TargetPlatform.android) {
+      directory = await getExternalStorageDirectory();
+    } else if (targetPlatform == TargetPlatform.iOS) {
+      //TODO exclude files in /Documents from backup
+      directory = appWideState.appState.iOsDocumentsDirectory;
+    }
+
+    logger.info("External Storage: " + directory.path);
+    Directory storageDirectory = Directory(directory.path + "/MediathekView");
     storageDirectory.createSync();
 
     // same as video id if provided
@@ -490,7 +503,7 @@ class DownloadManager {
           true, // click on notification to open downloaded file (for Android)
     );
 
-    logger.fine("Requested download of video with id " +
+    logger.info("Requested download of video with id " +
         video.id +
         " and url " +
         video.url_video);

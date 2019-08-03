@@ -21,9 +21,13 @@ class MetadataBar extends StatelessWidget {
       child: new Row(
         children: <Widget>[
           new Expanded(
+            child: new Padding(
+              padding: EdgeInsets.only(left: 30.0),
               child: new Text(
-            Calculator.calculateDuration(videoDuration),
-          )),
+                Calculator.calculateDuration(videoDuration),
+              ),
+            ),
+          ),
           new Expanded(
               child: _getRow(
             value: Calculator.calculateTimestamp(videoTimestamp),

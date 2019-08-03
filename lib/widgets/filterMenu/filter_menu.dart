@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ws/widgets/filterMenu/channel_picker.dart';
 import 'package:flutter_ws/widgets/filterMenu/filtermenu_channel_edit_button.dart';
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
+import 'package:flutter_ws/widgets/filterMenu/video_length_slider.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 
@@ -40,7 +41,7 @@ class FilterMenu extends StatelessWidget {
 
     return new Container(
       decoration: new BoxDecoration(
-        color: Colors.grey[800],
+        color: Color(0xffffbf00),
       ),
       child: new Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -49,6 +50,7 @@ class FilterMenu extends StatelessWidget {
           getFilterMenuRow("Thema", "Thema", _themaFieldController),
           getFilterMenuRow("Titel", "Titel", _titleFieldController),
           getChannelRow(context),
+          getRangeSliderRow(),
         ],
       ),
     );
@@ -66,7 +68,10 @@ class FilterMenu extends StatelessWidget {
                 padding: new EdgeInsets.only(right: 15.0),
                 child: new Text(
                   "Sender",
-                  style: theme.textTheme.body2,
+                  style: new TextStyle(
+                      color: Colors.white,
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.w700),
                   textAlign: TextAlign.start,
                 ))),
         searchFilters["Sender"] == null ||
@@ -101,14 +106,16 @@ class FilterMenu extends StatelessWidget {
       mainAxisSize: MainAxisSize.max,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
-//          new IconButton(iconSize: 18.0, disabledColor: Colors.black, alignment: Alignment.center, padding: const EdgeInsets.all(0.0), icon: new Icon(Icons.delete)),
         new Container(
           width: 80.0,
           child: new Padding(
             padding: new EdgeInsets.only(right: 15.0),
             child: new Text(
               displayText,
-              style: theme.textTheme.body2,
+              style: new TextStyle(
+                  color: Colors.white,
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.w700),
               textAlign: TextAlign.start,
             ),
           ),
@@ -124,9 +131,18 @@ class FilterMenu extends StatelessWidget {
                     handleTabCallback: handleTapOnFilter),
               );
             },
-            style: theme.textTheme.body1,
+            style: new TextStyle(
+                color: Colors.white,
+                fontSize: 20.0,
+                fontWeight: FontWeight.w700),
             controller: controller,
             decoration: new InputDecoration(
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.white),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.white),
+              ),
               contentPadding: new EdgeInsets.only(bottom: 0.0),
 //              counterStyle: buttonTextStyle,
               hintStyle: theme.textTheme.display1,
@@ -139,10 +155,12 @@ class FilterMenu extends StatelessWidget {
     _filterTextFocus.addListener(() {
       if (!_filterTextFocus.hasFocus) {
         String currentValueOfFilter = controller.text;
-        onFilterUpdated(new SearchFilter(
-            filterId: filterId,
-            filterValue: currentValueOfFilter,
-            handleTabCallback: handleTapOnFilter));
+        onFilterUpdated(
+          new SearchFilter(
+              filterId: filterId,
+              filterValue: currentValueOfFilter,
+              handleTabCallback: handleTapOnFilter),
+        );
       }
     });
 
@@ -177,5 +195,42 @@ class FilterMenu extends StatelessWidget {
         handleTabCallback: handleTapOnFilter);
 
     onFilterUpdated(channelFilter);
+  }
+
+  getRangeSliderRow() {
+    SearchFilter lengthFilter;
+    if (searchFilters["Länge"] != null) {
+      lengthFilter = new SearchFilter(
+          filterId: "Länge",
+          filterValue: searchFilters["Länge"].filterValue,
+          handleTabCallback: handleTapOnFilter);
+    } else {
+      lengthFilter = new SearchFilter(
+          filterId: "Länge", handleTabCallback: handleTapOnFilter);
+    }
+
+    return new Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisSize: MainAxisSize.max,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        new Container(
+          width: 80.0,
+          child: new Padding(
+            padding: new EdgeInsets.only(right: 5.0),
+            child: new Text(
+              "Länge",
+              style: new TextStyle(
+                  color: Colors.white,
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.w700),
+              textAlign: TextAlign.start,
+            ),
+          ),
+        ),
+        new Flexible(
+            child: new VideoLengthSlider(onFilterUpdated, lengthFilter)),
+      ],
+    );
   }
 }

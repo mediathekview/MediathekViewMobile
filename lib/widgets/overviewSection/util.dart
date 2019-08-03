@@ -97,7 +97,7 @@ class Util {
                         playbackProgress != null
                             ? PlaybackProgressBar(
                                 playbackProgress.progress,
-                                int.parse(videoRating.duration.toString()),
+                                int.tryParse(videoRating.duration.toString()),
                                 false)
                             : new Container(),
                         // Meta Information
@@ -158,74 +158,70 @@ class Util {
       double headingFontSize,
       double metaFontSize) {
     return new Padding(
-      padding: EdgeInsets.only(right: 5.0),
+      padding: EdgeInsets.only(right: 5.0, left: 2.0),
       child: ClipRRect(
-        borderRadius: BorderRadius.all(Radius.circular(5.0)),
-        child: new Padding(
-          padding: EdgeInsets.only(left: 10),
-          child: new Container(
-            color: Colors.grey[100],
-            width: width,
-            child: Stack(
-              children: <Widget>[
-                new VideoPreviewAdapter(
-                  true,
-                  playbackProgress.id,
-                  video: Video.fromMap(playbackProgress.toMap()),
-                  defaultImageAssetPath: channelPictureImagePath,
-                  showLoadingIndicator: false,
-                  presetAspectRatio: 16 / 9,
-                  videoProgressEntity: playbackProgress,
-                  //size: new Size.fromWidth(1000),
-                ),
-                new Positioned(
-                  bottom: 0.0,
-                  left: 0.0,
-                  right: 0.0,
-                  child: new Opacity(
-                    opacity: 0.7,
-                    child: new Container(
-                      color: Colors.grey[700],
-                      child: new Column(
-                        children: <Widget>[
-                          // Playback Progress
-                          PlaybackProgressBar(
-                              playbackProgress.progress,
-                              int.parse(playbackProgress.duration.toString()),
-                              false),
-                          // Meta Information
-                          new ListTile(
-                            trailing: new Text(
-                              Calculator.calculateDuration(
-                                  playbackProgress.duration),
-                              style: videoMetadataTextStyle.copyWith(
-                                  color: Colors.white, fontSize: metaFontSize),
-                            ),
-                            leading: channelPictureImagePath.isNotEmpty
-                                ? new ChannelThumbnail(
-                                    channelPictureImagePath, false)
-                                : new Container(),
-                            title: new Text(
-                              playbackProgress.title,
-                              style: videoMetadataTextStyle.copyWith(
-                                  color: Colors.white,
-                                  fontSize: headingFontSize),
-                            ),
-                            subtitle: new Text(
-                              playbackProgress.topic != null
-                                  ? playbackProgress.topic
-                                  : "",
-                              style: videoMetadataTextStyle.copyWith(
-                                  color: Colors.white),
-                            ),
+        borderRadius: BorderRadius.all(Radius.circular(10.0)),
+        child: new Container(
+          color: Colors.grey[100],
+          width: width,
+          child: Stack(
+            children: <Widget>[
+              new VideoPreviewAdapter(
+                true,
+                playbackProgress.id,
+                video: Video.fromMap(playbackProgress.toMap()),
+                defaultImageAssetPath: channelPictureImagePath,
+                showLoadingIndicator: false,
+                presetAspectRatio: 16 / 9,
+                videoProgressEntity: playbackProgress,
+                //size: new Size.fromWidth(1000),
+              ),
+              new Positioned(
+                bottom: 0.0,
+                left: 0.0,
+                right: 0.0,
+                child: new Opacity(
+                  opacity: 0.7,
+                  child: new Container(
+                    color: Colors.grey[700],
+                    child: new Column(
+                      children: <Widget>[
+                        // Playback Progress
+                        PlaybackProgressBar(
+                            playbackProgress.progress,
+                            int.tryParse(playbackProgress.duration.toString()),
+                            false),
+                        // Meta Information
+                        new ListTile(
+                          trailing: new Text(
+                            Calculator.calculateDuration(
+                                playbackProgress.duration),
+                            style: videoMetadataTextStyle.copyWith(
+                                color: Colors.white, fontSize: metaFontSize),
                           ),
-                        ],
-                      ),
+                          leading: channelPictureImagePath.isNotEmpty
+                              ? new ChannelThumbnail(
+                                  channelPictureImagePath, false)
+                              : new Container(),
+                          title: new Text(
+                            playbackProgress.title,
+                            style: videoMetadataTextStyle.copyWith(
+                                color: Colors.white, fontSize: headingFontSize),
+                          ),
+                          subtitle: new Text(
+                            playbackProgress.topic != null
+                                ? playbackProgress.topic
+                                : "",
+                            style: videoMetadataTextStyle.copyWith(
+                                color: Colors.white),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

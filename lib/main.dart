@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:bubble_bottom_bar/bubble_bottom_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -59,7 +58,7 @@ class MyApp extends StatelessWidget {
             display1: hintTextStyle,
             button: buttonTextStyle),
         chipTheme: new ChipThemeData.fromDefaults(
-            secondaryColor: Colors.grey,
+            secondaryColor: Colors.black,
             labelStyle: subHeaderTextStyle,
             brightness: Brightness.dark),
         brightness: Brightness.light,
@@ -266,111 +265,135 @@ class HomePageState extends State<MyHomePage>
     logger.fine("Rendering Home Page");
 
     return new Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.grey[800],
       body: new TabBarView(
         controller: _controller,
         children: <Widget>[
           new OverviewSection(),
-          new SafeArea(child: getVideoSearchListWidget()),
+          getVideoSearchListWidget(),
           downloadSection == null ? new DownloadSection() : downloadSection,
           aboutSection == null ? new AboutSection() : aboutSection
         ],
       ),
-      bottomNavigationBar: BubbleBottomBar(
-        opacity: .2,
-        currentIndex: _page,
-        onTap: navigationTapped,
-        items: [
-          BubbleBottomBarItem(
-              backgroundColor: Colors.red,
-              icon: Icon(
-                Icons.home,
-                color: Colors.black,
-              ),
-              activeIcon: Icon(
-                Icons.home,
-                color: Colors.red,
-              ),
-              title: Text("Home")),
-          BubbleBottomBarItem(
-              backgroundColor: Colors.blue,
-              icon: Icon(
-                Icons.live_tv,
-                color: Colors.black,
-              ),
-              activeIcon: Icon(
-                Icons.live_tv,
-                color: Colors.blue,
-              ),
-              title: Text("Mediathek")),
-          BubbleBottomBarItem(
-              backgroundColor: Colors.green,
-              icon: Icon(
-                Icons.folder,
-                color: Colors.black,
-              ),
-              activeIcon: Icon(
-                Icons.folder,
-                color: Colors.green,
-              ),
-              title: Text("Bibliothek")),
-          BubbleBottomBarItem(
-              backgroundColor: Colors.purple,
-              icon: Icon(
-                Icons.info_outline,
-                color: Colors.black,
-              ),
-              activeIcon: Icon(
-                Icons.info_outline,
-                color: Colors.purple,
-              ),
-              title: Text("About"))
-        ],
+      bottomNavigationBar: new Theme(
+        data: Theme.of(context).copyWith(
+            // sets the background color of the `BottomNavigationBar`
+            canvasColor: Colors.black,
+            // sets the active color of the `BottomNavigationBar` if `Brightness` is light
+            primaryColor: Colors.red,
+            textTheme: Theme.of(context).textTheme.copyWith(
+                caption: new TextStyle(
+                    color: Colors
+                        .yellow))), // sets the inactive color of the `BottomNavigationBar`
+        child: new BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          currentIndex: _page,
+          onTap: navigationTapped,
+          items: [
+            BottomNavigationBarItem(
+                icon: Icon(
+                  Icons.home,
+                  color: Colors.white,
+                ),
+                activeIcon: Icon(
+                  Icons.home,
+                  color: Color(0xffffbf00),
+                ),
+                title: Text(
+                  "Home",
+                  style: new TextStyle(color: Colors.white, fontSize: 15.0),
+                )),
+            BottomNavigationBarItem(
+                icon: Icon(
+                  Icons.live_tv,
+                  color: Colors.white,
+                ),
+                activeIcon: Icon(
+                  Icons.live_tv,
+                  color: Color(0xffffbf00),
+                ),
+                title: Text("Mediathek",
+                    style: new TextStyle(color: Colors.white, fontSize: 15.0))),
+            BottomNavigationBarItem(
+                icon: Icon(
+                  Icons.folder,
+                  color: Colors.white,
+                ),
+                activeIcon: Icon(
+                  Icons.folder,
+                  color: Color(0xffffbf00),
+                ),
+                title: Text("Bibliothek",
+                    style: new TextStyle(color: Colors.white, fontSize: 15.0))),
+            BottomNavigationBarItem(
+                icon: Icon(
+                  Icons.info_outline,
+                  color: Colors.white,
+                ),
+                activeIcon: Icon(
+                  Icons.info_outline,
+                  color: Color(0xffffbf00),
+                ),
+                title: Text("Info",
+                    style: new TextStyle(color: Colors.white, fontSize: 15.0)))
+          ],
+        ),
       ),
     );
   }
 
   Widget getVideoSearchListWidget() {
     logger.fine("Rendering Video Search list");
-    Widget videoSearchList = new Column(children: <Widget>[
-      new FilterBarSharedState(
-        child: new GradientAppBar(
-            this,
-            searchFieldController,
-            new FilterMenu(
-                searchFilters: searchFilters,
-                onFilterUpdated: _filterMenuUpdatedCallback,
-                onSingleFilterTapped: _singleFilterTappedCallback),
-            false,
-            videos.length,
-            totalQueryResults),
-      ),
-      new Flexible(
-        child: new RefreshIndicator(
-            child: new Scrollbar(
-              child: new VideoListView(
-                key: videoListKey,
-                videos: videos,
-                amountOfVideosFetched: lastAmountOfVideosRetrieved,
-                queryEntries: onQueryEntries,
-                currentQuerySkip: websocketController.getCurrentSkip(),
-                totalResultSize: totalQueryResults,
-                mixin: this,
+
+    Widget videoSearchList = new Container(
+      color: Color(0xffffbf00),
+      child: new SafeArea(
+        child: new Container(
+          color: Colors.grey[800],
+          child: new Column(
+            children: <Widget>[
+              new FilterBarSharedState(
+                child: new GradientAppBar(
+                    this,
+                    searchFieldController,
+                    new FilterMenu(
+                        searchFilters: searchFilters,
+                        onFilterUpdated: _filterMenuUpdatedCallback,
+                        onSingleFilterTapped: _singleFilterTappedCallback),
+                    false,
+                    videos.length,
+                    totalQueryResults),
               ),
-            ),
-            onRefresh: _handleListRefresh),
+              new Flexible(
+                child: new RefreshIndicator(
+                    child: new Scrollbar(
+                      child: new VideoListView(
+                        key: videoListKey,
+                        videos: videos,
+                        amountOfVideosFetched: lastAmountOfVideosRetrieved,
+                        queryEntries: onQueryEntries,
+                        currentQuerySkip: websocketController.getCurrentSkip(),
+                        totalResultSize: totalQueryResults,
+                        mixin: this,
+                      ),
+                    ),
+                    onRefresh: _handleListRefresh),
+              ),
+              new StatusBar(
+                  key: statusBarKey,
+                  websocketInitError: websocketInitError,
+                  videoListIsEmpty: videos.isEmpty,
+                  lastAmountOfVideosRetrieved: lastAmountOfVideosRetrieved,
+                  firstAppStartup: lastAmountOfVideosRetrieved < 0),
+              new IndexingBar(
+                  key: indexingBarKey,
+                  indexingError: indexingError,
+                  info: indexingInfo),
+            ],
+          ),
+        ),
       ),
-      new StatusBar(
-          key: statusBarKey,
-          websocketInitError: websocketInitError,
-          videoListIsEmpty: videos.isEmpty,
-          lastAmountOfVideosRetrieved: lastAmountOfVideosRetrieved,
-          firstAppStartup: lastAmountOfVideosRetrieved < 0),
-      new IndexingBar(
-          key: indexingBarKey,
-          indexingError: indexingError,
-          info: indexingInfo),
-    ]);
+    );
     return videoSearchList;
   }
 
@@ -479,10 +502,18 @@ class HomePageState extends State<MyHomePage>
         }
         return;
       } else if (newVideosCount != 0) {
+        // client side result filtering
+        if (searchFilters["Länge"] != null) {
+          videos =
+              VideoListUtil.applyLengthFilter(videos, searchFilters["Länge"]);
+        }
+        int newVideosCount = videos.length - videoListLengthOld;
+
         logger.info('Received ' +
             newVideosCount.toString() +
             ' new video(s). Amount of videos in list ' +
             videos.length.toString());
+
         lastAmountOfVideosRetrieved = newVideosCount;
         scrolledToEndOfList == false;
         if (mounted) setState(() {});
@@ -506,7 +537,7 @@ class HomePageState extends State<MyHomePage>
         });
       }
     } else {
-      logger.info("Received pong");
+      logger.fine("Received pong");
     }
   }
 

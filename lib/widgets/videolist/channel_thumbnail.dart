@@ -13,7 +13,7 @@ class ChannelThumbnail extends StatelessWidget {
 
     return new Container(
       key: new Key(uuid.v1()),
-      margin: new EdgeInsets.only(left: 2.0, top: 5.0),
+      margin: new EdgeInsets.only(left: 2.0),
       alignment: FractionalOffset.topLeft,
       width: 50.0,
       height: 50.0,

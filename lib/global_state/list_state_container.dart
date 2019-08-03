@@ -7,6 +7,7 @@ import 'package:flutter_ws/model/video_rating.dart';
 import 'package:flutter_ws/platform_channels/download_manager_flutter.dart';
 import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
 import 'package:flutter_ws/platform_channels/video_progress_manager.dart';
+import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/util/rating_util.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
@@ -23,6 +24,8 @@ class AppState {
   AppState(this.downloadManager, this.databaseManager, this.videoPreviewManager,
       this.progressManager, this.favoriteChannels, this.ratingCache);
 
+  TargetPlatform targetPlatform;
+  Directory iOsDocumentsDirectory;
   DownloadManager downloadManager;
   DatabaseManager databaseManager;
   VideoProgressManager progressManager;
@@ -44,6 +47,14 @@ class AppState {
 
   void setBestVideosAllTime(Map<String, VideoRating> cache) {
     bestVideosAllTime = cache;
+  }
+
+  void setTargetPlatform(TargetPlatform platform) {
+    targetPlatform = platform;
+  }
+
+  void setIOsDirectory(Directory dir) {
+    iOsDocumentsDirectory = dir;
   }
 }
 
@@ -110,6 +121,8 @@ class AppSharedState extends State<AppSharedStateContainer> {
 
       //load ratings only once on application start to reduce requests to backend(costly). Operate on cache when doing ratings.
       loadRatings();
+
+      determinePlatform();
 
       initializeDatabase().then((init) {
         //start subscription to Flutter Download Manager
@@ -178,5 +191,15 @@ class AppSharedState extends State<AppSharedStateContainer> {
     videoListState.extendetListTiles.contains(videoId)
         ? videoListState.extendetListTiles.remove(videoId)
         : videoListState.extendetListTiles.add(videoId);
+  }
+
+  void determinePlatform() {
+    DeviceInformation.getTargetPlatform().then((platform) async {
+      appState.setTargetPlatform(platform);
+      if (platform == TargetPlatform.iOS) {
+        Directory directory = await getApplicationDocumentsDirectory();
+        appState.setIOsDirectory(directory);
+      }
+    });
   }
 }

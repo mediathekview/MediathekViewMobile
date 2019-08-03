@@ -5,7 +5,7 @@ import 'package:flutter_ws/widgets/videolist/list_card.dart';
 import 'package:uuid/uuid.dart';
 
 class RowAdapter {
-  static Widget createRow(Video video, TickerProviderStateMixin mixin) {
+  static Widget createRow(Video video) {
     Uuid uuid = new Uuid();
 
     String assetPath = Channels.channelMap.entries
@@ -19,7 +19,6 @@ class RowAdapter {
     return new ListCard(
         key: new Key(uuid.v1()),
         channelPictureImagePath: assetPath,
-        video: video,
-        mixin: mixin);
+        video: video);
   }
 }

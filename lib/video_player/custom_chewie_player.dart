@@ -4,10 +4,9 @@ import 'package:chewie/src/chewie_progress_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_ws/video_player/custom_player_with_controls.dart';
 import 'package:screen/screen.dart';
 import 'package:video_player/video_player.dart';
-
-import 'custom_player_with_controls.dart';
 
 typedef Widget ChewieRoutePageBuilder(
     BuildContext context,

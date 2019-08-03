@@ -11,8 +11,8 @@ import 'package:flutter_ws/widgets/videolist/circular_progress_with_text.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 
-const ERROR_MSG = "Delete of video failed.";
-const ERROR_MSG_DOWNLOAD = "Download failed.";
+const ERROR_MSG = "Löschen fehlgeschlagen";
+const ERROR_MSG_DOWNLOAD = "Download fehlgeschlagen";
 
 class DownloadCardBody extends StatefulWidget {
   final Logger logger = new Logger('DownloadCardBody');
@@ -152,8 +152,8 @@ class DownloadCardBodyState extends State<DownloadCardBody> {
           new Flexible(
               key: new Key(uuid.v1()),
               child: new Container(
-                  margin:
-                      new EdgeInsets.symmetric(vertical: 8.0, horizontal: 40.0),
+                  margin: new EdgeInsets.only(
+                      left: 70.0, right: 40.0, bottom: 7.0, top: 2.0),
                   height: 2.0,
                   color: Colors.grey)),
           new MetadataBar(widget.video.duration, widget.video.timestamp),

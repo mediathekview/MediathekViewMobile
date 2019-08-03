@@ -1,4 +1,5 @@
 import 'package:flutter_ws/model/video.dart';
+import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
 import 'package:logging/logging.dart';
 
 class VideoListUtil {
@@ -80,5 +81,26 @@ class VideoListUtil {
     }
 
     return video;
+  }
+
+  static List<Video> applyLengthFilter(
+      List<Video> videos, SearchFilter searchFilter) {
+    List<String> split = searchFilter.filterValue.split("-");
+    double minLength = double.parse(split.elementAt(0));
+    double maxLength = double.parse(split.elementAt(1));
+    int videoLengthBeforeRemoval = videos.length;
+    videos.removeWhere((video) {
+      if (video.duration == null || video.duration.toString().isEmpty) {
+        return false;
+      }
+      int sekunden = int.parse(video.duration.toString());
+      int videoLengthInMinutes = (sekunden / 60).floor();
+      return videoLengthInMinutes < minLength ||
+          videoLengthInMinutes > maxLength;
+    });
+    int diff = videoLengthBeforeRemoval - videos.length;
+    logger.info(
+        "Removed " + diff.toString() + " videos due to length constraints");
+    return videos;
   }
 }

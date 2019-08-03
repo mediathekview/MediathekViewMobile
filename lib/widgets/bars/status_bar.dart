@@ -34,7 +34,7 @@ class StatusBar extends StatelessWidget {
       return new CircularProgressWithText(
         new Text("Keine Verbindung", style: connectionLostTextStyle),
         new Color(0xffffbf00),
-        Colors.white,
+        new Color(0xffffbf00),
         height: 30.0,
       );
     }

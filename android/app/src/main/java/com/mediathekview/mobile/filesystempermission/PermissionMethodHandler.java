@@ -26,8 +26,6 @@ public class PermissionMethodHandler implements MethodChannel.MethodCallHandler 
     @TargetApi(Build.VERSION_CODES.GINGERBREAD)
     @Override
     public void onMethodCall(MethodCall call, MethodChannel.Result result) {
-        Log.i(TAG, "Method call with identifier " + call.method + " received");
-
          if (call.method.equals("hasFilesystemPermission")) {
 
             Log.i(TAG, "Android: checking for Filesystem Permission");

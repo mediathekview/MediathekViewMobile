@@ -19,7 +19,7 @@ class FilterMenuChannelEditButton extends StatelessWidget {
     return new Container(
         height: 35.0,
         child: new RaisedButton(
-          color: Colors.grey[700],
+          color: Colors.black,
           shape: RoundedRectangleBorder(
               borderRadius: new BorderRadius.circular(8.0)),
           onPressed: () {

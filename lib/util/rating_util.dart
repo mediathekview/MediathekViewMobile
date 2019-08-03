@@ -9,6 +9,8 @@ class RatingUtil {
 
   static const githubInsertUrl =
       "https://raw.githubusercontent.com/mediathekview/MediathekViewMobile/master/assets/cloudfunctions/insertRating";
+  static const githubUpdateUrl =
+      "https://raw.githubusercontent.com/mediathekview/MediathekViewMobile/master/assets/cloudfunctions/updateRating";
   static const githubInsertDifUrl =
       "https://raw.githubusercontent.com/mediathekview/MediathekViewMobile/master/assets/cloudfunctions/insertRatingDif";
   static const githubAllRatingsUrl =
@@ -33,9 +35,10 @@ class RatingUtil {
   static Future<Map<String, VideoRating>> _getRatings(
       String queryString) async {
     final response = await http.get(queryString);
+    String body = utf8.decode(response.bodyBytes);
     if (response.statusCode == 200) {
       Map<String, VideoRating> ratingCache = new Map();
-      (json.decode(response.body) as List)
+      (json.decode(body) as List)
           .map((data) => new VideoRating.fromJson(data))
           .forEach((rating) {
         ratingCache.putIfAbsent(rating.video_id, () => rating);
@@ -52,6 +55,10 @@ class RatingUtil {
 
   static Future<String> getInsertRatingUrl() {
     return getResponseBodyAsString(githubInsertUrl);
+  }
+
+  static Future<String> getUpdateRatingUrl() {
+    return getResponseBodyAsString(githubUpdateUrl);
   }
 
   static Future<String> getInsertDifRatingUrl() {
@@ -73,7 +80,7 @@ class RatingUtil {
   static Future<String> getResponseBodyAsString(String url) async {
     final response = await http.get(url);
     if (response.statusCode == 200) {
-      return response.body.toString();
+      return response.body;
     } else {
       throw new Exception("Failed to get response from " +
           url +

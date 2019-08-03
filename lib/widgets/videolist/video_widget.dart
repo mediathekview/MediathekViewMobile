@@ -6,6 +6,7 @@ import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/platform_channels/video_manager.dart';
 import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
+import 'package:flutter_ws/video_player/flutter_video_player.dart';
 import 'package:logging/logging.dart';
 
 class VideoWidget extends StatefulWidget {
@@ -43,18 +44,27 @@ class VideoWidgetState extends State<VideoWidget> {
   VoidCallback listenerVideo;
   AppSharedState appWideState;
   Image previewImage;
+  FlutterVideoPlayer flutterVideoPlayer;
 
   VideoWidgetState(Image image) {
     previewImage = image;
   }
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (flutterVideoPlayer != null) {
+      return flutterVideoPlayer;
+    }
+
     appWideState = AppSharedStateContainer.of(context);
     widget.logger.fine("Rendering Image for " + widget.videoId);
 
     if (previewImage == null) {
-      widget.logger.info("Image for video " + widget.videoId + " is null");
       VideoPreviewManager previewController =
           appWideState.appState.videoPreviewManager;
       //Manager will update state of this widget!
@@ -101,76 +111,83 @@ class VideoWidgetState extends State<VideoWidget> {
     }
 
     return new GestureDetector(
-      child: new AspectRatio(
-        aspectRatio:
-            totalWidth > height ? totalWidth / height : height / totalWidth,
-        child: new Container(
-          width: totalWidth,
-          child: new Stack(
-            alignment: Alignment.center,
-            fit: StackFit.passthrough,
-            children: <Widget>[
-              new AnimatedOpacity(
-                opacity: previewImage == null ? 1.0 : 0.0,
-                duration: new Duration(milliseconds: 750),
-                curve: Curves.easeInOut,
-                child: widget.defaultImageAssetPath != null
-                    ? new Image.asset(
-                        'assets/img/' + widget.defaultImageAssetPath,
-                        width: totalWidth,
-                        height: height,
-                        alignment: Alignment.center,
-                        gaplessPlayback: true)
-                    : new Container(color: const Color(0xffffbf00)),
-              ),
-              widget.showLoadingIndicator == true
-                  ? new Container(
-                      constraints: BoxConstraints.tight(Size.square(25.0)),
-                      alignment: FractionalOffset.topLeft,
-                      child: widget.previewImage == null
-                          ? const CircularProgressIndicator(
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                  Colors.white),
-                              strokeWidth: 4.0,
-                            )
-                          : new Container(),
-                    )
-                  : new Container(),
-              new AnimatedOpacity(
-                opacity: previewImage != null ? 1.0 : 0.0,
-                duration: new Duration(milliseconds: 750),
-                curve: Curves.easeInOut,
-                child: previewImage,
-              ),
-              new Container(
-                width: totalWidth,
-                alignment: FractionalOffset.center,
-                child: new Opacity(
-                  opacity: 0.7,
-                  child: new Icon(Icons.play_circle_outline,
-                      size: 100.0,
-                      color: previewImage == null
-                          ? Colors.grey[500]
-                          : Colors.white),
+        child: new AspectRatio(
+          aspectRatio:
+              totalWidth > height ? totalWidth / height : height / totalWidth,
+          child: new Container(
+            width: totalWidth,
+            child: new Stack(
+              alignment: Alignment.center,
+              fit: StackFit.passthrough,
+              children: <Widget>[
+                new AnimatedOpacity(
+                  opacity: previewImage == null ? 1.0 : 0.0,
+                  duration: new Duration(milliseconds: 750),
+                  curve: Curves.easeInOut,
+                  child: widget.defaultImageAssetPath != null
+                      ? new Image.asset(
+                          'assets/img/' + widget.defaultImageAssetPath,
+                          width: totalWidth,
+                          height: height,
+                          alignment: Alignment.center,
+                          gaplessPlayback: true)
+                      : new Container(color: const Color(0xffffbf00)),
                 ),
-              ),
-            ],
+                widget.showLoadingIndicator == true
+                    ? new Container(
+                        constraints: BoxConstraints.tight(Size.square(25.0)),
+                        alignment: FractionalOffset.topLeft,
+                        child: widget.previewImage == null
+                            ? const CircularProgressIndicator(
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                    Colors.white),
+                                strokeWidth: 4.0,
+                              )
+                            : new Container(),
+                      )
+                    : new Container(),
+                new AnimatedOpacity(
+                  opacity: previewImage != null ? 1.0 : 0.0,
+                  duration: new Duration(milliseconds: 750),
+                  curve: Curves.easeInOut,
+                  child: previewImage,
+                ),
+                new Container(
+                  width: totalWidth,
+                  alignment: FractionalOffset.center,
+                  child: new Opacity(
+                    opacity: 0.7,
+                    child: new Icon(Icons.play_circle_outline,
+                        size: 100.0,
+                        color: previewImage == null
+                            ? Colors.grey[500]
+                            : Colors.white),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-      onTap: () {
-        widget.logger.fine("Opening video player");
+        onTap: () async {
+          widget.logger.fine("Opening video player");
 
-        NativeVideoPlayer nativeVideoPlayer =
-            new NativeVideoPlayer(appWideState.appState.databaseManager);
-        widget.entity != null
-            ? nativeVideoPlayer.playVideo(
-                videoEntity: widget.entity,
-                playbackProgress: widget.videoProgressEntity)
-            : nativeVideoPlayer.playVideo(
-                video: widget.video,
-                playbackProgress: widget.videoProgressEntity);
-      },
-    );
+          if (appWideState.appState.targetPlatform == TargetPlatform.iOS) {
+            setState(() {
+              flutterVideoPlayer = new FlutterVideoPlayer(appWideState,
+                  widget.video, widget.entity, widget.videoProgressEntity);
+            });
+            return;
+          }
+
+          NativeVideoPlayer nativeVideoPlayer =
+              new NativeVideoPlayer(appWideState.appState.databaseManager);
+          widget.entity != null
+              ? nativeVideoPlayer.playVideo(
+                  videoEntity: widget.entity,
+                  playbackProgress: widget.videoProgressEntity)
+              : nativeVideoPlayer.playVideo(
+                  video: widget.video,
+                  playbackProgress: widget.videoProgressEntity);
+        });
   }
 }

@@ -14,16 +14,16 @@ class DeviceInformation {
     DeviceInfoPlugin deviceInfo = new DeviceInfoPlugin();
     try {
       AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-      logger.fine('Running on ${androidInfo.model}'); // e.g. "Moto G (4)"
+      logger.info('Running on ${androidInfo.model}'); // e.g. "Moto G (4)"
       platform = TargetPlatform.android;
       return platform;
     } catch (e) {
-      logger.severe("Running NOT on Android");
+      logger.fine("Running NOT on Android");
     }
 
     try {
       IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
-      logger.fine('Running on iOS: ${iosInfo.utsname.machine}');
+      logger.info('Running on iOS: ${iosInfo.utsname.machine}');
       platform = TargetPlatform.iOS;
       return platform; // e.g. "iPod7,1""Moto G (4)"
     } catch (e) {

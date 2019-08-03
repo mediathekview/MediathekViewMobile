@@ -1,19 +1,69 @@
-import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
+import 'dart:io';
 
-import 'custom_chewie_player.dart';
-import 'custom_video_controls.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_ws/database/database_manager.dart';
+import 'package:flutter_ws/database/video_entity.dart';
+import 'package:flutter_ws/database/video_progress_entity.dart';
+import 'package:flutter_ws/global_state/list_state_container.dart';
+import 'package:flutter_ws/model/video.dart';
+import 'package:flutter_ws/video_player/custom_chewie_player.dart';
+import 'package:flutter_ws/video_player/custom_video_controls.dart';
+import 'package:logging/logging.dart';
+import 'package:video_player/video_player.dart';
+import 'package:wakelock/wakelock.dart';
 
 class FlutterVideoPlayer extends StatefulWidget {
+  String videoUrl;
+  String videoId;
+  Video video;
+  VideoEntity videoEntity;
   VideoPlayerController controller;
   CustomChewieController chewieController;
-  String videoUrl;
+  DatabaseManager databaseManager;
+  VideoProgressEntity progressEntity;
+  AppSharedState appSharedState;
+  final Logger log = new Logger('FlutterVideoPlayer');
 
-  FlutterVideoPlayer(String videoUrl) {
-    this.videoUrl = videoUrl;
-    controller = VideoPlayerController.network(
-      videoUrl,
-    );
+  final Logger logger = new Logger('FlutterVideoPlayer');
+
+  FlutterVideoPlayer(AppSharedState appSharedState, Video video,
+      VideoEntity entity, VideoProgressEntity progress) {
+    this.video = video;
+    this.videoEntity = entity;
+    this.videoId = video != null ? video.id : entity.id;
+    this.videoUrl = video != null ? video.url_video : entity.url_video;
+    this.databaseManager = appSharedState.appState.databaseManager;
+    this.progressEntity = progress;
+    this.appSharedState = appSharedState;
+    initVideoPlayerController();
+  }
+
+  void initVideoPlayerController() {
+    if (video != null) {
+      controller = VideoPlayerController.network(
+        videoUrl,
+      );
+    } else {
+      Uri videoUri = new Uri.file(
+          appSharedState.appState.iOsDocumentsDirectory.path +
+              "/MediathekView" +
+              "/" +
+              videoEntity.fileName);
+      File file = File.fromUri(videoUri);
+      file.exists().then(
+        (exists) {
+          if (!exists) {
+            log.severe("Cannot play video from file. File does not exist: " +
+                file.uri.toString());
+            controller = VideoPlayerController.network(
+              videoUrl,
+            );
+          }
+        },
+      );
+
+      controller = VideoPlayerController.file(file);
+    }
   }
 
   @override
@@ -24,23 +74,37 @@ class _FlutterVideoPlayerState extends State<FlutterVideoPlayer> {
   @override
   void initState() {
     buildControllers();
-    // Initialize the controller and store the Future for later use.
-    //_initializeVideoPlayerFuture = widget.controller.initialize();
-
-    // Use the controller to loop the video.
-    //widget.controller.setLooping(true);
     super.initState();
   }
 
-  void buildControllers() {
-    widget.controller = VideoPlayerController.network(
-      widget.videoUrl,
-    );
+  void buildControllers() async {
+    widget.controller
+      ..addListener(() {
+        final bool isPlaying = widget.controller.value.isPlaying;
+        final int position = widget.controller.value.position.inMilliseconds;
+        if (isPlaying) {
+          widget.logger.info("VideoPlayback position:" + position.toString());
+          Wakelock.enable();
+          widget.databaseManager
+              .getVideoProgressEntity(widget.videoId)
+              .then((entity) {
+            if (entity == null) {
+              // insert into database containing all the video information
+              insertVideoProgress(position);
+            } else {
+              updateVideoProgress(position);
+            }
+          });
+        }
+      });
 
     widget.chewieController = new CustomChewieController(
         videoPlayerController: widget.controller,
         autoPlay: true,
         looping: true,
+        startAt: widget.progressEntity != null
+            ? new Duration(milliseconds: widget.progressEntity.progress)
+            : new Duration(milliseconds: 0),
         customControls: new CustomVideoControls(
             backgroundColor: Color.fromRGBO(41, 41, 41, 0.7),
             iconColor: Color(0xffffbf00)),
@@ -48,57 +112,48 @@ class _FlutterVideoPlayerState extends State<FlutterVideoPlayer> {
   }
 
   @override
-  void dispose() {
-    //FlutterVideoPlayer.controller.dispose();
-    //FlutterVideoPlayer.chewieController.dispose();
-    print("Video Player widget being disposed");
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    print("Video Controller is null" +
-        (widget.controller == null ? "true" : "false"));
-
     return new Container(
       child: new CustomChewie(
         controller: widget.chewieController,
       ),
     );
+  }
 
-    /* return new Scaffold(
-      backgroundColor: Colors.grey[800],
-      body: FutureBuilder(
-        future: _initializeVideoPlayerFuture,
-        builder: (context, snapshot) {
-          widget.controller.play();
-          if (snapshot.connectionState == ConnectionState.done) {
-            return new Stack(children: <Widget>[
-              new Center(
-                  child: AspectRatio(
-                aspectRatio: widget.controller.value.aspectRatio,
-                // By default, the VideoPlayer widget takes up as much space as possible.
-                child: VideoPlayer(widget.controller),
-              )),
-              new Positioned(
-                top: 10.0,
-                left: 10.0,
-                child: new IconButton(
-                    icon: new Icon(Icons.clear),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    }),
-              ),
-            ]);
-            // If the VideoPlayerController has finished initialization, use
-            // the data it provides to limit the aspect ratio of the video.
-          } else {
-            // If the VideoPlayerController is still initializing, show a
-            // loading spinner.
-            return Center(child: CircularProgressIndicator());
-          }
-        },
-      ),
-    );*/
+  void insertVideoProgress(int position) {
+    // insert into database containing all the video information
+    VideoProgressEntity videoProgress = widget.video != null
+        ? VideoProgressEntity.fromMap(widget.video.toMap())
+        : VideoProgressEntity.fromMap(widget.videoEntity.toMap());
+
+    videoProgress.progress = position;
+    widget.databaseManager.insertVideoProgress(videoProgress).then((rowId) {
+      widget.logger.info(
+          "Successfully inserted progress entity for video " + widget.videoId);
+    }, onError: (err, stackTrace) {
+      widget.logger
+          .warning("Could not insert video progress " + stackTrace.toString());
+    });
+  }
+
+  void updateVideoProgress(int position) {
+    widget.databaseManager
+        .updateVideoProgressEntity(
+            new VideoProgressEntity(widget.videoId, position))
+        .then((rowsUpdated) {
+      if (rowsUpdated < 1) {
+        widget.logger
+            .warning("Could not update video progress. Rows Updated < 1");
+        return;
+      }
+    }, onError: (err, stackTrace) {
+      widget.logger
+          .warning("Could not update video progress " + stackTrace.toString());
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }
