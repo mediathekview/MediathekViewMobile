@@ -25,6 +25,8 @@ dependencies:
   chewie: '^0.9.7'
   wakelock: '^0.1.2+7'
   flutter_launcher_icons: "^0.7.0"
+  shared_preferences: "^0.5.3+4"
+  intro_slider: "^2.2.5"
 
   flutter:
     sdk: flutter
@@ -69,6 +71,9 @@ flutter:
       - assets/img/srf.png
       - assets/img/MediathekViewLoading.png
       - assets/default_live_stream_channels.txt
+      - assets/intro/intro_slider_1.png
+      - assets/intro/intro_slider_2.png
+      - assets/intro/intro_slider_3.png
 
   fonts:
     - family: OldStandard

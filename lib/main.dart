@@ -23,9 +23,11 @@ import 'package:flutter_ws/widgets/bars/indexing_bar.dart';
 import 'package:flutter_ws/widgets/bars/status_bar.dart';
 import 'package:flutter_ws/widgets/filterMenu/filter_menu.dart';
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
+import 'package:flutter_ws/widgets/introSlider/intro_slider.dart';
 import 'package:flutter_ws/widgets/videolist/video_list_view.dart';
 import 'package:flutter_ws/widgets/videolist/videolist_util.dart';
 import 'package:logging/logging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 void main() => runApp(new AppSharedStateContainer(child: new MyApp()));
@@ -49,6 +51,7 @@ class MyApp extends StatelessWidget {
     Uuid uuid = new Uuid();
 
     return new MaterialApp(
+      debugShowCheckedModeBanner: false,
       theme: new ThemeData(
         textTheme: new TextTheme(
             subhead: subHeaderTextStyle,
@@ -152,6 +155,10 @@ class HomePageState extends State<MyHomePage>
   DownloadSection downloadSection;
   AboutSection aboutSection;
 
+  //intro slider
+  SharedPreferences prefs;
+  bool isFirstStart = false;
+
   HomePageState(this.searchFieldController, this.logger);
 
   @override
@@ -212,57 +219,21 @@ class HomePageState extends State<MyHomePage>
     });
 
     startSocketHealthTimer();
-  }
-
-  void startSocketHealthTimer() {
-    if (socketHealthTimer == null || !socketHealthTimer.isActive) {
-      Duration duration = new Duration(milliseconds: 5000);
-      Timer.periodic(
-        duration,
-        (Timer t) {
-          ConnectionState connectionState = websocketController.connectionState;
-
-          if (connectionState == ConnectionState.active) {
-            logger.fine("Ws connection is fine");
-            consecutiveWebsocketUnhealthyChecks = 0;
-            if (websocketInitError) {
-              websocketInitError = false;
-              if (mounted) setState(() {});
-            }
-          } else if (connectionState == ConnectionState.done ||
-              connectionState == ConnectionState.none) {
-            showStatusBar();
-
-            logger.fine("Ws connection is " +
-                connectionState.toString() +
-                " and mounted: " +
-                mounted.toString());
-
-            if (mounted)
-              websocketController
-                  .initializeWebsocket()
-                  .then((initializedSuccessfully) {
-                if (initializedSuccessfully) {
-                  consecutiveWebsocketUnhealthyChecks = 0;
-                  logger.info("WS connection stable again");
-                  if (videos.isEmpty) {
-                    _createQuery();
-                  }
-                } else {
-                  logger.info("WS initialization failed");
-                }
-              });
-          }
-        },
-      );
-    }
+    checkForFirstStart();
   }
 
   @override
   Widget build(BuildContext context) {
     stateContainer = AppSharedStateContainer.of(context);
 
-    logger.fine("Rendering Home Page");
+    if (isFirstStart) {
+      return new IntroScreen(onDonePressed: () {
+        setState(() {
+          isFirstStart = false;
+          prefs.setBool('firstStart', false);
+        });
+      });
+    }
 
     return new Scaffold(
       backgroundColor: Colors.grey[800],
@@ -627,6 +598,61 @@ class HomePageState extends State<MyHomePage>
       websocketController.closeWebsocketChannel();
     } else if (state == AppLifecycleState.resumed) {
       websocketController.initializeWebsocket();
+    }
+  }
+
+  checkForFirstStart() async {
+    prefs = await SharedPreferences.getInstance();
+    var firstStart = prefs.getBool('firstStart');
+    if (firstStart == null) {
+      print("First start");
+      setState(() {
+        isFirstStart = true;
+      });
+    }
+  }
+
+  void startSocketHealthTimer() {
+    if (socketHealthTimer == null || !socketHealthTimer.isActive) {
+      Duration duration = new Duration(milliseconds: 5000);
+      Timer.periodic(
+        duration,
+        (Timer t) {
+          ConnectionState connectionState = websocketController.connectionState;
+
+          if (connectionState == ConnectionState.active) {
+            logger.fine("Ws connection is fine");
+            consecutiveWebsocketUnhealthyChecks = 0;
+            if (websocketInitError) {
+              websocketInitError = false;
+              if (mounted) setState(() {});
+            }
+          } else if (connectionState == ConnectionState.done ||
+              connectionState == ConnectionState.none) {
+            showStatusBar();
+
+            logger.fine("Ws connection is " +
+                connectionState.toString() +
+                " and mounted: " +
+                mounted.toString());
+
+            if (mounted)
+              websocketController
+                  .initializeWebsocket()
+                  .then((initializedSuccessfully) {
+                if (initializedSuccessfully) {
+                  consecutiveWebsocketUnhealthyChecks = 0;
+                  logger.info("WS connection stable again");
+                  if (videos.isEmpty) {
+                    _createQuery();
+                  }
+                } else {
+                  logger.info("WS initialization failed");
+                }
+              });
+          }
+        },
+      );
     }
   }
 
