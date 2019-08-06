@@ -1,8 +1,8 @@
 MediathekViewMobile ist eine mobile Android und iOs Anwendung für den Zugriff auf die Filmliste des [MediathekView Projekts](https://mediathekview.de/) mithilfe der API von [MediathekViewWeb](https://mediathekviewweb.de/)
 
 # Download
-[Android](https://github.com/mediathekview/MediathekViewMobile/releases/download/v1.0/MediathekViewMobileApp.apk)  
-[iOs - bald] (https://github.com/mediathekview/MediathekViewMobile)
+ - [Android](https://github.com/mediathekview/MediathekViewMobile/releases/download/v1.0/MediathekViewMobileApp.apk)  
+ - iOs (kommt demnächst)
 
 
 ## Tablet
@@ -15,8 +15,8 @@ MediathekViewMobile ist eine mobile Android und iOs Anwendung für den Zugriff a
 
 # Funktionen
 
-- Durchsuchen und Downloaden der Mediatheken der öffentlich-rechtlichen Sender
+- Durchsuchen und Downloaden von den Mediatheken der öffentlich-rechtlichen Sender
 - Filtern nach Thema, Titel, Sender und Länge
 - Bewertung von Videos und Übersicht über beliebte Sendungen
-- View History
 - Komfortabeler Videoplayer (merkt sich die Wiedergabeposition)
+- View History
