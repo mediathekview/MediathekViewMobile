@@ -1,23 +1,22 @@
-MediathekViewMobile ist eine mobile Android & iOS Anwendung für den Zugriff auf die Filmliste des [MediathekView Projekts](https://mediathekview.de/) mithilfe der API von [MediathekViewWeb](https://mediathekviewweb.de/)
+MediathekViewMobile ist eine mobile Android und iOs Anwendung für den Zugriff auf die Filmliste des [MediathekView Projekts](https://mediathekview.de/) mithilfe der API von [MediathekViewWeb](https://mediathekviewweb.de/)
 
 # Download
+[Android](https://github.com/mediathekview/MediathekViewMobile/releases/download/v1.0/MediathekViewMobileApp.apk)  
+[iOs - bald] (https://github.com/mediathekview/MediathekViewMobile)
 
-- Android: soon 
-- iOS: in Entwicklung
 
-# Impressionen
+## Tablet
+<img src="https://user-images.githubusercontent.com/33809186/62579900-3f24c600-b8a5-11e9-88b8-069d8a08cce9.png" width="640" height="400"/>
 
-- Tablet - 10 Zoll, Full-HD, 16:9 (Auf Smartphones sind die Texturen und Icons verhältnismäßig größer)
-<img src="https://user-images.githubusercontent.com/33809186/42665202-e36255ec-863e-11e8-90ef-93920be94f7b.gif" width="420" height="672"/>
+## Mobil
+<img src="https://user-images.githubusercontent.com/33809186/62579173-5d89c200-b8a3-11e9-84b1-d60b15e3026e.PNG" width="250" height="444"/> <img src="https://user-images.githubusercontent.com/33809186/62580100-bce8d180-b8a5-11e9-9893-d3f30d64124f.PNG" width="250" height="444"/> <img src="https://user-images.githubusercontent.com/33809186/62580644-0128a180-b8a7-11e9-8285-9483f5ef75e2.PNG" width="250" height="444"/>
 
-# Features
 
-- Durchsuchen der Mediatheken der öffentlich-rechtlichen Sender
-- Download
-- Live TV von deutschen & internationalen Sendern
 
-# Verwendete Bibliotheken etc. (zumindest die wichtigsten, siehe [pubspec.yaml](https://github.com/danielfoehrKn/MediathekViewMobile/blob/master/pubspec.yaml) für mehr)
+# Funktionen
 
-- Ffmpeg für Android
-- Sqflite flutter plugin
-- Websocket dart
+- Durchsuchen und Downloaden der Mediatheken der öffentlich-rechtlichen Sender
+- Filtern nach Thema, Titel, Sender und Länge
+- Bewertung von Videos und Übersicht über beliebte Sendungen
+- View History
+- Komfortabeler Videoplayer (merkt sich die Wiedergabeposition)
