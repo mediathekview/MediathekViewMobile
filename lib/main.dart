@@ -591,8 +591,7 @@ class HomePageState extends State<MyHomePage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     logger.fine("Observed Lifecycle change " + state.toString());
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.suspending) {
+    if (state == AppLifecycleState.paused) {
       //TODO maybe dispose Tab controller here
       websocketController.stopPing();
       websocketController.closeWebsocketChannel();

@@ -9,6 +9,7 @@ ios/.generated/
 packages
 .flutter-plugins
 pubspec.lock
+.flutter-plugins-dependencies
 
 # Miscellaneous
 *.class

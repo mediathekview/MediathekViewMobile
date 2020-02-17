@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
@@ -65,6 +67,9 @@ class DownloadManager {
   //remember video that was intended to be downloaded, but permission was missing
   Video downloadVideoRequestWithoutPermission;
 
+  // port for isolate needed for download progress handler
+  ReceivePort _port = ReceivePort();
+
   DownloadManager(this._context);
 
   void stopListeningToDownloads() {
@@ -77,132 +82,168 @@ class DownloadManager {
     appWideState = AppSharedStateContainer.of(this._context);
     databaseManager = appWideState.appState.databaseManager;
 
-    FlutterDownloader.registerCallback(
-      (taskId, status, progress) {
-        String videoId = cacheTask[taskId];
-        VideoEntity entity = cache[videoId];
-        if (entity != null) {
-          logger.fine("Cache hit for TaskID -> Entity");
-          _notify(taskId, status, progress, databaseManager, entity);
-        } else {
-          databaseManager
-              .getVideoEntityForTaskId(taskId)
-              .then((VideoEntity entity) {
-            if (entity == null) {
-              logger.severe(
-                  "Received update for task that we do not know of - Ignoring");
-              return;
-            }
-            _notify(taskId, status, progress, databaseManager, entity);
-          });
+    // isolate listening
+    IsolateNameServer.registerPortWithName(
+        _port.sendPort, 'downloader_send_port');
+    _port.listen((dynamic data) {
+      String id = data[0];
+      DownloadTaskStatus status = data[1];
+      int progress = data[2];
+      handleDownloadProgress(id, status, progress);
+    });
+
+    FlutterDownloader.registerCallback(downloadCallback);
+  }
+
+  // static callback in background thread using an isolate to send the progress to the UI thread
+  static void downloadCallback(
+      String id, DownloadTaskStatus status, int progress) {
+    final SendPort send =
+        IsolateNameServer.lookupPortByName('downloader_send_port');
+    send.send([id, status, progress]);
+  }
+
+  void handleDownloadProgress(taskId, status, progress) {
+    String videoId = cacheTask[taskId];
+    VideoEntity entity = cache[videoId];
+    if (entity != null) {
+      logger.fine("Cache hit for TaskID -> Entity");
+      _notify(taskId, status, progress, databaseManager, entity);
+    } else {
+      databaseManager
+          .getVideoEntityForTaskId(taskId)
+          .then((VideoEntity entity) {
+        if (entity == null) {
+          logger.severe(
+              "Received update for task that we do not know of - Ignoring");
+          return;
         }
-      },
-    );
+        _notify(taskId, status, progress, databaseManager, entity);
+      });
+    }
   }
 
   void _notify(String taskId, DownloadTaskStatus status, int progress,
       DatabaseManager databaseManager, VideoEntity entity) {
     if (status == DownloadTaskStatus.failed) {
       //delete from schema first in case we want to try downloading video again
-      //_deleteVideo(entity);
-
-      FilesystemPermissionManager filesystemPermissionManager =
-          new FilesystemPermissionManager(_context, appWideState);
-
-      filesystemPermissionManager
-          .hasFilesystemPermission()
-          .then((bool hasPermission) {
-        if (!hasPermission) {
-          logger.info("Requesting Filesystem Permissions");
-          rememberedFailedVideoDownload = entity;
-
-          // subscribe to event stream to catch update - if granted by user then download again
-          Stream<dynamic> broadcastStream =
-              filesystemPermissionManager.getBroadcastStream();
-          broadcastStream.listen(
-            (result) {
-              String res = result['Granted'];
-              bool granted = res.toLowerCase() == 'true';
-
-              if (granted) {
-                logger.info("Filesystem permissions got granted");
-                //restart download using the remembered video
-                downloadFile(
-                    Video.fromMap(rememberedFailedVideoDownload.toMap()));
-              } else {
-                logger.info("Filesystem Permission denied by User");
-              }
-            },
-            onError: (e) {
-              logger.severe(
-                  "Listening to User Action regarding Android file system permission failed. Reason " +
-                      e.toString());
-            },
-          );
-
-          //then ask for user permission
-          filesystemPermissionManager
-              .askUserForPermission()
-              .then((bool successfullyAsked) {
-            if (!successfullyAsked) {
-              logger.severe(
-                  "Failed to ask for Filesystem Permissions after failed video download");
-            }
-          });
-        } else {
-          // we already got proper filesystem permission - other cause
-          logger.fine(
-              "Download for video failed & filesystem permission granted");
-          deleteVideo(entity.id);
-          Iterable<MapEntry<int, onFailed>> entries =
-              onFailedListeners[entity.id];
-          entries.forEach((entry) => {entry.value(entity.id)});
-        }
-      });
+      handleFailedDownload(entity);
     } else if (status == DownloadTaskStatus.canceled) {
-      deleteVideo(entity.id);
-      Iterable<MapEntry<int, onCanceled>> entries =
-          onCanceledListeners[entity.id];
-      entries.forEach((entry) => {entry.value(entity.id)});
+      handleCanceledDownload(entity);
     } else if (status == DownloadTaskStatus.complete) {
       //status now includes data that we want to add to the entity
-      FlutterDownloader.loadTasksWithRawQuery(
-              query: SQL_GET_SINGEL_TASK + "'" + taskId + "'")
-          .then((List<DownloadTask> list) {
-        DownloadTask task = list.elementAt(0);
-
-        // for ios, saving the directory is useless as the base directory gets mounted to a unique id every restart
-        entity.filePath = task.savedDir;
-        entity.fileName = task.filename;
-        entity.timestamp_video_saved =
-            new DateTime.now().millisecondsSinceEpoch;
-        databaseManager
-            .updateDownloadingVideoEntity(entity)
-            .then((rowsUpdated) {
-          logger.fine("Updated " + rowsUpdated.toString() + " relations.");
-        });
-        //also update cache
-        cache.update(entity.id, (oldEntity) => entity);
-      });
-
-      Iterable<MapEntry<int, onComplete>> entries =
-          onCompleteListeners[entity.id];
-      entries.forEach((entry) => {entry.value(entity.id)});
+      handleCompletedDownload(taskId, entity);
     } else if (status == DownloadTaskStatus.enqueued ||
         status == DownloadTaskStatus.running ||
         status == DownloadTaskStatus.paused &&
             onStateChangedListeners.isNotEmpty) {
-      Iterable<MapEntry<int, onStateChanged>> entries =
-          onStateChangedListeners[entity.id];
-      if (entries.length == 0) {
-        logger.info("No subscriber found for progress update. Video: " +
-            entity.title +
-            " id: " +
-            entity.id);
+      handleRunningDownload(entity, progress, status);
+    }
+  }
+
+  void handleRunningDownload(
+      VideoEntity entity, int progress, DownloadTaskStatus status) {
+    Iterable<MapEntry<int, onStateChanged>> entries =
+        onStateChangedListeners[entity.id];
+    if (entries.length == 0) {
+      logger.info("No subscriber found for progress update. Video: " +
+          entity.title +
+          " id: " +
+          entity.id);
+    }
+    logger.info("Progress " + progress.toString());
+
+    entries.forEach(
+        (entry) => {entry.value(entity.id, status, progress.toDouble())});
+  }
+
+  void handleCompletedDownload(String taskId, VideoEntity entity) {
+    FlutterDownloader.loadTasksWithRawQuery(
+            query: SQL_GET_SINGEL_TASK + "'" + taskId + "'")
+        .then((List<DownloadTask> list) {
+      if (list.length == 0) {
+        return;
       }
 
-      entries.forEach(
-          (entry) => {entry.value(entity.id, status, progress.toDouble())});
+      DownloadTask task = list.elementAt(0);
+
+      // for ios, saving the directory is useless as the base directory gets mounted to a unique id every restart
+      entity.filePath = task.savedDir;
+      entity.fileName = task.filename;
+      entity.timestamp_video_saved = new DateTime.now().millisecondsSinceEpoch;
+      databaseManager.updateDownloadingVideoEntity(entity).then((rowsUpdated) {
+        logger.fine("Updated " + rowsUpdated.toString() + " relations.");
+      });
+      //also update cache
+      cache.update(entity.id, (oldEntity) => entity);
+    });
+
+    Iterable<MapEntry<int, onComplete>> entries =
+        onCompleteListeners[entity.id];
+    entries.forEach((entry) => {entry.value(entity.id)});
+  }
+
+  void handleCanceledDownload(VideoEntity entity) {
+    deleteVideo(entity.id);
+    Iterable<MapEntry<int, onCanceled>> entries =
+        onCanceledListeners[entity.id];
+    entries.forEach((entry) => {entry.value(entity.id)});
+  }
+
+  void handleFailedDownload(VideoEntity entity) {
+    _deleteVideo(entity);
+
+    //notify listeners
+    Iterable<MapEntry<int, onCanceled>> entries = onFailedListeners[entity.id];
+    entries.forEach((entry) => {entry.value(entity.id)});
+
+    // check for filesystem permissions
+    FilesystemPermissionManager filesystemPermissionManager =
+        new FilesystemPermissionManager(_context, appWideState);
+    checkAndRequestFilesystemPermissions(entity, filesystemPermissionManager);
+  }
+
+  // Check & request filesystem permissions
+  void checkAndRequestFilesystemPermissions(VideoEntity entity,
+      FilesystemPermissionManager filesystemPermissionManager) async {
+    bool hasPermission =
+        await filesystemPermissionManager.hasFilesystemPermission();
+
+    if (!hasPermission) {
+      logger.info("Requesting Filesystem Permissions");
+      rememberedFailedVideoDownload = entity;
+
+      // subscribe to event stream to catch update - if granted by user then download again
+      Stream<dynamic> broadcastStream =
+          filesystemPermissionManager.getBroadcastStream();
+      broadcastStream.listen(
+        (result) {
+          String res = result['Granted'];
+          bool granted = res.toLowerCase() == 'true';
+
+          if (granted) {
+            logger.info("Filesystem permissions got granted");
+            //restart download using the remembered video
+            downloadFile(Video.fromMap(rememberedFailedVideoDownload.toMap()));
+          } else {
+            logger.info("Filesystem Permission denied by User");
+          }
+        },
+        onError: (e) {
+          logger.severe(
+              "Listening to User Action regarding Android file system permission failed. Reason " +
+                  e.toString());
+        },
+      );
+
+      //then ask for user permission
+      bool successfullyAsked =
+          await filesystemPermissionManager.askUserForPermission();
+
+      if (!successfullyAsked) {
+        logger.severe(
+            "Failed to ask for Filesystem Permissions after failed video download");
+      }
     }
   }
 

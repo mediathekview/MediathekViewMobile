@@ -1,6 +1,7 @@
 import UIKit
 import Flutter
 import AVFoundation
+import flutter_downloader
 
 
 @UIApplicationMain
@@ -8,8 +9,10 @@ import AVFoundation
     override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+        GeneratedPluginRegistrant.register(with: self)
+        FlutterDownloaderPlugin.setPluginRegistrantCallback(registerPlugins)
         
-        let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
+        let controller : FlutterBinaryMessenger = window?.rootViewController as! FlutterBinaryMessenger
         let videoMethodChannel = FlutterMethodChannel(name: "com.mediathekview.mobile/video", binaryMessenger: controller)
         
         let videoEventChannel = FlutterEventChannel(name: "com.mediathekview.mobile/videoEvent", binaryMessenger: controller)
@@ -70,8 +73,6 @@ import AVFoundation
                 return
             }
         })
-        
-        GeneratedPluginRegistrant.register(with: self)
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
     
@@ -104,5 +105,11 @@ import AVFoundation
             print(error.localizedDescription)
             return
         }
+    }
+}
+
+private func registerPlugins(registry: FlutterPluginRegistry) {
+    if (!registry.hasPlugin("FlutterDownloaderPlugin")) {
+       FlutterDownloaderPlugin.register(with: registry.registrar(forPlugin: "FlutterDownloaderPlugin"))
     }
 }

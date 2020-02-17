@@ -194,7 +194,7 @@ class _ListCardState extends State<ListCard> {
                   true, ratingChanged:
                       (bool needsRemoteSync, VideoRating updatedRating) {
                 if (needsRemoteSync) {
-                  persistRatingInTheCloud(updatedRating);
+                  uploadRating(updatedRating);
                 }
                 if (mounted) {
                   setState(() {});
@@ -270,7 +270,7 @@ class _ListCardState extends State<ListCard> {
                     onRatingChanged:
                         (bool needsRemoteSync, VideoRating updatedRating) {
                       if (needsRemoteSync) {
-                        persistRatingInTheCloud(updatedRating);
+                        uploadRating(updatedRating);
                       }
                       if (mounted) {
                         setState(() {});
@@ -412,7 +412,26 @@ class _ListCardState extends State<ListCard> {
     }
   }
 
-  void onDownloadRequested() {
+  void onDownloadRequested() async {
+    // first check if is accessible
+    final response = await http.head(widget.video.url_video);
+
+    if (response.statusCode >= 300) {
+      widget.logger.info("Url is not accessible: " +
+          widget.video.url_video.toString() +
+          ". Status code: " +
+          response.statusCode.toString() +
+          ". Reason: " +
+          response.reasonPhrase);
+
+      SnackbarActions.showError(context, ERROR_MSG_DOWNLOAD);
+      updateStatus(DownloadTaskStatus.failed, widget.video.id);
+      return;
+    }
+
+    // start download animation right away.
+    onDownloadStateChanged(widget.video.id, DownloadTaskStatus.enqueued, -1);
+
     subscribeToProgressChannel();
     downloadManager
         .downloadFile(widget.video)
@@ -430,22 +449,20 @@ class _ListCardState extends State<ListCard> {
         .deleteVideo(widget.video.id)
         .then((bool deletedSuccessfully) {
       if (!deletedSuccessfully) {
-        SnackbarActions.showError(context, ERROR_MSG);
-        return;
+        widget.logger
+            .severe("Failed to delete video with title " + widget.video.title);
       }
       isDownloadedAlready = false;
       isCurrentlyDownloading = false;
       currentStatus = null;
       progress = null;
       if (mounted) {
-        widget.logger
-            .info("Successfully deleted video with id " + widget.video.id);
         setState(() {});
       }
     });
   }
 
-  void persistRatingInTheCloud(VideoRating rating) async {
+  void uploadRating(VideoRating rating) async {
     widget.logger.fine("Persisting rating in the cloud");
     if (rating == null) {
       return;

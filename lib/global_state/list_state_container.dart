@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_ws/database/channel_favorite_entity.dart';
 import 'package:flutter_ws/database/database_manager.dart';
 import 'package:flutter_ws/model/video_rating.dart';
@@ -109,6 +110,8 @@ class AppSharedState extends State<AppSharedStateContainer> {
   void initializeState(BuildContext context) {
     if (appState == null) {
       DownloadManager downloadManager = new DownloadManager(context);
+      WidgetsFlutterBinding.ensureInitialized();
+      FlutterDownloader.initialize();
 
       DatabaseManager databaseManager = new DatabaseManager();
       appState = new AppState(

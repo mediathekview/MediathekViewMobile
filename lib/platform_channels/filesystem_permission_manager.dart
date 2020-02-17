@@ -19,6 +19,7 @@ class FilesystemPermissionManager {
     _eventChannel =
         const EventChannel('com.mediathekview.mobile/permissionEvent');
     _methodChannel = const MethodChannel('com.mediathekview.mobile/permission');
+    this.appWideState = appWideState;
   }
 
   Stream<dynamic> getBroadcastStream() {
