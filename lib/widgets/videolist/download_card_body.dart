@@ -12,7 +12,9 @@ import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 
 const ERROR_MSG = "Löschen fehlgeschlagen";
-const ERROR_MSG_DOWNLOAD = "Download fehlgeschlagen";
+const ERROR_MSG_DOWNLOAD_FAILED = "Download fehlgeschlagen";
+const ERROR_MSG_NOT_AVAILABLE = "Video nicht verfügbar";
+const ERROR_MSG_NO_INTERNET = "Keine Internet Verbindung";
 
 class DownloadCardBody extends StatefulWidget {
   final Logger logger = new Logger('DownloadCardBody');

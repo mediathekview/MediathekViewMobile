@@ -1,3 +1,4 @@
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/database/video_entity.dart';
@@ -6,8 +7,12 @@ import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/platform_channels/video_manager.dart';
 import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
+import 'package:flutter_ws/util/show_snackbar.dart';
 import 'package:flutter_ws/video_player/flutter_video_player.dart';
+import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
+
+import 'download_card_body.dart';
 
 class VideoWidget extends StatefulWidget {
   final Logger logger = new Logger('VideoWidget');
@@ -169,13 +174,39 @@ class VideoWidgetState extends State<VideoWidget> {
           ),
         ),
         onTap: () async {
-          widget.logger.fine("Opening video player");
+          var connectivityResult = await (Connectivity().checkConnectivity());
+          if (connectivityResult == ConnectivityResult.none) {
+            // I am connected to a mobile network.
+            SnackbarActions.showError(context, ERROR_MSG_NO_INTERNET);
+            return;
+          }
+
+          // also check if video url is accessible
+          if (widget.video != null && widget.video.url_video != null) {
+            final response = await http.head(widget.video.url_video);
+
+            if (response.statusCode >= 300) {
+              widget.logger.info("Url is not accessible: " +
+                  widget.video.url_video.toString() +
+                  ". Status code: " +
+                  response.statusCode.toString() +
+                  ". Reason: " +
+                  response.reasonPhrase);
+
+              SnackbarActions.showError(context, ERROR_MSG_NOT_AVAILABLE);
+              return;
+            }
+          }
 
           if (appWideState.appState.targetPlatform == TargetPlatform.iOS) {
-            setState(() {
-              flutterVideoPlayer = new FlutterVideoPlayer(appWideState,
-                  widget.video, widget.entity, widget.videoProgressEntity);
-            });
+            // push full screen route
+            await Navigator.of(context).push(new MaterialPageRoute(
+                builder: (BuildContext context) {
+                  return new FlutterVideoPlayer(appWideState, widget.video,
+                      widget.entity, widget.videoProgressEntity);
+                },
+                settings: RouteSettings(name: "VideoPlayer"),
+                fullscreenDialog: true));
             return;
           }
 

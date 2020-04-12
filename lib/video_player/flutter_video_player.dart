@@ -83,6 +83,7 @@ class _FlutterVideoPlayerState extends State<FlutterVideoPlayer> {
         final bool isPlaying = widget.controller.value.isPlaying;
         final int position = widget.controller.value.position.inMilliseconds;
         if (isPlaying) {
+          setState(() {});
           widget.logger.info("VideoPlayback position:" + position.toString());
           Wakelock.enable();
           widget.databaseManager
@@ -90,7 +91,15 @@ class _FlutterVideoPlayerState extends State<FlutterVideoPlayer> {
               .then((entity) {
             if (entity == null) {
               // insert into database containing all the video information
-              insertVideoProgress(position);
+              insertVideoProgress(position).then((rowId) {
+                widget.logger.info(
+                    "Successfully inserted progress entity for video " +
+                        widget.videoId);
+              }, onError: (err, stackTrace) {
+                widget.logger.warning(
+                    "Could not insert video progress " + stackTrace.toString());
+                return err;
+              });
             } else {
               updateVideoProgress(position);
             }
@@ -113,27 +122,38 @@ class _FlutterVideoPlayerState extends State<FlutterVideoPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    return new Container(
+    // display a loading indicator until chewie player is ready
+    if (widget.controller == null ||
+        widget.controller.value == null ||
+        !widget.controller.value.initialized) {
+      return new Container(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.width / 16 * 9,
+        child: new Center(
+          child: new CircularProgressIndicator(
+            valueColor: new AlwaysStoppedAnimation<Color>(Color(0xffffbf00)),
+            strokeWidth: 5.0,
+            backgroundColor: Colors.white,
+          ),
+        ),
+      );
+    }
+    return new Scaffold(
+        body: Container(
       child: new CustomChewie(
         controller: widget.chewieController,
       ),
-    );
+    ));
   }
 
-  void insertVideoProgress(int position) {
+  Future<int> insertVideoProgress(int position) {
     // insert into database containing all the video information
     VideoProgressEntity videoProgress = widget.video != null
         ? VideoProgressEntity.fromMap(widget.video.toMap())
         : VideoProgressEntity.fromMap(widget.videoEntity.toMap());
 
     videoProgress.progress = position;
-    widget.databaseManager.insertVideoProgress(videoProgress).then((rowId) {
-      widget.logger.info(
-          "Successfully inserted progress entity for video " + widget.videoId);
-    }, onError: (err, stackTrace) {
-      widget.logger
-          .warning("Could not insert video progress " + stackTrace.toString());
-    });
+    return widget.databaseManager.insertVideoProgress(videoProgress);
   }
 
   void updateVideoProgress(int position) {

@@ -97,6 +97,9 @@ unlinked_spec.ds
 **/ios/Flutter/flutter_assets/
 **/ios/ServiceDefinitions.json
 **/ios/Runner/GeneratedPluginRegistrant.*
+*.pbxproj
+**/ios/.symlinks
+**/ios/Flutter/flutter_export_environment.sh
 
 # Coverage
 coverage/

@@ -7,8 +7,6 @@ class AboutSection extends StatelessWidget {
   static final Logger logger = new Logger('AboutSection');
   static const eMailAddress =
       'mailto:kontakt.mediathekview.mobile@gmail.com?subject=Feedback zu MediathekView Mobile&body=Hi Daniel,';
-  static const eMailAddressKontonummer =
-      'mailto:kontakt.mediathekview.mobile@gmail.com?subject=Spende - Kontonummer Anfrage&body=Hi Daniel, Ich würde gerne etwas spenden und brauche dazu deine Kontonummer. Ich möchte folgende Summe spenden: ';
   static const githubUrl =
       'https://github.com/Mediathekview/MediathekViewMobile';
   static const payPal = 'https://paypal.me/danielfoehr';
@@ -41,7 +39,7 @@ class AboutSection extends StatelessWidget {
                     leading: const Icon(Icons.feedback),
                     title: new Text('Feedback', style: aboutSectionTitle),
                     subtitle: new Text(
-                        'Anregungen, Wünsche oder (miese) Bugs? Gib Feedback auf Github oder per Mail. Danke für deinen Beitrag!'),
+                        'Anregungen, Wünsche oder Bugs? Gib Feedback auf Github oder per Mail. Danke für deinen Beitrag!'),
                   ),
                   new ButtonTheme.bar(
                     // make buttons use the appropriate styles for cards
@@ -78,12 +76,6 @@ class AboutSection extends StatelessWidget {
                     // make buttons use the appropriate styles for cards
                     child: new ButtonBar(
                       children: <Widget>[
-                        new FlatButton(
-                          color: Colors.grey[800],
-                          child: new Text('Kontonummer auf Anfrage',
-                              style: body2TextStyle),
-                          onPressed: () => _launchURL(eMailAddressKontonummer),
-                        ),
                         new FlatButton(
                           color: Colors.blue,
                           child: new Text('Paypal', style: body2TextStyle),

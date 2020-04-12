@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
 
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
@@ -347,7 +348,7 @@ class _ListCardState extends State<ListCard> {
   void onDownloaderFailed(String videoId) {
     widget.logger
         .info("Download video: " + videoId + " received 'failed' signal");
-    SnackbarActions.showError(context, ERROR_MSG_DOWNLOAD);
+    SnackbarActions.showError(context, ERROR_MSG_DOWNLOAD_FAILED);
     updateStatus(DownloadTaskStatus.failed, videoId);
   }
 
@@ -413,7 +414,15 @@ class _ListCardState extends State<ListCard> {
   }
 
   void onDownloadRequested() async {
-    // first check if is accessible
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    if (connectivityResult == ConnectivityResult.none) {
+      // I am connected to a mobile network.
+      SnackbarActions.showError(context, ERROR_MSG_NO_INTERNET);
+      updateStatus(DownloadTaskStatus.failed, widget.video.id);
+      return;
+    }
+
+    // also check if video url is accessible
     final response = await http.head(widget.video.url_video);
 
     if (response.statusCode >= 300) {
@@ -424,7 +433,7 @@ class _ListCardState extends State<ListCard> {
           ". Reason: " +
           response.reasonPhrase);
 
-      SnackbarActions.showError(context, ERROR_MSG_DOWNLOAD);
+      SnackbarActions.showError(context, ERROR_MSG_NOT_AVAILABLE);
       updateStatus(DownloadTaskStatus.failed, widget.video.id);
       return;
     }
