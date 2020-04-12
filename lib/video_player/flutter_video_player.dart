@@ -127,23 +127,25 @@ class _FlutterVideoPlayerState extends State<FlutterVideoPlayer> {
         widget.controller.value == null ||
         !widget.controller.value.initialized) {
       return new Container(
+        color: Colors.grey[800],
         width: MediaQuery.of(context).size.width,
         height: MediaQuery.of(context).size.width / 16 * 9,
         child: new Center(
           child: new CircularProgressIndicator(
             valueColor: new AlwaysStoppedAnimation<Color>(Color(0xffffbf00)),
             strokeWidth: 5.0,
-            backgroundColor: Colors.white,
+            backgroundColor: Colors.grey[800],
           ),
         ),
       );
     }
     return new Scaffold(
+        backgroundColor: Colors.grey[800],
         body: Container(
-      child: new CustomChewie(
-        controller: widget.chewieController,
-      ),
-    ));
+          child: new CustomChewie(
+            controller: widget.chewieController,
+          ),
+        ));
   }
 
   Future<int> insertVideoProgress(int position) {

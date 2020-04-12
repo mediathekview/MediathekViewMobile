@@ -77,6 +77,7 @@ flutter:
       - assets/intro/intro_slider_1.png
       - assets/intro/intro_slider_2.png
       - assets/intro/intro_slider_3.png
+      - assets/launcher/ic_launcher.png
 
   fonts:
     - family: OldStandard

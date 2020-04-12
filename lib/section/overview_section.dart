@@ -82,7 +82,26 @@ class _OverviewSectionState extends State<OverviewSection> {
                                 videosWithPlaybackProgress, size.width / 2),
                           ),
                         )
-                      : SliverToBoxAdapter(child: new Container())
+                      : SliverToBoxAdapter(
+                          child: new Padding(
+                              padding: EdgeInsets.only(left: 20.0, right: 20.0),
+                              child: new Center(
+                                  child: new Column(
+                                children: <Widget>[
+                                  new Container(
+                                      child: new Image(
+                                    image: new AssetImage(
+                                        "assets/launcher/ic_launcher.png"),
+                                  )),
+                                  new Text(
+                                    "Übersicht konnte nicht geladen werden.",
+                                    style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        color: Colors.white,
+                                        fontSize: 20.0),
+                                  )
+                                ],
+                              ))))
                   : new SliverList(
                       delegate: new SliverChildListDelegate([
                       new Container(

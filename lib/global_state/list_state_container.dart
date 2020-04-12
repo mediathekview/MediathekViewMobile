@@ -107,7 +107,7 @@ class AppSharedState extends State<AppSharedStateContainer> {
     );
   }
 
-  void initializeState(BuildContext context) {
+  void initializeState(BuildContext context) async {
     if (appState == null) {
       DownloadManager downloadManager = new DownloadManager(context);
       WidgetsFlutterBinding.ensureInitialized();
@@ -121,9 +121,6 @@ class AppSharedState extends State<AppSharedStateContainer> {
           new VideoProgressManager(context, databaseManager),
           new Map(),
           new Map());
-
-      //load ratings only once on application start to reduce requests to backend(costly). Operate on cache when doing ratings.
-      loadRatings();
 
       determinePlatform();
 
@@ -143,19 +140,25 @@ class AppSharedState extends State<AppSharedStateContainer> {
     if (videoListState == null) {
       _initializeListState();
     }
+
+    //load ratings only once on application start to reduce requests to backend(costly). Operate on cache when doing ratings.
+    int amountOfRatingsRetrieved = await loadRatings();
+    logger.info("Total amount of ratings retrieved is " +
+        amountOfRatingsRetrieved.toString());
   }
 
-  void loadRatings() {
+  Future<int> loadRatings() {
     // All ratings needed for local rating operations
-    RatingUtil.loadAllRatings().then((ratings) {
+    return RatingUtil.loadAllRatings().then((ratings) {
       logger
           .info("All ratings retrieved. Amount: " + ratings.length.toString());
 
       if (ratings.length == 0) {
-        return;
+        return 0;
       }
 
       appState.setRatingCache(ratings);
+      return ratings.length;
     });
   }
 
