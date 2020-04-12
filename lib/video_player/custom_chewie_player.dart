@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_ws/video_player/custom_player_with_controls.dart';
-import 'package:screen/screen.dart';
 import 'package:video_player/video_player.dart';
 
 typedef Widget ChewieRoutePageBuilder(
@@ -123,7 +122,6 @@ class CustomChewieState extends State<CustomChewie> {
   Future<dynamic> _pushFullScreenWidget(BuildContext context) async {
     final isAndroid = Theme.of(context).platform == TargetPlatform.android;
     final TransitionRoute<Null> route = PageRouteBuilder<Null>(
-      settings: RouteSettings(isInitialRoute: false),
       pageBuilder: _fullScreenRoutePageBuilder,
     );
 
@@ -135,17 +133,8 @@ class CustomChewieState extends State<CustomChewie> {
       ]);
     }
 
-    if (!widget.controller.allowedScreenSleep) {
-      Screen.keepOn(true);
-    }
-
     await Navigator.of(context).push(route);
     _isFullScreen = false;
-
-    bool isKeptOn = await Screen.isKeptOn;
-    if (isKeptOn) {
-      Screen.keepOn(false);
-    }
 
     SystemChrome.setEnabledSystemUIOverlays(
         widget.controller.systemOverlaysAfterFullScreen);
