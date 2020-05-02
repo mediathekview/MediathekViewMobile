@@ -41,7 +41,7 @@ class ChannelListTileState extends State<ChannelListTile> {
             new Expanded(child: new Text(channel.name, style: body2TextStyle)),
             new Checkbox(
                 value: channel.isCheck,
-                activeColor: Colors.grey[700],
+                activeColor: Colors.grey[800],
                 onChanged: (bool value) {
                   setState(() {
                     channel.isCheck = value;

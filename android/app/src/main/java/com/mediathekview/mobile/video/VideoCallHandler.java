@@ -48,19 +48,10 @@ public class VideoCallHandler implements MethodChannel.MethodCallHandler {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             MainActivity.context.startActivity(intent);
 
-            /*Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(filePath));
-
-            //intent.setDataAndType(Uri.parse(filePath), mimeType);
-            intent.setDataAndType(Uri.parse(filePath), mimeType);
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            MainActivity.context.startActivity(intent);*/
-
             result.success(null);
         }
 
         if (call.method.equals("deleteVideo")) {
-//            String filePath = call.argument("filePath");
             String fileName = call.argument("fileName");
 
             Log.i(TAG, "Deleting video with  name : " + Environment.getExternalStorageDirectory() + "/MediathekView" + "/" + fileName);
@@ -85,11 +76,10 @@ public class VideoCallHandler implements MethodChannel.MethodCallHandler {
                 return;
             }
 
-            //reche
             File file2 = new File(Environment.getExternalStorageDirectory() + "/MediathekView", fileName);
 
             if (file2.exists()) {
-                result.error(TAG, "File still exists dude...", null);
+                result.error(TAG, "File still exists ...", null);
                 return;
             }
 

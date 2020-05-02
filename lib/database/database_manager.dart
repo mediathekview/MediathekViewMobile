@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_ws/database/channel_favorite_entity.dart';
 import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/database/video_progress_entity.dart';
+import 'package:flutter_ws/model/video.dart';
 import 'package:logging/logging.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -442,5 +443,45 @@ create table ''' +
       return result.map((raw) => new VideoProgressEntity.fromMap(raw)).toSet();
     }
     return new Set();
+  }
+
+  void updatePlaybackPosition(Video video, int position) {
+    this.getVideoProgressEntity(video.id).then((entity) {
+      if (entity == null) {
+        // initial insert into database
+        _insertPlaybackPosition(video, position);
+      } else {
+        _updateProgress(video.id, position);
+      }
+    });
+  }
+
+  // initial insert into database containing all the video information
+  void _insertPlaybackPosition(Video video, int position) {
+    // get entity from video
+    VideoProgressEntity videoProgress =
+        VideoProgressEntity.fromMap(video.toMap());
+
+    videoProgress.progress = position;
+    this.insertVideoProgress(videoProgress).then((value) {
+      logger
+          .info("Successfully inserted progress entity for video " + video.id);
+    }, onError: (err, stackTrace) {
+      logger
+          .warning("Could not insert video progress " + stackTrace.toString());
+    });
+  }
+
+  void _updateProgress(String videoId, int position) {
+    this
+        .updateVideoProgressEntity(new VideoProgressEntity(videoId, position))
+        .then((rowsUpdated) {
+      if (rowsUpdated < 1) {
+        logger.warning("Could not update video progress. Rows Updated < 1");
+      }
+    }, onError: (err, stackTrace) {
+      logger
+          .warning("Could not update video progress " + stackTrace.toString());
+    });
   }
 }

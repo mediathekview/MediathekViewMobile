@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_ws/database/channel_favorite_entity.dart';
 import 'package:flutter_ws/database/database_manager.dart';
+import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/model/video_rating.dart';
 import 'package:flutter_ws/platform_channels/download_manager_flutter.dart';
+import 'package:flutter_ws/platform_channels/filesystem_permission_manager.dart';
+import 'package:flutter_ws/platform_channels/samsung_tv_cast_manager.dart';
 import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
-import 'package:flutter_ws/platform_channels/video_progress_manager.dart';
 import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/util/rating_util.dart';
 import 'package:logging/logging.dart';
@@ -22,21 +24,46 @@ class VideoListState {
 }
 
 class AppState {
-  AppState(this.downloadManager, this.databaseManager, this.videoPreviewManager,
-      this.progressManager, this.favoriteChannels, this.ratingCache);
+  AppState(
+      this.downloadManager,
+      this.databaseManager,
+      this.videoPreviewManager,
+      this.filesystemPermissionManager,
+      this.samsungTVCastManager,
+      this.isCurrentlyPlayingOnTV,
+      this.tvCurrentlyPlayingVideo,
+      this.availableTvs,
+      this.favoriteChannels,
+      this.ratingCache);
 
   TargetPlatform targetPlatform;
   Directory iOsDocumentsDirectory;
   DownloadManager downloadManager;
   DatabaseManager databaseManager;
-  VideoProgressManager progressManager;
   VideoPreviewManager videoPreviewManager;
+  FilesystemPermissionManager filesystemPermissionManager;
+  // only relevant on Android, always true on other platforms
+  bool hasFilesystemPermission;
   Map<String, ChannelFavoriteEntity> favoriteChannels;
+
+  // Samsung TV cast
+  SamsungTVCastManager samsungTVCastManager;
+  bool isCurrentlyPlayingOnTV;
+  Video tvCurrentlyPlayingVideo;
+  List<String> availableTvs;
 
   //videoId -> Rating
   Map<String, VideoRating> ratingCache;
   Map<String, VideoRating> bestVideosAllTime;
   Map<String, VideoRating> hotVideosToday;
+
+  void setHasFilesystemPermission(bool permission) {
+    hasFilesystemPermission = permission;
+  }
+
+  void setTargetPlatform(TargetPlatform platform) {
+    targetPlatform = platform;
+  }
 
   void setRatingCache(Map<String, VideoRating> cache) {
     ratingCache = cache;
@@ -48,10 +75,6 @@ class AppState {
 
   void setBestVideosAllTime(Map<String, VideoRating> cache) {
     bestVideosAllTime = cache;
-  }
-
-  void setTargetPlatform(TargetPlatform platform) {
-    targetPlatform = platform;
   }
 
   void setIOsDirectory(Directory dir) {
@@ -114,15 +137,38 @@ class AppSharedState extends State<AppSharedStateContainer> {
       FlutterDownloader.initialize();
 
       DatabaseManager databaseManager = new DatabaseManager();
+      var filesystemPermissionManager =
+          new FilesystemPermissionManager(context);
+
       appState = new AppState(
           downloadManager,
           databaseManager,
           new VideoPreviewManager(context),
-          new VideoProgressManager(context, databaseManager),
+          filesystemPermissionManager,
+          new SamsungTVCastManager(context),
+          false,
+          new Video(""),
+          new List(),
           new Map(),
           new Map());
 
-      determinePlatform();
+      // async execution to concurrently open database
+      DeviceInformation.getTargetPlatform().then((platform) async {
+        appState.setTargetPlatform(platform);
+
+        bool hasPermission = true;
+        if (platform == TargetPlatform.android) {
+          hasPermission =
+              await filesystemPermissionManager.hasFilesystemPermission();
+        }
+
+        appState.setHasFilesystemPermission(hasPermission);
+
+        if (platform == TargetPlatform.iOS) {
+          Directory directory = await getApplicationDocumentsDirectory();
+          appState.setIOsDirectory(directory);
+        }
+      });
 
       initializeDatabase().then((init) {
         //start subscription to Flutter Download Manager
@@ -197,15 +243,5 @@ class AppSharedState extends State<AppSharedStateContainer> {
     videoListState.extendetListTiles.contains(videoId)
         ? videoListState.extendetListTiles.remove(videoId)
         : videoListState.extendetListTiles.add(videoId);
-  }
-
-  void determinePlatform() {
-    DeviceInformation.getTargetPlatform().then((platform) async {
-      appState.setTargetPlatform(platform);
-      if (platform == TargetPlatform.iOS) {
-        Directory directory = await getApplicationDocumentsDirectory();
-        appState.setIOsDirectory(directory);
-      }
-    });
   }
 }

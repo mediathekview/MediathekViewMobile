@@ -6,7 +6,6 @@ import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:flutter_ws/enum/channels.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/platform_channels/video_progress_manager.dart';
 import 'package:flutter_ws/util/channel_util.dart';
 import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/util/show_snackbar.dart';
@@ -46,14 +45,12 @@ class DownloadSectionState extends State<DownloadSection> {
   Map<String, DownloadTaskStatus> currentStatus = new Map();
   Map<String, double> progress = new Map();
   Map<String, VideoProgressEntity> videosWithPlaybackProgress = new Map();
-  VideoProgressManager videoProgressManager;
 
   DownloadSectionState(this.userDeletedAppId);
 
   @override
   void dispose() {
     super.dispose();
-    videoProgressManager = null;
   }
 
   @override
@@ -65,9 +62,6 @@ class DownloadSectionState extends State<DownloadSection> {
     loadAlreadyDownloadedVideosFromDb();
     loadCurrentDownloads();
     loadVideosWithPlaybackProgress();
-    // video progress manager needs to have correct context to display error messages
-    videoProgressManager =
-        new VideoProgressManager(context, appState.databaseManager);
 
     Widget loadingIndicator;
     if (currentDownloads.length == 1) {
@@ -180,7 +174,7 @@ class DownloadSectionState extends State<DownloadSection> {
                 child: new Opacity(
                   opacity: 0.7,
                   child: new Container(
-                      color: Colors.grey[700],
+                      color: Colors.grey[800],
                       child: new Column(
                         children: <Widget>[
                           videosWithPlaybackProgress[entity.id] != null
@@ -257,7 +251,7 @@ class DownloadSectionState extends State<DownloadSection> {
     appState.downloadManager.deleteVideo(id).then((bool deletedSuccessfully) {
       if (deletedSuccessfully && mounted) {
         setState(() {
-          SnackbarActions.showSuccess(context, "Successfully deleted ");
+          SnackbarActions.showSuccess(context, "Löschen erfolgreich");
         });
         return;
       }

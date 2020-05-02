@@ -5,7 +5,7 @@
 //}
 
 class WebsocketConnectionTypes {
-  static final String  INDEX_STATE = "indexState";
+  static final String INDEX_STATE = "indexState";
   static final String UID = "uid";
   static final String CONNECT = "connect";
   static final String DISCONNECT = "disconnect";
@@ -13,6 +13,6 @@ class WebsocketConnectionTypes {
   static final String UNKNOWN = "unknown";
 
   static Iterable<String> getValues() {
-    return [RESULT, INDEX_STATE, UID, CONNECT, DISCONNECT,UNKNOWN];
+    return [RESULT, INDEX_STATE, UID, CONNECT, DISCONNECT, UNKNOWN];
   }
 }

@@ -3,11 +3,11 @@ description: A mobile Mediathek based on the MediathekView Web API.
 version: 0.0.1
 
 dependencies:
-  path_provider: '0.5.0+1'
+  path_provider: '1.6.5'
   sqflite: '^1.2.0'
   uuid: '^1.0.3'
   json_object_lite: '^2.0.0'
-  device_info: '0.4.0+1'
+  device_info: '0.4.2+1'
   url_launcher: '^5.0.0'
   socket_io: '^0.9.0+1'
   web_socket_channel: '^1.0.9'
@@ -30,6 +30,7 @@ dependencies:
   intro_slider: "^2.2.9"
   showcaseview: "^0.1.5"
   connectivity: "^0.4.8+2"
+  video_thumbnail: "^0.2.1"
 
   flutter:
     sdk: flutter
@@ -78,6 +79,11 @@ flutter:
       - assets/intro/intro_slider_2.png
       - assets/intro/intro_slider_3.png
       - assets/launcher/ic_launcher.png
+      - assets/cast/ic_cast0_white.png
+      - assets/cast/ic_cast1_white.png
+      - assets/cast/ic_cast2_white.png
+      - assets/cast/ic_cast_connected_white.png
+      - assets/cast/ic_cast_white.png
 
   fonts:
     - family: OldStandard

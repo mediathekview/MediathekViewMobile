@@ -12,7 +12,6 @@ import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/model/video_rating.dart';
 import 'package:flutter_ws/model/video_rating_insert.dart';
 import 'package:flutter_ws/platform_channels/download_manager_flutter.dart';
-import 'package:flutter_ws/platform_channels/video_manager.dart';
 import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/util/rating_util.dart';
 import 'package:flutter_ws/util/show_snackbar.dart';
@@ -46,7 +45,7 @@ class ListCard extends StatefulWidget {
 class _ListCardState extends State<ListCard> {
   static const downloadManagerIdentifier = 0;
   BuildContext context;
-  AppSharedState stateContainer;
+  AppSharedState appWideState;
   bool modalBottomScreenIsShown = false;
   bool isDownloadedAlready = false;
   bool isCurrentlyDownloading = false;
@@ -73,14 +72,12 @@ class _ListCardState extends State<ListCard> {
   @override
   Widget build(BuildContext context) {
     this.context = context;
-    stateContainer = AppSharedStateContainer.of(context);
-    downloadManager = stateContainer.appState.downloadManager;
-    databaseManager = stateContainer.appState.databaseManager;
-    VideoListState videoListState = stateContainer.videoListState;
+    appWideState = AppSharedStateContainer.of(context);
+    downloadManager = appWideState.appState.downloadManager;
+    databaseManager = appWideState.appState.databaseManager;
+    VideoListState videoListState = appWideState.videoListState;
     Orientation orientation = MediaQuery.of(context).orientation;
-    NativeVideoPlayer nativeVideoPlayer =
-        new NativeVideoPlayer(databaseManager);
-    rating = stateContainer.appState.ratingCache[widget.video.id];
+    rating = appWideState.appState.ratingCache[widget.video.id];
 
     subscribeToProgressChannel();
     loadCurrentStatusFromDatabase(widget.video.id);
@@ -205,7 +202,6 @@ class _ListCardState extends State<ListCard> {
                   widget.video,
                   downloadManager,
                   databaseManager,
-                  nativeVideoPlayer,
                   isExtendet,
                   isDownloadedAlready,
                   isCurrentlyDownloading,
@@ -286,7 +282,7 @@ class _ListCardState extends State<ListCard> {
 
   void _handleTap() {
     widget.logger.fine("handle tab on tile");
-    stateContainer.updateExtendetListTile(widget.video.id);
+    appWideState.updateExtendetListTile(widget.video.id);
     //only rerender this tile, not the whole app state!
     setState(() {});
   }
@@ -348,7 +344,7 @@ class _ListCardState extends State<ListCard> {
   void onDownloaderFailed(String videoId) {
     widget.logger
         .info("Download video: " + videoId + " received 'failed' signal");
-    SnackbarActions.showError(context, ERROR_MSG_DOWNLOAD_FAILED);
+    // SnackbarActions.showError(context, ERROR_MSG_DOWNLOAD_FAILED);
     updateStatus(DownloadTaskStatus.failed, videoId);
   }
 
@@ -400,7 +396,7 @@ class _ListCardState extends State<ListCard> {
     }
 
     if (videoProgressEntity == null) {
-      stateContainer.appState.databaseManager
+      appWideState.appState.databaseManager
           .getVideoProgressEntity(videoId)
           .then((entity) {
         if (entity != null) {
@@ -416,7 +412,6 @@ class _ListCardState extends State<ListCard> {
   void onDownloadRequested() async {
     var connectivityResult = await (Connectivity().checkConnectivity());
     if (connectivityResult == ConnectivityResult.none) {
-      // I am connected to a mobile network.
       SnackbarActions.showError(context, ERROR_MSG_NO_INTERNET);
       updateStatus(DownloadTaskStatus.failed, widget.video.id);
       return;
@@ -438,10 +433,18 @@ class _ListCardState extends State<ListCard> {
       return;
     }
 
+    subscribeToProgressChannel();
     // start download animation right away.
     onDownloadStateChanged(widget.video.id, DownloadTaskStatus.enqueued, -1);
 
-    subscribeToProgressChannel();
+    // check for filesystem permissions
+    // if user grants permission, start downloading right away
+    if (!appWideState.appState.hasFilesystemPermission) {
+      appWideState.appState.downloadManager
+          .checkAndRequestFilesystemPermissions(appWideState, widget.video);
+      return;
+    }
+
     downloadManager
         .downloadFile(widget.video)
         .then((video) => widget.logger.info("Downloaded request successfull"),
@@ -539,7 +542,7 @@ class _ListCardState extends State<ListCard> {
     final response =
         await http.post(ratingUrl, body: json.encode(userRating.toMap()));
     if (response.statusCode == 200) {
-      stateContainer.appState.ratingCache.update(rating.video_id, (old) {
+      appWideState.appState.ratingCache.update(rating.video_id, (old) {
         old.local_user_rating_saved_from_db = old.local_user_rating;
         return old;
       });

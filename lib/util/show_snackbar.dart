@@ -25,6 +25,19 @@ class SnackbarActions {
     );
   }
 
+  static void showInfo(BuildContext context, String msg, {Duration duration}) {
+    Scaffold.of(context).showSnackBar(
+      new SnackBar(
+        duration: duration != null ? duration : null,
+        backgroundColor: Colors.grey,
+        content: new Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[new Text(msg)],
+        ),
+      ),
+    );
+  }
+
   static void showErrorWithTryAgain(BuildContext context, String errorMsg,
       String tryAgainMsg, dynamic onTryAgainPressed, String videoId) {
     Scaffold.of(context).showSnackBar(

@@ -1,0 +1,2 @@
+configurations.maybeCreate("default")
+artifacts.add("default", file('android-smartview-sdk-2.5.1.jar'))

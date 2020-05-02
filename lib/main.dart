@@ -12,7 +12,6 @@ import 'package:flutter_ws/model/query_result.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/section/about_section.dart';
 import 'package:flutter_ws/section/download_section.dart';
-import 'package:flutter_ws/section/live_tv_section.dart';
 import 'package:flutter_ws/section/overview_section.dart';
 import 'package:flutter_ws/util/json_parser.dart';
 import 'package:flutter_ws/util/text_styles.dart';
@@ -151,7 +150,6 @@ class HomePageState extends State<MyHomePage>
 
   //Tabs
   Widget videoSearchList;
-  LiveTVSection liveTVSection;
   DownloadSection downloadSection;
   AboutSection aboutSection;
 

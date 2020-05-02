@@ -74,17 +74,16 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.1.0-alpha4'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0-alpha4'
     implementation 'androidx.appcompat:appcompat:1.0.0-beta01'
-   // implementation 'androidx.core:core:1.0.1'
-    implementation(name:'armv7-fmmr', ext:'aar')
+    // implementation 'androidx.core:core:1.0.1'
+    implementation(name: 'armv7-fmmr', ext: 'aar')
     //ffmpeg android
-    implementation(name:'FFmpegAndroid-0.3.2', ext:'aar')
+    implementation(name: 'FFmpegAndroid-0.3.2', ext: 'aar')
     //implementation(name:'x86-fmmr', ext:'aar')
     // full exoplayer library
     implementation 'com.google.android.exoplayer:exoplayer:2.8.1'
-
-
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
     implementation 'io.reactivex.rxjava2:rxjava:2.1.7'
+    implementation files('libs/android-smartview-sdk-2.5.1.jar')
 }
 
 

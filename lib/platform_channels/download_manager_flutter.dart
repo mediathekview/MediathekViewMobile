@@ -9,7 +9,6 @@ import 'package:flutter_ws/database/database_manager.dart';
 import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/platform_channels/filesystem_permission_manager.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:quiver/collection.dart';
@@ -62,7 +61,7 @@ class DownloadManager {
   DatabaseManager databaseManager;
 
   //special case Android: remember Video to be able to resume download after grant of file system permission
-  VideoEntity rememberedFailedVideoDownload;
+  Video rememberedFailedVideoDownload;
 
   //remember video that was intended to be downloaded, but permission was missing
   Video downloadVideoRequestWithoutPermission;
@@ -196,55 +195,46 @@ class DownloadManager {
     //notify listeners
     Iterable<MapEntry<int, onCanceled>> entries = onFailedListeners[entity.id];
     entries.forEach((entry) => {entry.value(entity.id)});
-
-    // check for filesystem permissions
-    FilesystemPermissionManager filesystemPermissionManager =
-        new FilesystemPermissionManager(_context, appWideState);
-    checkAndRequestFilesystemPermissions(entity, filesystemPermissionManager);
   }
 
   // Check & request filesystem permissions
-  void checkAndRequestFilesystemPermissions(VideoEntity entity,
-      FilesystemPermissionManager filesystemPermissionManager) async {
-    bool hasPermission =
-        await filesystemPermissionManager.hasFilesystemPermission();
+  void checkAndRequestFilesystemPermissions(
+      AppSharedState appWideState, Video video) async {
+    logger.info("Requesting Filesystem Permissions");
+    rememberedFailedVideoDownload = video;
 
-    if (!hasPermission) {
-      logger.info("Requesting Filesystem Permissions");
-      rememberedFailedVideoDownload = entity;
+    //ask for user permission
+    bool successfullyAsked = await appWideState
+        .appState.filesystemPermissionManager
+        .askUserForPermission();
 
-      // subscribe to event stream to catch update - if granted by user then download again
-      Stream<dynamic> broadcastStream =
-          filesystemPermissionManager.getBroadcastStream();
-      broadcastStream.listen(
-        (result) {
-          String res = result['Granted'];
-          bool granted = res.toLowerCase() == 'true';
-
-          if (granted) {
-            logger.info("Filesystem permissions got granted");
-            //restart download using the remembered video
-            downloadFile(Video.fromMap(rememberedFailedVideoDownload.toMap()));
-          } else {
-            logger.info("Filesystem Permission denied by User");
-          }
-        },
-        onError: (e) {
-          logger.severe(
-              "Listening to User Action regarding Android file system permission failed. Reason " +
-                  e.toString());
-        },
-      );
-
-      //then ask for user permission
-      bool successfullyAsked =
-          await filesystemPermissionManager.askUserForPermission();
-
-      if (!successfullyAsked) {
-        logger.severe(
-            "Failed to ask for Filesystem Permissions after failed video download");
-      }
+    if (!successfullyAsked) {
+      logger.severe("Failed to ask user for Filesystem Permissions");
     }
+
+    // subscribe to event stream to catch update - if granted by user then start download
+    Stream<dynamic> broadcastStream =
+        appWideState.appState.filesystemPermissionManager.getBroadcastStream();
+    broadcastStream.listen(
+      (result) {
+        String res = result['Granted'];
+        bool granted = res.toLowerCase() == 'true';
+
+        if (granted) {
+          appWideState.appState.hasFilesystemPermission = true;
+          logger.info("Filesystem permissions got granted");
+          //restart download using the remembered video
+          downloadFile(rememberedFailedVideoDownload);
+        } else {
+          logger.info("Filesystem Permission denied by User");
+        }
+      },
+      onError: (e) {
+        logger.severe(
+            "Listening to User Action regarding Android file system permission failed. Reason " +
+                e.toString());
+      },
+    );
   }
 
   // Check first if a entity with that id exists on the db or cache. If yes & task id is set, check Task schema for running, queued or paused status

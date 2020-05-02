@@ -5,7 +5,6 @@ import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/platform_channels/video_manager.dart';
 import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
 import 'package:flutter_ws/util/show_snackbar.dart';
 import 'package:flutter_ws/video_player/flutter_video_player.dart';
@@ -174,15 +173,20 @@ class VideoWidgetState extends State<VideoWidget> {
           ),
         ),
         onTap: () async {
-          var connectivityResult = await (Connectivity().checkConnectivity());
-          if (connectivityResult == ConnectivityResult.none) {
-            // I am connected to a mobile network.
-            SnackbarActions.showError(context, ERROR_MSG_NO_INTERNET);
-            return;
+          // only check for internet connection when video is not downloaded
+          if (widget.entity == null) {
+            var connectivityResult = await (Connectivity().checkConnectivity());
+            if (connectivityResult == ConnectivityResult.none) {
+              // I am connected to a mobile network.
+              SnackbarActions.showError(context, ERROR_MSG_NO_INTERNET);
+              return;
+            }
           }
 
-          // also check if video url is accessible
-          if (widget.video != null && widget.video.url_video != null) {
+          //  video has been removed from the Mediathek already
+          if (widget.entity == null &&
+              widget.video != null &&
+              widget.video.url_video != null) {
             final response = await http.head(widget.video.url_video);
 
             if (response.statusCode >= 300) {
@@ -198,27 +202,15 @@ class VideoWidgetState extends State<VideoWidget> {
             }
           }
 
-          if (appWideState.appState.targetPlatform == TargetPlatform.iOS) {
-            // push full screen route
-            await Navigator.of(context).push(new MaterialPageRoute(
-                builder: (BuildContext context) {
-                  return new FlutterVideoPlayer(appWideState, widget.video,
-                      widget.entity, widget.videoProgressEntity);
-                },
-                settings: RouteSettings(name: "VideoPlayer"),
-                fullscreenDialog: true));
-            return;
-          }
-
-          NativeVideoPlayer nativeVideoPlayer =
-              new NativeVideoPlayer(appWideState.appState.databaseManager);
-          widget.entity != null
-              ? nativeVideoPlayer.playVideo(
-                  videoEntity: widget.entity,
-                  playbackProgress: widget.videoProgressEntity)
-              : nativeVideoPlayer.playVideo(
-                  video: widget.video,
-                  playbackProgress: widget.videoProgressEntity);
+          // push full screen route
+          await Navigator.of(context).push(new MaterialPageRoute(
+              builder: (BuildContext context) {
+                return new FlutterVideoPlayer(context, appWideState,
+                    widget.video, widget.entity, widget.videoProgressEntity);
+              },
+              settings: RouteSettings(name: "VideoPlayer"),
+              fullscreenDialog: false));
+          return;
         });
   }
 }

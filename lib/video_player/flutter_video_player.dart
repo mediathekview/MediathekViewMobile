@@ -10,59 +10,35 @@ import 'package:flutter_ws/video_player/custom_chewie_player.dart';
 import 'package:flutter_ws/video_player/custom_video_controls.dart';
 import 'package:logging/logging.dart';
 import 'package:video_player/video_player.dart';
-import 'package:wakelock/wakelock.dart';
+
+import 'TVPlayerController.dart';
 
 class FlutterVideoPlayer extends StatefulWidget {
-  String videoUrl;
   String videoId;
   Video video;
   VideoEntity videoEntity;
-  VideoPlayerController controller;
   CustomChewieController chewieController;
   DatabaseManager databaseManager;
   VideoProgressEntity progressEntity;
   AppSharedState appSharedState;
+  bool isAlreadyPlayingDifferentVideoOnTV = false;
+
   final Logger log = new Logger('FlutterVideoPlayer');
 
   final Logger logger = new Logger('FlutterVideoPlayer');
 
-  FlutterVideoPlayer(AppSharedState appSharedState, Video video,
-      VideoEntity entity, VideoProgressEntity progress) {
+  FlutterVideoPlayer(BuildContext context, AppSharedState appSharedState,
+      Video video, VideoEntity entity, VideoProgressEntity progress) {
     this.video = video;
-    this.videoEntity = entity;
     this.videoId = video != null ? video.id : entity.id;
-    this.videoUrl = video != null ? video.url_video : entity.url_video;
     this.databaseManager = appSharedState.appState.databaseManager;
     this.progressEntity = progress;
+    this.videoEntity = entity;
     this.appSharedState = appSharedState;
-    initVideoPlayerController();
-  }
 
-  void initVideoPlayerController() {
-    if (video != null) {
-      controller = VideoPlayerController.network(
-        videoUrl,
-      );
-    } else {
-      Uri videoUri = new Uri.file(
-          appSharedState.appState.iOsDocumentsDirectory.path +
-              "/MediathekView" +
-              "/" +
-              videoEntity.fileName);
-      File file = File.fromUri(videoUri);
-      file.exists().then(
-        (exists) {
-          if (!exists) {
-            log.severe("Cannot play video from file. File does not exist: " +
-                file.uri.toString());
-            controller = VideoPlayerController.network(
-              videoUrl,
-            );
-          }
-        },
-      );
-
-      controller = VideoPlayerController.file(file);
+    if (appSharedState.appState.isCurrentlyPlayingOnTV &&
+        videoId != appSharedState.appState.tvCurrentlyPlayingVideo.id) {
+      isAlreadyPlayingDifferentVideoOnTV = true;
     }
   }
 
@@ -71,111 +47,190 @@ class FlutterVideoPlayer extends StatefulWidget {
 }
 
 class _FlutterVideoPlayerState extends State<FlutterVideoPlayer> {
-  @override
-  void initState() {
-    buildControllers();
-    super.initState();
-  }
-
-  void buildControllers() async {
-    widget.controller
-      ..addListener(() {
-        final bool isPlaying = widget.controller.value.isPlaying;
-        final int position = widget.controller.value.position.inMilliseconds;
-        if (isPlaying) {
-          setState(() {});
-          widget.logger.info("VideoPlayback position:" + position.toString());
-          Wakelock.enable();
-          widget.databaseManager
-              .getVideoProgressEntity(widget.videoId)
-              .then((entity) {
-            if (entity == null) {
-              // insert into database containing all the video information
-              insertVideoProgress(position).then((rowId) {
-                widget.logger.info(
-                    "Successfully inserted progress entity for video " +
-                        widget.videoId);
-              }, onError: (err, stackTrace) {
-                widget.logger.warning(
-                    "Could not insert video progress " + stackTrace.toString());
-                return err;
-              });
-            } else {
-              updateVideoProgress(position);
-            }
-          });
-        }
-      });
-
-    widget.chewieController = new CustomChewieController(
-        videoPlayerController: widget.controller,
-        autoPlay: true,
-        looping: true,
-        startAt: widget.progressEntity != null
-            ? new Duration(milliseconds: widget.progressEntity.progress)
-            : new Duration(milliseconds: 0),
-        customControls: new CustomVideoControls(
-            backgroundColor: Color.fromRGBO(41, 41, 41, 0.7),
-            iconColor: Color(0xffffbf00)),
-        fullScreenByDefault: true);
-  }
+  String videoUrl;
+  // castNewVideoToTV indicates that the currently playing video on the TV
+  // should be replaced
+  bool castNewVideoToTV = false;
+  static VideoPlayerController videoController;
+  static TvPlayerController tvVideoController;
 
   @override
   Widget build(BuildContext context) {
-    // display a loading indicator until chewie player is ready
-    if (widget.controller == null ||
-        widget.controller.value == null ||
-        !widget.controller.value.initialized) {
-      return new Container(
-        color: Colors.grey[800],
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.width / 16 * 9,
-        child: new Center(
-          child: new CircularProgressIndicator(
-            valueColor: new AlwaysStoppedAnimation<Color>(Color(0xffffbf00)),
-            strokeWidth: 5.0,
-            backgroundColor: Colors.grey[800],
-          ),
-        ),
-      );
+    if (widget.isAlreadyPlayingDifferentVideoOnTV) {
+      return _showDialog(context);
     }
+
+    this.videoUrl = getVideoUrl(widget.video, widget.videoEntity);
+    initVideoPlayerController(context);
+    initTvVideoController();
+    initChewieController();
+
     return new Scaffold(
         backgroundColor: Colors.grey[800],
-        body: Container(
+        body: new Container(
           child: new CustomChewie(
             controller: widget.chewieController,
           ),
         ));
   }
 
-  Future<int> insertVideoProgress(int position) {
-    // insert into database containing all the video information
-    VideoProgressEntity videoProgress = widget.video != null
-        ? VideoProgressEntity.fromMap(widget.video.toMap())
-        : VideoProgressEntity.fromMap(widget.videoEntity.toMap());
-
-    videoProgress.progress = position;
-    return widget.databaseManager.insertVideoProgress(videoProgress);
-  }
-
-  void updateVideoProgress(int position) {
-    widget.databaseManager
-        .updateVideoProgressEntity(
-            new VideoProgressEntity(widget.videoId, position))
-        .then((rowsUpdated) {
-      if (rowsUpdated < 1) {
-        widget.logger
-            .warning("Could not update video progress. Rows Updated < 1");
-        return;
-      }
-    }, onError: (err, stackTrace) {
-      widget.logger
-          .warning("Could not update video progress " + stackTrace.toString());
-    });
-  }
-
   @override
   void dispose() {
     super.dispose();
+  }
+
+  String getVideoUrl(Video video, VideoEntity entity) {
+    if (video != null) {
+      if (video.url_video_hd != null && video.url_video_hd.isNotEmpty) {
+        return video.url_video_hd;
+      } else {
+        return video.url_video;
+      }
+    } else {
+      if (entity.url_video_hd != null && entity.url_video_hd.isNotEmpty) {
+        return entity.url_video_hd;
+      } else {
+        return entity.url_video;
+      }
+    }
+  }
+
+  void initTvVideoController() {
+    tvVideoController = new TvPlayerController(
+      widget.appSharedState.appState.availableTvs,
+      widget.appSharedState.appState.samsungTVCastManager,
+      widget.appSharedState.appState.databaseManager,
+      videoUrl,
+      widget.video != null
+          ? widget.video
+          : Video.fromMap(widget.videoEntity.toMap()),
+      widget.progressEntity != null
+          ? new Duration(milliseconds: widget.progressEntity.progress)
+          : new Duration(milliseconds: 0),
+    );
+
+    tvVideoController.startTvDiscovery();
+
+    // replace the currently playing video on TV
+    if (widget.appSharedState.appState.isCurrentlyPlayingOnTV &&
+        castNewVideoToTV) {
+      widget.appSharedState.appState.samsungTVCastManager.stop();
+      tvVideoController.initialize();
+      tvVideoController.startPlayingOnTV();
+      return;
+    }
+
+    // case: do not replace the currently playing video on TV
+    if (widget.appSharedState.appState.isCurrentlyPlayingOnTV) {
+      tvVideoController.initialize();
+    }
+  }
+
+  void initVideoPlayerController(BuildContext context) {
+    if (videoController != null) {
+      videoController.dispose();
+    }
+    // always use network datasource if should be casted to TV
+    // TV needs accessible video URL
+    if (widget.appSharedState.appState.isCurrentlyPlayingOnTV ||
+        widget.video != null) {
+      videoController = VideoPlayerController.network(
+        videoUrl,
+      );
+      return;
+    }
+
+    String path;
+    if (Platform.isAndroid) {
+      path = widget.videoEntity.filePath + "/" + widget.videoEntity.fileName;
+    } else {
+      path = widget.appSharedState.appState.iOsDocumentsDirectory.path +
+          "/MediathekView" +
+          "/" +
+          widget.videoEntity.fileName;
+    }
+
+    Uri videoUri = new Uri.file(path);
+
+    File file = File.fromUri(videoUri);
+    file.exists().then(
+      (exists) {
+        if (!exists) {
+          widget.log.severe(
+              "Cannot play video from file. File does not exist: " +
+                  file.uri.toString());
+          videoController = VideoPlayerController.network(
+            videoUrl,
+          );
+        }
+      },
+    );
+
+    videoController = VideoPlayerController.file(file);
+  }
+
+  void initChewieController() {
+    widget.chewieController = new CustomChewieController(
+        context: context,
+        videoPlayerController: videoController,
+        tvPlayerController: tvVideoController,
+        looping: false,
+        startAt: tvVideoController.startAt,
+        customControls: new CustomVideoControls(
+            backgroundColor: Color.fromRGBO(41, 41, 41, 0.7),
+            iconColor: Color(0xffffbf00)),
+        fullScreenByDefault: false,
+        allowedScreenSleep: false,
+        isCurrentlyPlayingOnTV:
+            widget.appSharedState.appState.isCurrentlyPlayingOnTV,
+        video: widget.video != null
+            ? widget.video
+            : Video.fromMap(widget.videoEntity.toMap()));
+  }
+
+  AlertDialog _showDialog(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: Colors.grey[800],
+      title: Text('Fernseher Verbunden',
+          style: new TextStyle(color: Colors.white, fontSize: 18.0)),
+      content: new Text('Soll die aktuelle TV Wiedergabe unterbrochen werden?',
+          style: new TextStyle(color: Colors.white, fontSize: 16.0)),
+      actions: <Widget>[
+        RaisedButton(
+          child: const Text('Nein'),
+          onPressed: () async {
+            widget.isAlreadyPlayingDifferentVideoOnTV = false;
+            // replace widget.video with the currently playing video
+            // to not interrupt the video playback
+            widget.video =
+                widget.appSharedState.appState.tvCurrentlyPlayingVideo;
+
+            // get the video entity
+            widget.videoEntity = await widget
+                .appSharedState.appState.databaseManager
+                .getDownloadedVideo(widget.videoId);
+
+            // get the video progress
+            widget.progressEntity = await widget
+                .appSharedState.appState.databaseManager
+                .getVideoProgressEntity(widget.video.id);
+
+            // start initializing players with the video playing on the TV
+            setState(() {});
+          },
+        ),
+        RaisedButton(
+          child: const Text('Ja'),
+          onPressed: () {
+            widget.appSharedState.appState.samsungTVCastManager.stop();
+
+            setState(() {
+              widget.isAlreadyPlayingDifferentVideoOnTV = false;
+              castNewVideoToTV = true;
+            });
+          },
+        )
+      ],
+    );
   }
 }

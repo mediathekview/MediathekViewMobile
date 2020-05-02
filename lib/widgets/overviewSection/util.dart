@@ -90,7 +90,7 @@ class Util {
                 child: new Opacity(
                   opacity: 0.7,
                   child: new Container(
-                    color: Colors.grey[700],
+                    color: Colors.grey[800],
                     child: new Column(
                       children: <Widget>[
                         // Playback Progress
@@ -183,7 +183,7 @@ class Util {
                 child: new Opacity(
                   opacity: 0.7,
                   child: new Container(
-                    color: Colors.grey[700],
+                    color: Colors.grey[800],
                     child: new Column(
                       children: <Widget>[
                         // Playback Progress

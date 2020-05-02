@@ -7,8 +7,15 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.mediathekview.mobile.samsung_cast.ReadinessStreamHandler;
+import com.mediathekview.mobile.samsung_cast.FoundTVsStreamHandler;
+import com.mediathekview.mobile.samsung_cast.LostTVsStreamHandler;
+import com.mediathekview.mobile.samsung_cast.PlaybackPositionStreamHandler;
+import com.mediathekview.mobile.samsung_cast.PlayerStreamHandler;
+import com.mediathekview.mobile.samsung_cast.SamsungMediaLauncher;
+import com.mediathekview.mobile.samsung_cast.SamsungTVDiscovery;
+import com.mediathekview.mobile.samsung_cast.TvCastMethodHandler;
 import com.mediathekview.mobile.video.VideoCallHandler;
-import com.mediathekview.mobile.ffmpeg.FFMPEGDownloader;
 import com.mediathekview.mobile.filesystempermission.FilesystemPermissionStreamHandler;
 import com.mediathekview.mobile.filesystempermission.PermissionMethodHandler;
 import com.mediathekview.mobile.video.VideoProgressStreamHandler;
@@ -26,6 +33,12 @@ public class MainActivity extends FlutterActivity{
   private static final String VIDEO_PROGRESS_EVENT_CHANNEL = "com.mediathekview.mobile/videoProgressEvent";
   private static final String PERMISSION_METHOD_CHANNEL = "com.mediathekview.mobile/permission";
   private static final String PERMISSION_EVENT_CHANNEL = "com.mediathekview.mobile/permissionEvent";
+  private static final String SAMSUNG_METHOD_CHANNEL = "com.mediathekview.mobile/samsungTVCast";
+  private static final String SAMSUNG_TV_FOUND_EVENT_CHANNEL = "com.mediathekview.mobile/samsungTVFound";
+  private static final String SAMSUNG_TV_LOST_EVENT_CHANNEL = "com.mediathekview.mobile/samsungTVLost";
+  private static final String SAMSUNG_TV_READINESS_EVENT_CHANNEL = "com.mediathekview.mobile/samsungTVReadiness";
+  private static final String SAMSUNG_TV_PLAYER_EVENT_CHANNEL = "com.mediathekview.mobile/samsungTVPlayer";
+  private static final String SAMSUNG_TV_PLAYBACK_POSITION_EVENT_CHANNEL = "com.mediathekview.mobile/samsungTVPlaybackPosition";
 
   public static Context context;
   public static MainActivity mainActivity;
@@ -35,6 +48,14 @@ public class MainActivity extends FlutterActivity{
   MethodChannel permissionMethodChannel;
   EventChannel permissionEventChannel;
   EventChannel progressEventChannel;
+
+  MethodChannel samsungMethodChannel;
+  EventChannel samsungTvFoundEventChannel;
+  EventChannel samsungTvLostEventChannel;
+  EventChannel samsungTvReadinessEventChannel;
+  EventChannel samsungTvPlayerEventChannel;
+  EventChannel samsungTvPlaybackPositionEventChannel;
+
 
   public static VideoProgressStreamHandler videoProgressStreamHandler;
 
@@ -48,8 +69,6 @@ public class MainActivity extends FlutterActivity{
     GeneratedPluginRegistrant.registerWith(this);
 
     context = this.getApplicationContext();
-    //init ffmpeg lib
-    //FFMPEGDownloader.initialize(context);
     mainActivity = this;
 
     //video player
@@ -64,6 +83,7 @@ public class MainActivity extends FlutterActivity{
     progressEventChannel = new EventChannel(getFlutterView(), VIDEO_PROGRESS_EVENT_CHANNEL);
     videoProgressStreamHandler = new VideoProgressStreamHandler();
     progressEventChannel.setStreamHandler(videoProgressStreamHandler);
+
     //Permissions
     permissionEventChannel = new EventChannel(getFlutterView(), PERMISSION_EVENT_CHANNEL);
     filesystemPermissionStreamHandler = new FilesystemPermissionStreamHandler();
@@ -71,6 +91,34 @@ public class MainActivity extends FlutterActivity{
 
     permissionMethodChannel = new MethodChannel(getFlutterView(), PERMISSION_METHOD_CHANNEL);
     permissionMethodChannel.setMethodCallHandler(new PermissionMethodHandler(context));
+
+    //Samsung TV Cast
+    samsungTvFoundEventChannel = new EventChannel(getFlutterView(), SAMSUNG_TV_FOUND_EVENT_CHANNEL);
+    FoundTVsStreamHandler foundTVsStreamHandler = new FoundTVsStreamHandler();
+    samsungTvFoundEventChannel.setStreamHandler(foundTVsStreamHandler);
+
+    samsungTvLostEventChannel = new EventChannel(getFlutterView(), SAMSUNG_TV_LOST_EVENT_CHANNEL);
+    LostTVsStreamHandler lostTVsStreamHandler = new LostTVsStreamHandler();
+    samsungTvLostEventChannel.setStreamHandler(lostTVsStreamHandler);
+
+    samsungTvReadinessEventChannel = new EventChannel(getFlutterView(), SAMSUNG_TV_READINESS_EVENT_CHANNEL);
+    ReadinessStreamHandler readinessStreamHandler = new ReadinessStreamHandler();
+    samsungTvReadinessEventChannel.setStreamHandler(readinessStreamHandler);
+
+    samsungTvPlayerEventChannel = new EventChannel(getFlutterView(), SAMSUNG_TV_PLAYER_EVENT_CHANNEL);
+    PlayerStreamHandler playerStreamHandler = new PlayerStreamHandler();
+    samsungTvPlayerEventChannel.setStreamHandler(playerStreamHandler);
+
+    samsungTvPlaybackPositionEventChannel = new EventChannel(getFlutterView(), SAMSUNG_TV_PLAYBACK_POSITION_EVENT_CHANNEL);
+    PlaybackPositionStreamHandler playbackPositionStreamHandler = new PlaybackPositionStreamHandler();
+    samsungTvPlaybackPositionEventChannel.setStreamHandler(playbackPositionStreamHandler);
+
+    SamsungTVDiscovery samsungTvDiscovery = SamsungTVDiscovery.getInstance(context, foundTVsStreamHandler, lostTVsStreamHandler);
+    SamsungMediaLauncher samsungMediaLauncher = SamsungMediaLauncher.getInstance(readinessStreamHandler, playerStreamHandler, playbackPositionStreamHandler);
+
+    TvCastMethodHandler tvCastMethodHandler = new TvCastMethodHandler(samsungTvDiscovery, samsungMediaLauncher, readinessStreamHandler);
+    samsungMethodChannel = new MethodChannel(getFlutterView(), SAMSUNG_METHOD_CHANNEL);
+    samsungMethodChannel.setMethodCallHandler(tvCastMethodHandler);
   }
 
   @Override

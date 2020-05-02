@@ -8,7 +8,7 @@ import flutter_downloader
 @objc class AppDelegate: FlutterAppDelegate {
     override func application(
         _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         GeneratedPluginRegistrant.register(with: self)
         FlutterDownloaderPlugin.setPluginRegistrantCallback(registerPlugins)
         
@@ -24,8 +24,7 @@ import flutter_downloader
         
         let videoProgressEventStreamHandler = VideoProgressStreamHandler()
         videoProgressEvent.setStreamHandler(videoProgressEventStreamHandler)
-        
-        
+
         videoMethodChannel.setMethodCallHandler({
             (call: FlutterMethodCall, result: FlutterResult) -> Void in
             guard let args = call.arguments else {
@@ -35,11 +34,6 @@ import flutter_downloader
             guard let myArgs = args as? [String: Any] else {
                 result("iOS could not extract flutter arguments in method: (sendParams)")
                 return
-            }
-            
-            if call.method == "playVideo" {
-                NSLog("iOs play video")
-                
             }
             
             if call.method == "videoPreviewPicture" {
@@ -86,12 +80,12 @@ import flutter_downloader
         assetImgGenerate.appliesPreferredTrackTransform = true
         //Can set this to improve performance if target size is known before hand
         //assetImgGenerate.maximumSize = CGSize(width,height)
-        let time = CMTimeMakeWithSeconds(0.0, 600)
+        let time = CMTimeMakeWithSeconds(0.0, preferredTimescale: 600)
         do {
             let img = try assetImgGenerate.copyCGImage(at: time, actualTime: nil)
             let thumbnail = UIImage(cgImage: img)
             // PNG Image
-            if let previewBytes = UIImagePNGRepresentation(thumbnail) as NSData? {
+            if let previewBytes = thumbnail.pngData() as NSData? {
                 resultMap["image"] = FlutterStandardTypedData(bytes: previewBytes as Data)
                 videoEventStreamHandler.onPreviewReceived(returnArgs: resultMap)
                 

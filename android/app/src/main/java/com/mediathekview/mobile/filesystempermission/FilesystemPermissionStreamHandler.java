@@ -19,7 +19,6 @@ public class FilesystemPermissionStreamHandler implements EventChannel.StreamHan
 
     @Override
     public void onCancel(Object o) {
-        //scheduledExecutorService.shutdown();
         Log.e(TAG, "Chancel Download Stream Handler");
     }
 

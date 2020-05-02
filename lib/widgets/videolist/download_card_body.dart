@@ -3,7 +3,6 @@ import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_ws/database/database_manager.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/platform_channels/download_manager_flutter.dart';
-import 'package:flutter_ws/platform_channels/video_manager.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/widgets/bars/download_progress_bar.dart';
 import 'package:flutter_ws/widgets/bars/metadata_bar.dart';
@@ -21,7 +20,6 @@ class DownloadCardBody extends StatefulWidget {
   final Video video;
   final DownloadManager downloadManager;
   final DatabaseManager databaseManager;
-  final NativeVideoPlayer nativeVideoPlayer;
   final tileIsExtendet;
   final bool isDownloadedAlready;
   final bool isCurrentlyDownloading;
@@ -35,7 +33,6 @@ class DownloadCardBody extends StatefulWidget {
       this.video,
       this.downloadManager,
       this.databaseManager,
-      this.nativeVideoPlayer,
       this.tileIsExtendet,
       this.isDownloadedAlready,
       this.isCurrentlyDownloading,
