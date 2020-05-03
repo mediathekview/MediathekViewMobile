@@ -19,14 +19,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import io.flutter.plugin.common.EventChannel;
 import wseemann.media.FFmpegMediaMetadataRetriever;
 
-public class VideoStreamHandler implements EventChannel.StreamHandler {
+public class PreviewPictureEventChannel implements EventChannel.StreamHandler {
 
     static EventChannel.EventSink events;
     ScheduledExecutorService previewdExecutorService;
     private String TAG = "DownloadStreamHandler";
 
 
-    public VideoStreamHandler() {
+    public PreviewPictureEventChannel() {
 
     }
 

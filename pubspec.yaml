@@ -13,7 +13,7 @@ dependencies:
   web_socket_channel: '^1.0.9'
   logging: '^0.11.3+2'
   synchronized: '^2.2.0'
-  flutter_downloader: '^1.4.1'
+  flutter_downloader: '^1.4.4'
   shimmer: '^1.0.0'
   flutter_spinkit: '^3.1.0'
   auto_size_text: '^1.0.0'
@@ -30,7 +30,7 @@ dependencies:
   intro_slider: "^2.2.9"
   showcaseview: "^0.1.5"
   connectivity: "^0.4.8+2"
-  video_thumbnail: "^0.2.1"
+  #video_thumbnail: "^0.2.1"
 
   flutter:
     sdk: flutter
