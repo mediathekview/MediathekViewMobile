@@ -75,10 +75,10 @@ class Util {
             children: <Widget>[
               new VideoPreviewAdapter(
                 true,
+                true,
                 videoRating.video_id,
                 video: Video.fromMap(videoRating.toMap()),
                 defaultImageAssetPath: channelPictureImagePath,
-                showLoadingIndicator: false,
                 presetAspectRatio: 16 / 9,
                 videoProgressEntity: playbackProgress,
                 //size: new Size.fromWidth(1000),
@@ -168,10 +168,10 @@ class Util {
             children: <Widget>[
               new VideoPreviewAdapter(
                 true,
+                true,
                 playbackProgress.id,
                 video: Video.fromMap(playbackProgress.toMap()),
                 defaultImageAssetPath: channelPictureImagePath,
-                showLoadingIndicator: false,
                 presetAspectRatio: 16 / 9,
                 videoProgressEntity: playbackProgress,
                 //size: new Size.fromWidth(1000),

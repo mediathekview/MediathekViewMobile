@@ -14,13 +14,10 @@ import com.mediathekview.mobile.samsung_cast.PlayerStreamHandler;
 import com.mediathekview.mobile.samsung_cast.SamsungMediaLauncher;
 import com.mediathekview.mobile.samsung_cast.SamsungTVDiscovery;
 import com.mediathekview.mobile.samsung_cast.TvCastMethodHandler;
-import com.mediathekview.mobile.video.PreviewPictureMethodChannel;
 import com.mediathekview.mobile.filesystempermission.FilesystemPermissionStreamHandler;
 import com.mediathekview.mobile.filesystempermission.PermissionMethodHandler;
-import com.mediathekview.mobile.video.PreviewPictureEventChannel;
 
 import androidx.annotation.NonNull;
-import io.flutter.embedding.engine.plugins.shim.ShimPluginRegistry;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.embedding.android.FlutterActivity;
@@ -29,8 +26,6 @@ import io.flutter.plugins.GeneratedPluginRegistrant;
 
 @TargetApi(Build.VERSION_CODES.GINGERBREAD)
 public class MainActivity extends FlutterActivity{
-  private static final String VIDEO_METHOD_CHANNEL = "com.mediathekview.mobile/video";
-  private static final String VIDEO_EVENT_CHANNEL = "com.mediathekview.mobile/videoEvent";
   private static final String PERMISSION_METHOD_CHANNEL = "com.mediathekview.mobile/permission";
   private static final String PERMISSION_EVENT_CHANNEL = "com.mediathekview.mobile/permissionEvent";
   private static final String SAMSUNG_METHOD_CHANNEL = "com.mediathekview.mobile/samsungTVCast";
@@ -43,8 +38,6 @@ public class MainActivity extends FlutterActivity{
   public static Context context;
   public static MainActivity mainActivity;
 
-  MethodChannel videoMethodChannel;
-  EventChannel videoEventChannel;
   MethodChannel permissionMethodChannel;
   EventChannel permissionEventChannel;
 
@@ -64,11 +57,6 @@ public class MainActivity extends FlutterActivity{
         Log.i("Startup Android","configureFlutterEngine called!");
         mainActivity = this;
         context = this.getApplicationContext();
-        PreviewPictureEventChannel previewPictureEventChannel = new PreviewPictureEventChannel();
-        videoEventChannel = new EventChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), VIDEO_EVENT_CHANNEL);
-        videoEventChannel.setStreamHandler(previewPictureEventChannel);
-        videoMethodChannel = new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), VIDEO_METHOD_CHANNEL);
-        videoMethodChannel.setMethodCallHandler(new PreviewPictureMethodChannel(context, previewPictureEventChannel));
 
         //Permissions
         permissionEventChannel = new EventChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), PERMISSION_EVENT_CHANNEL);

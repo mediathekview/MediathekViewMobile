@@ -149,7 +149,7 @@ class _OverviewSectionState extends State<OverviewSection> {
 
         //request previews
         ratings.forEach((videoId, rating) => appState.videoPreviewManager
-            .generatePreview(videoId, url: rating.url_video));
+            .startPreviewGeneration(videoId, rating.url_video));
 
         appState.setHotVideosToday(ratings);
         if (mounted) {
@@ -166,7 +166,7 @@ class _OverviewSectionState extends State<OverviewSection> {
         //request previews
         ratings.forEach((videoId, rating) {
           appState.videoPreviewManager
-              .generatePreview(videoId, url: rating.url_video);
+              .startPreviewGeneration(videoId, rating.url_video);
         });
 
         appState.setBestVideosAllTime(ratings);

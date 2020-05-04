@@ -5,7 +5,6 @@ import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
 import 'package:flutter_ws/util/show_snackbar.dart';
 import 'package:flutter_ws/video_player/flutter_video_player.dart';
 import 'package:http/http.dart' as http;
@@ -22,7 +21,6 @@ class VideoWidget extends StatefulWidget {
   String mimeType;
   String defaultImageAssetPath;
   Image previewImage;
-  bool showLoadingIndicator;
   Size size;
   double presetAspectRatio;
 
@@ -33,26 +31,16 @@ class VideoWidget extends StatefulWidget {
       this.video,
       this.mimeType,
       this.defaultImageAssetPath,
-      this.showLoadingIndicator,
       this.size,
       this.presetAspectRatio,
       this.videoProgressEntity});
 
   @override
-  VideoWidgetState createState() => new VideoWidgetState(previewImage);
+  VideoWidgetState createState() => new VideoWidgetState();
 }
 
 class VideoWidgetState extends State<VideoWidget> {
-  bool initialized = false;
-  VoidCallback listenerImage;
-  VoidCallback listenerVideo;
   AppSharedState appWideState;
-  Image previewImage;
-  FlutterVideoPlayer flutterVideoPlayer;
-
-  VideoWidgetState(Image image) {
-    previewImage = image;
-  }
 
   @override
   void dispose() {
@@ -61,41 +49,22 @@ class VideoWidgetState extends State<VideoWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (flutterVideoPlayer != null) {
-      return flutterVideoPlayer;
-    }
-
     appWideState = AppSharedStateContainer.of(context);
     widget.logger.fine("Rendering Image for " + widget.videoId);
-
-    if (previewImage == null) {
-      VideoPreviewManager previewController =
-          appWideState.appState.videoPreviewManager;
-      //Manager will update state of this widget!
-      if (widget.entity == null && widget.video == null) {
-        return new Container();
-      }
-      if (widget.entity == null) {
-        previewController.startPreviewGeneration(this, widget.videoId,
-            url: widget.video.url_video);
-      } else {
-        previewController.startPreviewGeneration(this, widget.videoId,
-            fileName: widget.entity.fileName);
-      }
-    }
 
     //Always fill full width & calc height accordingly
     double totalWidth =
         widget.size.width - 36.0; //Intendation: 28 left, 8 right
     double height;
 
-    if (previewImage != null && widget.presetAspectRatio != null) {
+    if (widget.previewImage != null && widget.presetAspectRatio != null) {
       height = totalWidth / widget.presetAspectRatio;
-    } else if (previewImage == null && widget.presetAspectRatio != null) {
+    } else if (widget.previewImage == null &&
+        widget.presetAspectRatio != null) {
       height = totalWidth / widget.presetAspectRatio;
-    } else if (previewImage != null) {
-      double originalWidth = previewImage.width;
-      double originalHeight = previewImage.height;
+    } else if (widget.previewImage != null) {
+      double originalWidth = widget.previewImage.width;
+      double originalHeight = widget.previewImage.height;
       double aspectRatioVideo = originalWidth / originalHeight;
 
       //calc height
@@ -125,7 +94,7 @@ class VideoWidgetState extends State<VideoWidget> {
               fit: StackFit.passthrough,
               children: <Widget>[
                 new AnimatedOpacity(
-                  opacity: previewImage == null ? 1.0 : 0.0,
+                  opacity: widget.previewImage == null ? 1.0 : 0.0,
                   duration: new Duration(milliseconds: 750),
                   curve: Curves.easeInOut,
                   child: widget.defaultImageAssetPath != null
@@ -137,24 +106,11 @@ class VideoWidgetState extends State<VideoWidget> {
                           gaplessPlayback: true)
                       : new Container(color: const Color(0xffffbf00)),
                 ),
-                widget.showLoadingIndicator == true
-                    ? new Container(
-                        constraints: BoxConstraints.tight(Size.square(25.0)),
-                        alignment: FractionalOffset.topLeft,
-                        child: widget.previewImage == null
-                            ? const CircularProgressIndicator(
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                    Colors.white),
-                                strokeWidth: 4.0,
-                              )
-                            : new Container(),
-                      )
-                    : new Container(),
                 new AnimatedOpacity(
-                  opacity: previewImage != null ? 1.0 : 0.0,
+                  opacity: widget.previewImage != null ? 1.0 : 0.0,
                   duration: new Duration(milliseconds: 750),
                   curve: Curves.easeInOut,
-                  child: previewImage,
+                  child: widget.previewImage,
                 ),
                 new Container(
                   width: totalWidth,
@@ -163,7 +119,7 @@ class VideoWidgetState extends State<VideoWidget> {
                     opacity: 0.7,
                     child: new Icon(Icons.play_circle_outline,
                         size: 100.0,
-                        color: previewImage == null
+                        color: widget.previewImage == null
                             ? Colors.grey[500]
                             : Colors.white),
                   ),

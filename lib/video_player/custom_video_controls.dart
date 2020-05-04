@@ -92,12 +92,6 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
       setState(() {});
     }
 
-    // this is a hack. Unsure why the listener is called with the same position
-    if (flutterPlayerController.value.position ==
-        _latestFlutterPlayerValue.position) {
-      return;
-    }
-
     // if playing on TV, the position is already inserted into the database
     // avoid inserting the current position twice
     if (tvPlayerController.value.playbackOnTvStarted) {
@@ -579,7 +573,6 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
     return GestureDetector(
       onTap: () {
         flutterPlayerController.pause();
-        // use platform channel to call ios
         showDialog(
             context: context,
             builder: (ctxt) => new AvailableTVsDialog(tvPlayerController));

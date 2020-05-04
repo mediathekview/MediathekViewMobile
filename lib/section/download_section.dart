@@ -11,6 +11,7 @@ import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/util/show_snackbar.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/util/timestamp_calculator.dart';
+import 'package:flutter_ws/util/video.dart';
 import 'package:flutter_ws/widgets/bars/download_progress_bar.dart';
 import 'package:flutter_ws/widgets/bars/playback_progress_bar.dart';
 import 'package:flutter_ws/widgets/downloadSection/watch_history.dart';
@@ -39,6 +40,7 @@ class DownloadSectionState extends State<DownloadSection> {
   Set<VideoEntity> downloadedVideos;
   Set<VideoEntity> currentDownloads = new Set();
   AppState appState;
+  AppSharedState appWideState;
   Set<String> userDeletedAppId; //used for fade out animation
   int milliseconds = 1500;
   Map<String, VideoEntity> entities = new Map();
@@ -55,7 +57,8 @@ class DownloadSectionState extends State<DownloadSection> {
 
   @override
   Widget build(BuildContext context) {
-    appState = AppSharedStateContainer.of(context).appState;
+    appWideState = AppSharedStateContainer.of(context);
+    appState = appWideState.appState;
     Size size = MediaQuery.of(context).size;
     var orientation = MediaQuery.of(context).orientation;
     appState.downloadManager.syncCompletedDownloads();
@@ -131,16 +134,16 @@ class DownloadSectionState extends State<DownloadSection> {
                           currentDownloadsLength > 0)
                       ? new VideoPreviewAdapter(
                           true,
+                          false,
                           entity.id,
-                          video: Video.fromMap(entity.toMap()),
-                          showLoadingIndicator: false,
+                          videoEntity: entity,
                           videoProgressEntity:
                               videosWithPlaybackProgress[entity.id],
                         )
                       : new VideoPreviewAdapter(
                           true,
+                          false,
                           entity.id,
-                          showLoadingIndicator: false,
                           videoProgressEntity:
                               videosWithPlaybackProgress[entity.id],
                         ),
@@ -269,6 +272,25 @@ class DownloadSectionState extends State<DownloadSection> {
       if (mounted) {
         setState(() {});
       }
+
+      // request preview for each downloaded video
+      downloadedVideos.forEach((VideoEntity entity) {
+        String filepath = VideoUtil.getVideoPath(appWideState, entity, null);
+
+        appState.videoPreviewManager
+            .startPreviewGeneration(entity.id, filepath)
+            .then((Image image) {
+          if (image == null) {
+            return;
+          }
+          widget.logger.info("Download section: received preview image");
+          if (mounted) {
+            widget.logger.info(
+                "Download section: received preview image and setting state");
+            setState(() {});
+          }
+        });
+      });
     }
   }
 

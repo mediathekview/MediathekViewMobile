@@ -30,7 +30,7 @@ dependencies:
   intro_slider: "^2.2.9"
   showcaseview: "^0.1.5"
   connectivity: "^0.4.8+2"
-  #video_thumbnail: "^0.2.1"
+  video_thumbnail: "^0.2.1"
 
   flutter:
     sdk: flutter

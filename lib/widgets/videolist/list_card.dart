@@ -150,11 +150,10 @@ class _ListCardState extends State<ListCard> {
                 padding: new EdgeInsets.only(top: 12.0, bottom: 12.0),
                 child: Stack(
                   children: <Widget>[
-                    new VideoPreviewAdapter(isExtendet, widget.video.id,
+                    new VideoPreviewAdapter(isExtendet, true, widget.video.id,
                         video: widget.video,
                         videoProgressEntity: videoProgressEntity,
-                        defaultImageAssetPath: widget.channelPictureImagePath,
-                        showLoadingIndicator: false),
+                        defaultImageAssetPath: widget.channelPictureImagePath),
                     new Positioned(
                       bottom: 0.0,
                       left: 0.0,

@@ -141,7 +141,8 @@ class _FlutterVideoPlayerState extends State<FlutterVideoPlayer> {
     }
 
     String path;
-    if (Platform.isAndroid) {
+    if (widget.appSharedState.appState.targetPlatform ==
+        TargetPlatform.android) {
       path = widget.videoEntity.filePath + "/" + widget.videoEntity.fileName;
     } else {
       path = widget.appSharedState.appState.iOsDocumentsDirectory.path +
