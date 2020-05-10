@@ -55,11 +55,13 @@ class VideoPreviewManager {
       );
     } on PlatformException catch (e) {
       logger.severe("Create preview failed. Reason " + e.toString());
+      return null;
     } on MissingPluginException catch (e) {
       logger.severe("Creating preview failed faile for: " +
           url +
           ". Missing Plugin: " +
           e.toString());
+      return null;
     }
     logger.info("Received image for " +
         url +

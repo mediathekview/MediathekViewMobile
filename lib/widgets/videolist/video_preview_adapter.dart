@@ -104,8 +104,6 @@ class _VideoPreviewAdapterState extends State<VideoPreviewAdapter> {
       });
     }
 
-    widget.logger.info("Building VideoPreviewAdapterState");
-
     if (widget.size == null) {
       widget.size = MediaQuery.of(context).size;
     }

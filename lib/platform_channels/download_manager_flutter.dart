@@ -71,17 +71,13 @@ class DownloadManager {
 
   DownloadManager(this._context);
 
-  void stopListeningToDownloads() {
-    FlutterDownloader.registerCallback((id, status, progress) {
-      return null;
-    });
-  }
-
   void startListeningToDownloads() {
+    logger.fine("Start listening to downloads");
     appWideState = AppSharedStateContainer.of(this._context);
     databaseManager = appWideState.appState.databaseManager;
 
     // isolate listening
+    IsolateNameServer.removePortNameMapping('downloader_send_port');
     IsolateNameServer.registerPortWithName(
         _port.sendPort, 'downloader_send_port');
     _port.listen((dynamic data) {
@@ -103,6 +99,10 @@ class DownloadManager {
   }
 
   void handleDownloadProgress(taskId, status, progress) {
+    logger.fine("Received download update with status " +
+        status.toString() +
+        " and progress " +
+        progress.toString());
     String videoId = cacheTask[taskId];
     VideoEntity entity = cache[videoId];
     if (entity != null) {
@@ -239,7 +239,7 @@ class DownloadManager {
 
   // Check first if a entity with that id exists on the db or cache. If yes & task id is set, check Task schema for running, queued or paused status
   Future<DownloadTask> isCurrentlyDownloading(String videoId) async {
-    return _getEntityForId(videoId).then((entity) {
+    return getEntityForId(videoId).then((entity) {
       if (entity == null || entity.task_id == '') {
         return null;
       }
@@ -269,7 +269,7 @@ class DownloadManager {
 
   //Check in DB only if the VideoEntity has a filename associated with it
   Future<bool> isAlreadyDownloaded(String videoId) async {
-    return _getEntityForId(videoId).then((entity) {
+    return getEntityForId(videoId).then((entity) {
       if (entity == null || entity.task_id == '') {
         return false;
       }
@@ -281,7 +281,7 @@ class DownloadManager {
     });
   }
 
-  Future<VideoEntity> _getEntityForId(String videoId) async {
+  Future<VideoEntity> getEntityForId(String videoId) async {
     VideoEntity entity = cache[videoId];
     if (entity != null) {
       logger.fine("Cache hit for VideoId -> Entity");
@@ -299,7 +299,7 @@ class DownloadManager {
   //Delete all in one: as task & file & from VideoEntity schema
   Future<bool> deleteVideo(String videoId) async {
     cache[videoId] = null;
-    return _getEntityForId(videoId).then((entity) {
+    return getEntityForId(videoId).then((entity) {
       if (entity == null) {
         logger.severe("Video with id " +
             videoId +
@@ -545,7 +545,7 @@ class DownloadManager {
     First check if there is already a VideoEntity.
     Once finished downloading, the filepath and filename will be updated.
      */
-    _getEntityForId(video.id).then(
+    getEntityForId(video.id).then(
       (alreadyExistingEntity) {
         if (alreadyExistingEntity != null) {
           //perform update

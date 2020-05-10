@@ -14,6 +14,7 @@ const ERROR_MSG = "Löschen fehlgeschlagen";
 const ERROR_MSG_DOWNLOAD_FAILED = "Download fehlgeschlagen";
 const ERROR_MSG_NOT_AVAILABLE = "Video nicht verfügbar";
 const ERROR_MSG_NO_INTERNET = "Keine Internet Verbindung";
+const ERROR_MSG_FAILED_PLAYING = "Abspielen fehlgeschlagen.";
 
 class DownloadCardBody extends StatefulWidget {
   final Logger logger = new Logger('DownloadCardBody');

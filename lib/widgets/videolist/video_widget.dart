@@ -112,18 +112,6 @@ class VideoWidgetState extends State<VideoWidget> {
                   curve: Curves.easeInOut,
                   child: widget.previewImage,
                 ),
-                new Container(
-                  width: totalWidth,
-                  alignment: FractionalOffset.center,
-                  child: new Opacity(
-                    opacity: 0.7,
-                    child: new Icon(Icons.play_circle_outline,
-                        size: 100.0,
-                        color: widget.previewImage == null
-                            ? Colors.grey[500]
-                            : Colors.white),
-                  ),
-                ),
               ],
             ),
           ),
@@ -133,7 +121,6 @@ class VideoWidgetState extends State<VideoWidget> {
           if (widget.entity == null) {
             var connectivityResult = await (Connectivity().checkConnectivity());
             if (connectivityResult == ConnectivityResult.none) {
-              // I am connected to a mobile network.
               SnackbarActions.showError(context, ERROR_MSG_NO_INTERNET);
               return;
             }
@@ -158,14 +145,21 @@ class VideoWidgetState extends State<VideoWidget> {
             }
           }
 
-          // push full screen route
-          await Navigator.of(context).push(new MaterialPageRoute(
-              builder: (BuildContext context) {
-                return new FlutterVideoPlayer(context, appWideState,
-                    widget.video, widget.entity, widget.videoProgressEntity);
-              },
-              settings: RouteSettings(name: "VideoPlayer"),
-              fullscreenDialog: false));
+          if (widget.video == null && widget.entity == null) {
+            SnackbarActions.showError(context, ERROR_MSG_FAILED_PLAYING);
+            return;
+          }
+
+          if (mounted) {
+            // push full screen route
+            await Navigator.of(context).push(new MaterialPageRoute(
+                builder: (BuildContext context) {
+                  return new FlutterVideoPlayer(context, appWideState,
+                      widget.video, widget.entity, widget.videoProgressEntity);
+                },
+                settings: RouteSettings(name: "VideoPlayer"),
+                fullscreenDialog: false));
+          }
           return;
         });
   }

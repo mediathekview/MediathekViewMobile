@@ -132,8 +132,9 @@ class _FlutterVideoPlayerState extends State<FlutterVideoPlayer> {
     }
     // always use network datasource if should be casted to TV
     // TV needs accessible video URL
-    if (widget.appSharedState.appState.isCurrentlyPlayingOnTV ||
-        widget.video != null) {
+    if (widget.videoEntity == null ||
+        widget.appSharedState.appState.isCurrentlyPlayingOnTV &&
+            widget.video != null) {
       videoController = VideoPlayerController.network(
         videoUrl,
       );

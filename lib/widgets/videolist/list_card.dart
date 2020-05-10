@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_ws/database/database_manager.dart';
+import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
@@ -48,6 +49,7 @@ class _ListCardState extends State<ListCard> {
   AppSharedState appWideState;
   bool modalBottomScreenIsShown = false;
   bool isDownloadedAlready = false;
+  VideoEntity entity;
   bool isCurrentlyDownloading = false;
   DownloadTaskStatus currentStatus;
   double progress;
@@ -152,6 +154,7 @@ class _ListCardState extends State<ListCard> {
                   children: <Widget>[
                     new VideoPreviewAdapter(isExtendet, true, widget.video.id,
                         video: widget.video,
+                        videoEntity: isDownloadedAlready ? entity : null,
                         videoProgressEntity: videoProgressEntity,
                         defaultImageAssetPath: widget.channelPictureImagePath),
                     new Positioned(
@@ -360,12 +363,27 @@ class _ListCardState extends State<ListCard> {
   }
 
   void loadCurrentStatusFromDatabase(String videoId) async {
-    if (await downloadManager.isAlreadyDownloaded(videoId)) {
-      widget.logger.fine("Video with name  " +
+    if (videoProgressEntity == null) {
+      appWideState.appState.databaseManager
+          .getVideoProgressEntity(videoId)
+          .then((entity) {
+        if (entity != null) {
+          videoProgressEntity = entity;
+          if (mounted) {
+            setState(() {});
+          }
+        }
+      });
+    }
+
+    VideoEntity entity = await downloadManager.getEntityForId(videoId);
+    if (entity != null) {
+      widget.logger.info("Video with name  " +
           widget.video.title +
           " and id " +
           videoId +
           " is downloaded already");
+      this.entity = entity;
       if (!isDownloadedAlready) {
         isDownloadedAlready = true;
         isCurrentlyDownloading = false;
@@ -392,19 +410,6 @@ class _ListCardState extends State<ListCard> {
           setState(() {});
         }
       }
-    }
-
-    if (videoProgressEntity == null) {
-      appWideState.appState.databaseManager
-          .getVideoProgressEntity(videoId)
-          .then((entity) {
-        if (entity != null) {
-          videoProgressEntity = entity;
-          if (mounted) {
-            setState(() {});
-          }
-        }
-      });
     }
   }
 

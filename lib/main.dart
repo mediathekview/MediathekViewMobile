@@ -100,7 +100,7 @@ class HomePageState extends State<MyHomePage>
   final Logger logger;
 
   //global state
-  AppSharedState stateContainer;
+  AppSharedState appWideState;
 
   //AppBar
   IconButton buttonOpenFilterMenu;
@@ -150,7 +150,7 @@ class HomePageState extends State<MyHomePage>
 
   //Tabs
   Widget videoSearchList;
-  DownloadSection downloadSection;
+  static DownloadSection downloadSection;
   AboutSection aboutSection;
 
   //intro slider
@@ -194,7 +194,6 @@ class HomePageState extends State<MyHomePage>
 
     //Init tabs
     //liveTVSection = new LiveTVSection();
-    downloadSection = new DownloadSection();
     aboutSection = new AboutSection();
 
     //keys
@@ -222,7 +221,7 @@ class HomePageState extends State<MyHomePage>
 
   @override
   Widget build(BuildContext context) {
-    stateContainer = AppSharedStateContainer.of(context);
+    appWideState = AppSharedStateContainer.of(context);
 
     if (isFirstStart) {
       return new IntroScreen(onDonePressed: () {
@@ -233,6 +232,10 @@ class HomePageState extends State<MyHomePage>
       });
     }
 
+    if (downloadSection == null) {
+      downloadSection = new DownloadSection(appWideState);
+    }
+
     return new Scaffold(
       backgroundColor: Colors.grey[800],
       body: new TabBarView(
@@ -240,7 +243,7 @@ class HomePageState extends State<MyHomePage>
         children: <Widget>[
           new OverviewSection(),
           getVideoSearchListWidget(),
-          downloadSection == null ? new DownloadSection() : downloadSection,
+          downloadSection,
           aboutSection == null ? new AboutSection() : aboutSection
         ],
       ),
@@ -419,7 +422,7 @@ class HomePageState extends State<MyHomePage>
   }
 
   void showStatusBar() {
-    logger.info("Ws Status: Errors retrieved: " +
+    logger.fine("Ws Status: Errors retrieved: " +
         consecutiveWebsocketUnhealthyChecks.toString());
     consecutiveWebsocketUnhealthyChecks++;
     if (this.websocketInitError == false &&
@@ -639,7 +642,7 @@ class HomePageState extends State<MyHomePage>
                   .then((initializedSuccessfully) {
                 if (initializedSuccessfully) {
                   consecutiveWebsocketUnhealthyChecks = 0;
-                  logger.info("WS connection stable again");
+                  logger.fine("WS connection stable again");
                   if (videos.isEmpty) {
                     _createQuery();
                   }
