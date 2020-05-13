@@ -42,6 +42,12 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
   bool listeningToPlayerPosition = false;
   bool isWaitingUntilTVPlaybackStarts = false;
 
+  // needed to be able to show a loading spinner if the the video does not
+  // progress over a certain amount of time
+  DateTime lastVideoPlayerPositionUpdateTime = new DateTime.now();
+  var LAGGING_THRESHOLD_IN_MILLISECONDS = 100;
+  bool isLagging = false;
+
   // Samsung TV cast
   StreamSubscription<dynamic> tvConnectionSubscription;
   StreamSubscription<dynamic> tvPlayerSubscription;
@@ -82,6 +88,27 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
   }
 
   void _updateFlutterPlayerState() {
+    if (_latestFlutterPlayerValue != null &&
+        _latestFlutterPlayerValue.position ==
+            flutterPlayerController.value.position &&
+        flutterPlayerController.value.isPlaying) {
+      DateTime now = new DateTime.now();
+      var lag =
+          now.difference(lastVideoPlayerPositionUpdateTime).inMilliseconds;
+      logger.info("Same position detected with lag: " + lag.toString());
+      if (lag > LAGGING_THRESHOLD_IN_MILLISECONDS) {
+        isLagging = true;
+        logger.info("Detected lag of > 100 ms - showing loading indicator!");
+        if (mounted) {
+          setState(() {});
+        }
+        return;
+      }
+    } else {
+      isLagging = false;
+      lastVideoPlayerPositionUpdateTime = DateTime.now();
+    }
+
     _latestFlutterPlayerValue = flutterPlayerController.value;
 
     // update position
@@ -243,7 +270,8 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
         !flutterPlayerController.value.initialized ||
         flutterPlayerController.value.isBuffering ||
         tvPlayerController.value.isCurrentlyCheckingTV ||
-        isWaitingUntilTVPlaybackStarts;
+        isWaitingUntilTVPlaybackStarts ||
+        isLagging;
 
     return GestureDetector(
       onTap: () {

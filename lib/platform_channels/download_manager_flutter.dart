@@ -267,17 +267,18 @@ class DownloadManager {
     });
   }
 
-  //Check in DB only if the VideoEntity has a filename associated with it
-  Future<bool> isAlreadyDownloaded(String videoId) async {
+  //Checks if the video is downloaded already.
+  // downloaded videos have a filePath set
+  Future<VideoEntity> isAlreadyDownloaded(String videoId) async {
     return getEntityForId(videoId).then((entity) {
       if (entity == null || entity.task_id == '') {
-        return false;
+        return null;
       }
       // if it has a filename, then it is already downloaded!
       if (entity.fileName != null && entity.fileName != '') {
-        return true;
+        return entity;
       }
-      return false;
+      return null;
     });
   }
 

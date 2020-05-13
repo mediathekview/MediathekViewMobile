@@ -309,7 +309,7 @@ class _ListCardState extends State<ListCard> {
 
   void onDownloadStateChanged(String videoId, DownloadTaskStatus updatedStatus,
       double updatedProgress) {
-    widget.logger.fine("Download: " +
+    widget.logger.info("Download: " +
         widget.video.title +
         " status: " +
         updatedStatus.toString() +
@@ -376,7 +376,7 @@ class _ListCardState extends State<ListCard> {
       });
     }
 
-    VideoEntity entity = await downloadManager.getEntityForId(videoId);
+    VideoEntity entity = await downloadManager.isAlreadyDownloaded(videoId);
     if (entity != null) {
       widget.logger.info("Video with name  " +
           widget.video.title +
