@@ -3,12 +3,12 @@ import 'package:flutter_swiper/flutter_swiper.dart';
 import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
+import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/util/channel_util.dart';
 import 'package:flutter_ws/util/cross_axis_count.dart';
 import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/util/show_snackbar.dart';
 import 'package:flutter_ws/util/text_styles.dart';
-import 'package:flutter_ws/util/video.dart';
 import 'package:flutter_ws/widgets/downloadSection/current_downloads.dart';
 import 'package:flutter_ws/widgets/downloadSection/heading.dart';
 import 'package:flutter_ws/widgets/downloadSection/video_list_item_builder.dart';
@@ -34,8 +34,8 @@ class DownloadSection extends StatefulWidget {
 }
 
 class DownloadSectionState extends State<DownloadSection> {
-  List<VideoEntity> currentDownloads = new List();
-  Map<String, VideoEntity> downloadedVideos = new Map();
+  List<Video> currentDownloads = new List();
+  Map<String, Video> downloadedVideos = new Map();
   Set<String> userDeletedAppId; //used for fade out animation
   int milliseconds = 1500;
   Map<String, double> progress = new Map();
@@ -116,10 +116,11 @@ class DownloadSectionState extends State<DownloadSection> {
         .getAllDownloadedVideos();
     if (downloadedVideos == null ||
         downloadedVideos.length != downloads.length) {
-      downloads.forEach((video) {
+      downloads.forEach((entity) {
         widget.logger
-            .info("Downloaded: " + video.id + ". Title: " + video.title);
-        downloadedVideos.putIfAbsent(video.id, () => video);
+            .info("Downloaded: " + entity.id + ". Title: " + entity.title);
+        downloadedVideos.putIfAbsent(
+            entity.id, () => Video.fromMap(entity.toMap()));
       });
 
       if (mounted) {
@@ -127,24 +128,28 @@ class DownloadSectionState extends State<DownloadSection> {
       }
 
       // request preview for each downloaded video
-      downloadedVideos.values.forEach((VideoEntity entity) {
-        String filepath =
-            VideoUtil.getVideoPath(widget.appWideState, entity, null);
+      /*downloadedVideos.values.forEach(
+        (VideoEntity entity) {
+          String filepath =
+              VideoUtil.getVideoPath(widget.appWideState, entity, null);
 
-        widget.appWideState.appState.videoPreviewManager
-            .startPreviewGeneration(entity.id, filepath)
-            .then((Image image) {
-          if (image == null) {
-            return;
-          }
-          widget.logger.info("Download section: received preview image");
-          if (mounted) {
-            widget.logger.info(
-                "Download section: received preview image and setting state");
-            setState(() {});
-          }
-        });
-      });
+          widget.appWideState.appState.videoPreviewManager
+              .startPreviewGeneration(entity.id, filepath)
+              .then((Image image) {
+            if (image == null) {
+              return;
+            }
+            widget.logger.info("Download section: received preview image");
+            if (mounted) {
+              widget.logger.info(
+                  "Download section: received preview image and setting state");
+              setState(() {});
+            }
+          });
+        },
+      );
+      */
+
     }
   }
 
@@ -166,6 +171,7 @@ class DownloadSectionState extends State<DownloadSection> {
           if (stateReloadNeeded) {
             setState(() {});
           }
+          // generatePreview(all.take(amount_of_swiper_items))
         }
         return;
       });
@@ -253,10 +259,8 @@ class DownloadSectionState extends State<DownloadSection> {
       downloadHeading = new Heading("Meine Downloads", 25.0, 20.0, 20.0, 0.0);
 
       var videoListItemBuilder = new VideoListItemBuilder.name(
-          deleteOrStopDownload,
-          downloadedVideos.values.toList(),
-          videosWithPlaybackProgress,
-          false);
+          downloadedVideos.values.toList(), true, false,
+          onRemoveVideo: deleteOrStopDownload);
 
       downloadList = SliverGrid(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -284,8 +288,7 @@ class DownloadSectionState extends State<DownloadSection> {
             watchHistoryNavigation,
             //new Heading("Aktuelle Downloads", 25.0, 20.0, 20.0, 0.0),
             downloadHeading,
-            new CurrentDownloads(widget.appWideState,
-                videosWithPlaybackProgress, downloadedVideosChanged),
+            new CurrentDownloads(widget.appWideState, downloadedVideosChanged),
             downloadList
           ],
         ),
@@ -353,13 +356,15 @@ class DownloadSectionState extends State<DownloadSection> {
   // triggered when the download section should setState
   // 1) Download finished -> reload downloads from Database
   // 2) Current downloads retrieved -> to show green top bar
-  void downloadedVideosChanged(List<VideoEntity> currentDownloads) {
+  void downloadedVideosChanged(List<Video> currentDownloads) {
     widget.logger.info("Downloads changed: setState()");
 
-    this.currentDownloads = currentDownloads;
+    if (this.currentDownloads.length != currentDownloads.length) {
+      this.currentDownloads = currentDownloads;
 
-    if (mounted) {
-      setState(() {});
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
 }

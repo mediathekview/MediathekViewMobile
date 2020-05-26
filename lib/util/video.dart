@@ -19,4 +19,9 @@ class VideoUtil {
       return video.url_video;
     }
   }
+
+  static bool isLivestreamVideo(Video video) {
+    return video.url_video.substring(video.url_video.lastIndexOf(".")) ==
+        ".m3u8";
+  }
 }

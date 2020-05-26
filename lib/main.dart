@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_ws/enum/ws_event_types.dart';
 import 'package:flutter_ws/exceptions/failed_to_contact_websocket.dart';
-import 'package:flutter_ws/global_state/appBar_state_container.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/indexing_info.dart';
 import 'package:flutter_ws/model/query_result.dart';
@@ -28,6 +27,8 @@ import 'package:flutter_ws/widgets/videolist/videolist_util.dart';
 import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+
+import 'global_state/appBar_state_container.dart';
 
 void main() => runApp(new AppSharedStateContainer(child: new MyApp()));
 
@@ -79,7 +80,7 @@ class MyHomePage extends StatefulWidget {
   final String title;
   final TextEditingController textEditingController;
   final PageController pageController;
-  final Logger logger = new Logger('MyHomePage');
+  final Logger logger = new Logger('Main');
 
   MyHomePage(
       {Key key,
@@ -317,50 +318,49 @@ class HomePageState extends State<MyHomePage>
   Widget getVideoSearchListWidget() {
     logger.fine("Rendering Video Search list");
 
-    Widget videoSearchList = new Container(
-      color: Color(0xffffbf00),
-      child: new SafeArea(
+    Widget videoSearchList = new SafeArea(
+      child: new RefreshIndicator(
+        onRefresh: _handleListRefresh,
         child: new Container(
           color: Colors.grey[800],
-          child: new Column(
-            children: <Widget>[
-              new FilterBarSharedState(
-                child: new GradientAppBar(
-                    this,
-                    searchFieldController,
-                    new FilterMenu(
-                        searchFilters: searchFilters,
-                        onFilterUpdated: _filterMenuUpdatedCallback,
-                        onSingleFilterTapped: _singleFilterTappedCallback),
-                    false,
-                    videos.length,
-                    totalQueryResults),
+          child: new CustomScrollView(
+            slivers: <Widget>[
+              new SliverToBoxAdapter(
+                child: new FilterBarSharedState(
+                  child: new GradientAppBar(
+                      this,
+                      searchFieldController,
+                      new FilterMenu(
+                          searchFilters: searchFilters,
+                          onFilterUpdated: _filterMenuUpdatedCallback,
+                          onSingleFilterTapped: _singleFilterTappedCallback),
+                      false,
+                      videos.length,
+                      totalQueryResults),
+                ),
               ),
-              new Flexible(
-                child: new RefreshIndicator(
-                    child: new Scrollbar(
-                      child: new VideoListView(
-                        key: videoListKey,
-                        videos: videos,
-                        amountOfVideosFetched: lastAmountOfVideosRetrieved,
-                        queryEntries: onQueryEntries,
-                        currentQuerySkip: websocketController.getCurrentSkip(),
-                        totalResultSize: totalQueryResults,
-                        mixin: this,
-                      ),
-                    ),
-                    onRefresh: _handleListRefresh),
+              new VideoListView(
+                  key: videoListKey,
+                  videos: videos,
+                  amountOfVideosFetched: lastAmountOfVideosRetrieved,
+                  queryEntries: onQueryEntries,
+                  currentQuerySkip: websocketController.getCurrentSkip(),
+                  totalResultSize: totalQueryResults,
+                  mixin: this),
+              new SliverToBoxAdapter(
+                child: new StatusBar(
+                    key: statusBarKey,
+                    websocketInitError: websocketInitError,
+                    videoListIsEmpty: videos.isEmpty,
+                    lastAmountOfVideosRetrieved: lastAmountOfVideosRetrieved,
+                    firstAppStartup: lastAmountOfVideosRetrieved < 0),
               ),
-              new StatusBar(
-                  key: statusBarKey,
-                  websocketInitError: websocketInitError,
-                  videoListIsEmpty: videos.isEmpty,
-                  lastAmountOfVideosRetrieved: lastAmountOfVideosRetrieved,
-                  firstAppStartup: lastAmountOfVideosRetrieved < 0),
-              new IndexingBar(
-                  key: indexingBarKey,
-                  indexingError: indexingError,
-                  info: indexingInfo),
+              new SliverToBoxAdapter(
+                child: new IndexingBar(
+                    key: indexingBarKey,
+                    indexingError: indexingError,
+                    info: indexingInfo),
+              ),
             ],
           ),
         ),

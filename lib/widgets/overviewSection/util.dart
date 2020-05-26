@@ -4,9 +4,6 @@ import 'package:flutter_ws/enum/channels.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/model/video_rating.dart';
 import 'package:flutter_ws/util/text_styles.dart';
-import 'package:flutter_ws/util/timestamp_calculator.dart';
-import 'package:flutter_ws/widgets/bars/playback_progress_bar.dart';
-import 'package:flutter_ws/widgets/videolist/channel_thumbnail.dart';
 import 'package:flutter_ws/widgets/videolist/rating_bar.dart';
 import 'package:flutter_ws/widgets/videolist/video_preview_adapter.dart';
 
@@ -74,61 +71,12 @@ class Util {
           child: Stack(
             children: <Widget>[
               new VideoPreviewAdapter(
+                Video.fromMap(videoRating.toMap()),
                 true,
-                true,
-                videoRating.video_id,
-                video: Video.fromMap(videoRating.toMap()),
+                false,
                 defaultImageAssetPath: channelPictureImagePath,
                 presetAspectRatio: 16 / 9,
-                videoProgressEntity: playbackProgress,
                 //size: new Size.fromWidth(1000),
-              ),
-              new Positioned(
-                bottom: 0.0,
-                left: 0.0,
-                right: 0.0,
-                child: new Opacity(
-                  opacity: 0.7,
-                  child: new Container(
-                    color: Colors.grey[800],
-                    child: new Column(
-                      children: <Widget>[
-                        // Playback Progress
-                        playbackProgress != null
-                            ? PlaybackProgressBar(
-                                playbackProgress.progress,
-                                int.tryParse(videoRating.duration.toString()),
-                                false)
-                            : new Container(),
-                        // Meta Information
-                        new ListTile(
-                          trailing: new Text(
-                            videoRating.duration != null
-                                ? Calculator.calculateDuration(
-                                    videoRating.duration)
-                                : "",
-                            style: videoMetadataTextStyle.copyWith(
-                                color: Colors.white, fontSize: metaFontSize),
-                          ),
-                          leading: channelPictureImagePath.isNotEmpty
-                              ? new ChannelThumbnail(
-                                  channelPictureImagePath, false)
-                              : new Container(),
-                          title: new Text(
-                            videoRating.title,
-                            style: videoMetadataTextStyle.copyWith(
-                                color: Colors.white, fontSize: headingFontSize),
-                          ),
-                          subtitle: new Text(
-                            videoRating.topic != null ? videoRating.topic : "",
-                            style: videoMetadataTextStyle.copyWith(
-                                color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               ),
               new Positioned(
                 bottom: 0.0,
@@ -167,59 +115,12 @@ class Util {
           child: Stack(
             children: <Widget>[
               new VideoPreviewAdapter(
+                Video.fromMap(playbackProgress.toMap()),
                 true,
-                true,
-                playbackProgress.id,
-                video: Video.fromMap(playbackProgress.toMap()),
+                false,
                 defaultImageAssetPath: channelPictureImagePath,
                 presetAspectRatio: 16 / 9,
-                videoProgressEntity: playbackProgress,
                 //size: new Size.fromWidth(1000),
-              ),
-              new Positioned(
-                bottom: 0.0,
-                left: 0.0,
-                right: 0.0,
-                child: new Opacity(
-                  opacity: 0.7,
-                  child: new Container(
-                    color: Colors.grey[800],
-                    child: new Column(
-                      children: <Widget>[
-                        // Playback Progress
-                        PlaybackProgressBar(
-                            playbackProgress.progress,
-                            int.tryParse(playbackProgress.duration.toString()),
-                            false),
-                        // Meta Information
-                        new ListTile(
-                          trailing: new Text(
-                            Calculator.calculateDuration(
-                                playbackProgress.duration),
-                            style: videoMetadataTextStyle.copyWith(
-                                color: Colors.white, fontSize: metaFontSize),
-                          ),
-                          leading: channelPictureImagePath.isNotEmpty
-                              ? new ChannelThumbnail(
-                                  channelPictureImagePath, false)
-                              : new Container(),
-                          title: new Text(
-                            playbackProgress.title,
-                            style: videoMetadataTextStyle.copyWith(
-                                color: Colors.white, fontSize: headingFontSize),
-                          ),
-                          subtitle: new Text(
-                            playbackProgress.topic != null
-                                ? playbackProgress.topic
-                                : "",
-                            style: videoMetadataTextStyle.copyWith(
-                                color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               ),
             ],
           ),

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/model/video_rating.dart';
 import 'package:flutter_ws/util/channel_util.dart';
-import 'package:flutter_ws/util/row_adapter.dart';
+import 'package:flutter_ws/util/cross_axis_count.dart';
+import 'package:flutter_ws/widgets/downloadSection/video_list_item_builder.dart';
 import 'package:flutter_ws/widgets/videolist/loading_list_view.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
@@ -57,67 +58,54 @@ class _VideoListViewState extends State<VideoListView> {
 
     if (widget.videos.length == 0 && widget.amountOfVideosFetched == 0) {
       widget.logger.fine("No Videos found");
-      return new Center(
-        child: new Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            new Center(
-              child: new Text(
-                "Keine Videos gefunden",
-                style: new TextStyle(fontSize: 25),
-              ),
-            ),
-            new Container(
-              height: 50,
-              child: new ListView(
-                shrinkWrap: true,
-                scrollDirection: Axis.horizontal,
-                //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: ChannelUtil.getAllChannelImages(),
-              ),
-            ),
-          ],
-        ),
-      );
+      return buildNoVideosFound();
     } else if (widget.videos.length == 0) {
       widget.logger.fine("Searching: video list legth : 0 & amountFetched: " +
           widget.amountOfVideosFetched.toString());
-      return new LoadingListPage();
+      return new SliverToBoxAdapter(child: LoadingListPage());
     }
 
-    return ListView.builder(
-        controller: scrollController,
-        itemBuilder: itemBuilder,
-        itemCount: widget.videos.length);
+    var videoListItemBuilder =
+        new VideoListItemBuilder.name(widget.videos, false, true);
+
+    int crossAxisCount = CrossAxisCount.getCrossAxisCount(context);
+
+    return SliverGrid(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        childAspectRatio: 16 / 9,
+        mainAxisSpacing: 1.0,
+        crossAxisSpacing: 5.0,
+      ),
+      // padding: const EdgeInsets.all(5.0),
+      delegate: SliverChildBuilderDelegate(videoListItemBuilder.itemBuilder,
+          childCount: widget.videos.length),
+    );
   }
 
-  Widget itemBuilder(BuildContext context, int index) {
-    if (index + widget.pageThreshold > widget.videos.length) {
-      widget.queryEntries();
-    }
-
-    if (widget.currentQuerySkip + widget.pageThreshold >=
-            widget.totalResultSize &&
-        widget.videos.length == index + 1) {
-      widget.logger.info("ResultList - reached last position of result list.");
-    } else if (widget.videos.length == index + 1) {
-      widget.logger.info("Reached last position in list for query");
-      return new Container(
-          alignment: Alignment.center,
-          width: 20.0,
-          child: new CircularProgressIndicator(
-              valueColor: new AlwaysStoppedAnimation<Color>(Colors.white),
-              strokeWidth: 3.0));
-    }
-
-    if (widget.videos.length > index) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
+  Center buildNoVideosFound() {
+    return new Center(
+      child: new Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          RowAdapter.createRow(widget.videos[index]),
+          new Center(
+            child: new Text(
+              "Keine Videos gefunden",
+              style: new TextStyle(fontSize: 25),
+            ),
+          ),
+          new Container(
+            height: 50,
+            child: new ListView(
+              shrinkWrap: true,
+              scrollDirection: Axis.horizontal,
+              //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: ChannelUtil.getAllChannelImages(),
+            ),
+          ),
         ],
-      );
-    }
+      ),
+    );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
+import 'package:flutter_ws/util/cross_axis_count.dart';
 import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/util/rating_util.dart';
 import 'package:flutter_ws/widgets/overviewSection/carousel_slider.dart';
@@ -31,16 +32,7 @@ class _OverviewSectionState extends State<OverviewSection> {
   }
 
   Widget _buildMobile(Size size, Orientation orientation, bool isTablet) {
-    int crossAxisCount;
-    if (orientation == Orientation.portrait && isTablet) {
-      crossAxisCount = 2;
-    } else if (orientation == Orientation.portrait && !isTablet) {
-      crossAxisCount = 1;
-    } else if (orientation == Orientation.landscape && isTablet) {
-      crossAxisCount = 3;
-    } else if (orientation == Orientation.landscape && !isTablet) {
-      crossAxisCount = 2;
-    }
+    int crossAxisCount = CrossAxisCount.getCrossAxisCount(context);
 
     return new Scaffold(
       backgroundColor: Colors.grey[800],
@@ -149,7 +141,7 @@ class _OverviewSectionState extends State<OverviewSection> {
 
         //request previews
         ratings.forEach((videoId, rating) => appState.videoPreviewManager
-            .startPreviewGeneration(videoId, rating.url_video));
+            .startPreviewGeneration(videoId, rating.title, rating.url_video));
 
         appState.setHotVideosToday(ratings);
         if (mounted) {
@@ -166,7 +158,7 @@ class _OverviewSectionState extends State<OverviewSection> {
         //request previews
         ratings.forEach((videoId, rating) {
           appState.videoPreviewManager
-              .startPreviewGeneration(videoId, rating.url_video);
+              .startPreviewGeneration(videoId, rating.title, rating.url_video);
         });
 
         appState.setBestVideosAllTime(ratings);

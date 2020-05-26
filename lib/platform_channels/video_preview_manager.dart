@@ -17,7 +17,8 @@ class VideoPreviewManager {
     _appWideState = AppSharedStateContainer.of(context);
   }
 
-  Future<Image> startPreviewGeneration(String videoId, String url) async {
+  Future<Image> startPreviewGeneration(
+      String videoId, String title, String url) async {
     if (_appWideState.videoListState.previewImages.containsKey(videoId)) {
       return null;
     }
@@ -30,7 +31,7 @@ class VideoPreviewManager {
       return true;
     });
 
-    logger.fine("Request preview for: " + url);
+    logger.info("Request preview for: " + title);
     return await _createPreview(videoId, url);
   }
 
@@ -63,7 +64,7 @@ class VideoPreviewManager {
           e.toString());
       return null;
     }
-    logger.info("Received image for " +
+    logger.fine("Received image for " +
         url +
         " with size: " +
         uint8list.length.toString());

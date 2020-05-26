@@ -18,7 +18,6 @@ import 'package:flutter_ws/util/rating_util.dart';
 import 'package:flutter_ws/util/show_snackbar.dart';
 import 'package:flutter_ws/widgets/bars/playback_progress_bar.dart';
 import 'package:flutter_ws/widgets/videolist/channel_thumbnail.dart';
-import 'package:flutter_ws/widgets/videolist/download_card_body.dart';
 import 'package:flutter_ws/widgets/videolist/rating_bar.dart';
 import 'package:flutter_ws/widgets/videolist/star_rating.dart';
 import 'package:flutter_ws/widgets/videolist/video_description.dart';
@@ -27,6 +26,8 @@ import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:uuid/uuid.dart';
+
+import 'download_switch.dart';
 
 class ListCard extends StatefulWidget {
   final Logger logger = new Logger('VideoWidget');
@@ -67,8 +68,7 @@ class _ListCardState extends State<ListCard> {
         " and id " +
         widget.video.id);
 
-    downloadManager.cancelSubscription(
-        widget.video.id, downloadManagerIdentifier);
+    downloadManager.unsubscribe(widget.video.id, downloadManagerIdentifier);
   }
 
   @override
@@ -92,129 +92,117 @@ class _ListCardState extends State<ListCard> {
 
     Uuid uuid = new Uuid();
 
-    final cardContent = new Container(
-      margin: new EdgeInsets.only(top: 12.0, bottom: 12.0),
-      child: new Column(
-        key: new Key(uuid.v1()),
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          new Container(key: new Key(uuid.v1()), height: 4.0),
-          new Flexible(
+    final cardContent = new Column(
+      key: new Key(uuid.v1()),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        new Container(key: new Key(uuid.v1()), height: 4.0),
+        new Flexible(
+          key: new Key(uuid.v1()),
+          child: new Container(
             key: new Key(uuid.v1()),
-            child: new Container(
-              key: new Key(uuid.v1()),
-              margin: new EdgeInsets.only(left: 40.0, right: 12.0),
-              child: new Text(
-                widget.video.topic,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-                style: Theme.of(context)
-                    .textTheme
-                    .title
-                    .copyWith(color: Colors.black),
-              ),
+            margin: new EdgeInsets.only(left: 40.0, right: 12.0),
+            child: new Text(
+              widget.video.topic,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+              style: Theme.of(context)
+                  .textTheme
+                  .title
+                  .copyWith(color: Colors.black),
             ),
           ),
-          new Container(key: new Key(uuid.v1()), height: 10.0),
-          new Flexible(
+        ),
+        new Container(key: new Key(uuid.v1()), height: 10.0),
+        new Flexible(
+          key: new Key(uuid.v1()),
+          child: new Container(
             key: new Key(uuid.v1()),
-            child: new Container(
-              key: new Key(uuid.v1()),
-              margin: new EdgeInsets.only(left: 40.0, right: 12.0),
-//              padding: new EdgeInsets.only(right: 13.0),
-              child: new Text(
-                widget.video.title,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 2,
-                style: Theme.of(context)
-                    .textTheme
-                    .subhead
-                    .copyWith(color: Colors.black),
-              ),
+            margin: new EdgeInsets.only(left: 40.0, right: 12.0),
+            child: new Text(
+              widget.video.title,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+              style: Theme.of(context)
+                  .textTheme
+                  .subhead
+                  .copyWith(color: Colors.black),
             ),
           ),
-          isExtendet == true
-              ? new Container(
-                  key: new Key(uuid.v1()),
-                  margin:
-                      new EdgeInsets.symmetric(vertical: 8.0, horizontal: 40.0),
-                  height: 2.0,
-                  color: Colors.grey)
-              : new Container(
-                  key: new Key(uuid.v1()),
-                  padding: new EdgeInsets.only(left: 40.0, right: 12.0),
-                ),
-          new Column(
-            key: new Key(uuid.v1()),
-            children: <Widget>[
-              new Padding(
-                padding: new EdgeInsets.only(top: 12.0, bottom: 12.0),
-                child: Stack(
-                  children: <Widget>[
-                    new VideoPreviewAdapter(isExtendet, true, widget.video.id,
-                        video: widget.video,
-                        videoEntity: isDownloadedAlready ? entity : null,
-                        videoProgressEntity: videoProgressEntity,
-                        defaultImageAssetPath: widget.channelPictureImagePath),
-                    new Positioned(
-                      bottom: 0.0,
-                      left: 0.0,
-                      right: 0.0,
-                      child: new Opacity(
-                        opacity: 0.8,
-                        child: new Column(
-                          children: <Widget>[
-                            // Playback Progress
-                            videoProgressEntity != null
-                                ? PlaybackProgressBar(
-                                    videoProgressEntity.progress,
-                                    int.tryParse(
-                                        widget.video.duration.toString()),
-                                    true)
-                                : new Container(),
-                          ],
-                        ),
+        ),
+        isExtendet == true
+            ? new Container(
+                key: new Key(uuid.v1()),
+                margin:
+                    new EdgeInsets.symmetric(vertical: 8.0, horizontal: 40.0),
+                height: 2.0,
+                color: Colors.grey)
+            : new Container(
+                key: new Key(uuid.v1()),
+                padding: new EdgeInsets.only(left: 40.0, right: 12.0),
+              ),
+        new Column(
+          key: new Key(uuid.v1()),
+          children: <Widget>[
+            new Padding(
+              padding: new EdgeInsets.only(top: 12.0, bottom: 12.0),
+              child: Stack(
+                children: <Widget>[
+                  new VideoPreviewAdapter(widget.video, true, true,
+                      defaultImageAssetPath: widget.channelPictureImagePath),
+                  new Positioned(
+                    bottom: 0.0,
+                    left: 0.0,
+                    right: 0.0,
+                    child: new Opacity(
+                      opacity: 0.8,
+                      child: new Column(
+                        children: <Widget>[
+                          // Playback Progress
+                          videoProgressEntity != null
+                              ? PlaybackProgressBar(
+                                  videoProgressEntity.progress,
+                                  int.tryParse(
+                                      widget.video.duration.toString()),
+                                  true)
+                              : new Container(),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              new RatingBar(
-                  isExtendet,
-                  rating,
-                  widget.video,
-                  Theme.of(context)
-                      .textTheme
-                      .body1
-                      .copyWith(color: Colors.black, fontSize: 14.0),
-                  DeviceInformation.isTablet(context)
-                      ? false
-                      : orientation == Orientation.portrait ? true : false,
-                  true, ratingChanged:
-                      (bool needsRemoteSync, VideoRating updatedRating) {
-                if (needsRemoteSync) {
-                  uploadRating(updatedRating);
-                }
-                if (mounted) {
-                  setState(() {});
-                }
-              }),
-              new DownloadCardBody(
-                  widget.video,
-                  downloadManager,
-                  databaseManager,
-                  isExtendet,
-                  isDownloadedAlready,
-                  isCurrentlyDownloading,
-                  currentStatus,
-                  progress,
-                  onDownloadRequested,
-                  onDeleteRequested),
-            ],
-          ),
-        ],
-      ),
+            ),
+            new RatingBar(
+                isExtendet,
+                rating,
+                widget.video,
+                Theme.of(context)
+                    .textTheme
+                    .body1
+                    .copyWith(color: Colors.black, fontSize: 14.0),
+                DeviceInformation.isTablet(context)
+                    ? false
+                    : orientation == Orientation.portrait ? true : false,
+                true, ratingChanged:
+                    (bool needsRemoteSync, VideoRating updatedRating) {
+              if (needsRemoteSync) {
+                uploadRating(updatedRating);
+              }
+              if (mounted) {
+                setState(() {});
+              }
+            }),
+            new DownloadSwitch(
+                appWideState,
+                widget.video,
+                isCurrentlyDownloading,
+                isDownloadedAlready,
+                appWideState.appState.downloadManager),
+          ],
+        ),
+      ],
     );
 
     final card = ClipRRect(
@@ -234,8 +222,7 @@ class _ListCardState extends State<ListCard> {
     return new Container(
       key: _keyListRow,
       margin: const EdgeInsets.symmetric(
-        vertical: 8.0,
-        horizontal: 8.0,
+        horizontal: 4.0,
       ),
       child: new Stack(
         children: <Widget>[
@@ -283,7 +270,7 @@ class _ListCardState extends State<ListCard> {
   }
 
   void _handleTap() {
-    widget.logger.fine("handle tab on tile");
+    widget.logger.info("handle tab on tile");
     appWideState.updateExtendetListTile(widget.video.id);
     //only rerender this tile, not the whole app state!
     setState(() {});
@@ -335,7 +322,7 @@ class _ListCardState extends State<ListCard> {
 
   void subscribeToProgressChannel() {
     downloadManager.subscribe(
-        widget.video,
+        widget.video.id,
         onDownloadStateChanged,
         onDownloaderComplete,
         onDownloaderFailed,

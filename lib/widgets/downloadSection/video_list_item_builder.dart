@@ -1,57 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_downloader/flutter_downloader.dart';
-import 'package:flutter_ws/database/video_entity.dart';
-import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:flutter_ws/enum/channels.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/util/text_styles.dart';
-import 'package:flutter_ws/util/timestamp_calculator.dart';
-import 'package:flutter_ws/widgets/bars/download_progress_bar.dart';
-import 'package:flutter_ws/widgets/bars/playback_progress_bar.dart';
-import 'package:flutter_ws/widgets/videolist/channel_thumbnail.dart';
 import 'package:flutter_ws/widgets/videolist/video_preview_adapter.dart';
 
 class VideoListItemBuilder {
   // called when the user pressed on the remove button
   var onRemoveVideo;
 
-  List<VideoEntity> videos = new List();
-  Map<String, VideoProgressEntity> videosWithPlaybackProgress = new Map();
+  List<Video> videos = new List();
 
-  bool showDownloadProgressBar;
-  Map<String, DownloadTaskStatus> downloadStatus = new Map();
-  Map<String, double> downloadProgress = new Map();
+  bool showDeleteButton;
+  bool openDetailPage;
 
-  VideoListItemBuilder.name(this.onRemoveVideo, this.videos,
-      this.videosWithPlaybackProgress, this.showDownloadProgressBar,
-      {this.downloadStatus, this.downloadProgress});
+  VideoListItemBuilder.name(
+      this.videos, this.showDeleteButton, this.openDetailPage,
+      {this.onRemoveVideo});
 
   Widget itemBuilder(BuildContext context, int index) {
-    VideoEntity entity;
-    entity = videos.elementAt(index);
-
-    Widget downloadProgressBar = new Container();
-    if (showDownloadProgressBar) {
-      DownloadTaskStatus downloadTaskStatus = DownloadTaskStatus.running;
-      if (downloadStatus[entity.id] != null) {
-        downloadTaskStatus = downloadStatus[entity.id];
-      }
-
-      double progress = -1;
-      if (downloadProgress[entity.id] != null &&
-          downloadProgress[entity.id] > -1) {
-        progress = downloadProgress[entity.id];
-      }
-
-      downloadProgressBar = new DownloadProgressBar(
-          Video.fromMap(entity.toMap()), downloadTaskStatus, progress);
-    }
+    Video video = videos.elementAt(index);
 
     String assetPath = Channels.channelMap.entries.firstWhere((entry) {
-      return entity.channel != null &&
-              entity.channel.toUpperCase().contains(entry.key.toUpperCase()) ||
-          entry.key.toUpperCase().contains(entity.channel.toUpperCase());
+      return video.channel != null &&
+              video.channel.toUpperCase().contains(entry.key.toUpperCase()) ||
+          entry.key.toUpperCase().contains(video.channel.toUpperCase());
     }, orElse: () => new MapEntry("", "")).value;
+
+    Widget deleteButton = new Container();
+    if (showDeleteButton) {
+      deleteButton = new Positioned(
+        top: 12.0,
+        left: 0.0,
+        child: getRemoveButton(index, context, video.id),
+      );
+    }
 
     Widget listRow = new Container(
       padding: new EdgeInsets.symmetric(horizontal: 3.0),
@@ -62,37 +43,16 @@ class VideoListItemBuilder {
             children: <Widget>[
               new Positioned(
                 child: new Container(
+                    color: Colors.white,
                     child: new VideoPreviewAdapter(
-                  true,
-                  false,
-                  entity.id,
-                  video: showDownloadProgressBar
-                      ? Video.fromMap(entity.toMap())
-                      : null,
-                  videoEntity: showDownloadProgressBar ? null : entity,
-                  videoProgressEntity: videosWithPlaybackProgress[entity.id],
-                )),
+                      video,
+                      true,
+                      openDetailPage,
+                      defaultImageAssetPath: assetPath,
+                      presetAspectRatio: 16 / 9,
+                    )),
               ),
-              new Positioned(
-                top: 12.0,
-                left: 0.0,
-                child: getRemoveButton(index, context, entity),
-              ),
-              //Overlay Banner
-              new Positioned(
-                bottom: 0,
-                left: 0.0,
-                right: 0.0,
-                child: new Opacity(
-                  opacity: 0.7,
-                  child: getBottomBar(context, entity, assetPath),
-                ),
-              ),
-              new Positioned(
-                  bottom: 0.0,
-                  left: 0.0,
-                  right: 0.0,
-                  child: downloadProgressBar)
+              deleteButton,
             ],
           ),
         ),
@@ -102,55 +62,15 @@ class VideoListItemBuilder {
     return listRow;
   }
 
-  Container getBottomBar(
-      BuildContext context, VideoEntity entity, String assetPath) {
-    return new Container(
-      color: Colors.grey[800],
-      child: new Column(
-        children: <Widget>[
-          videosWithPlaybackProgress[entity.id] != null
-              ? PlaybackProgressBar(
-                  videosWithPlaybackProgress[entity.id].progress,
-                  int.tryParse(entity.duration.toString()),
-                  false)
-              : new Container(),
-          getVideoMetaInformationListTile(entity, assetPath, context),
-        ],
-      ),
-    );
-  }
-
-  ListTile getVideoMetaInformationListTile(
-      VideoEntity entity, String assetPath, BuildContext context) {
-    return new ListTile(
-      trailing: new Text(
-        entity.duration != null
-            ? Calculator.calculateDuration(entity.duration)
-            : "",
-        style: videoMetadataTextStyle.copyWith(color: Colors.white),
-      ),
-      leading: assetPath.isNotEmpty
-          ? new ChannelThumbnail(assetPath, true)
-          : new Container(),
-      title: new Text(
-        entity.title,
-        style:
-            Theme.of(context).textTheme.subhead.copyWith(color: Colors.white),
-      ),
-      subtitle: new Text(
-        entity.topic != null ? entity.topic : "",
-        style: Theme.of(context).textTheme.title.copyWith(color: Colors.white),
-      ),
-    );
-  }
-
-  Center getRemoveButton(int index, BuildContext context, VideoEntity entity) {
+  Center getRemoveButton(int index, BuildContext context, String id) {
     return new Center(
       child: new FloatingActionButton(
         heroTag: null, // explicitly set to null
         mini: true,
         onPressed: () {
-          onRemoveVideo(context, entity.id);
+          if (showDeleteButton) {
+            onRemoveVideo(context, id);
+          }
         },
         backgroundColor: Colors.red[800],
         highlightElevation: 10.0,

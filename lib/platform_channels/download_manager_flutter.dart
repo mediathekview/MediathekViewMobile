@@ -307,6 +307,11 @@ class DownloadManager {
             " does not exist. Cannot fetch taskID to remove it via Downloader from tasks db and local file storage");
         return false;
       }
+
+      // notify listeners about cancellation
+      _notify(entity.task_id, DownloadTaskStatus.canceled, 0, databaseManager,
+          entity);
+
       return _cancelDownload(entity.task_id)
           .then((dummy) => _deleteVideo(entity));
     });
@@ -378,28 +383,24 @@ class DownloadManager {
   }
 
   void subscribe(
-      Video video,
+      String videoId,
       onStateChanged onDownloadStateChanged,
       onComplete onDownloadComplete,
       onFailed onDownloadFailed,
       onCanceled onDownloadCanceled,
       // used to differentiate between download section & list view section as both need to listen for updates!
       int identifier) {
-    logger.fine("Subscribing on updates for video with name: " +
-        video.title +
-        " and id " +
-        video.id);
-    onFailedListeners.add(video.id, new MapEntry(identifier, onDownloadFailed));
-    onCompleteListeners.add(video.id, MapEntry(identifier, onDownloadComplete));
+    logger.fine("Subscribing on updates for video with id " + videoId);
+    onFailedListeners.add(videoId, new MapEntry(identifier, onDownloadFailed));
+    onCompleteListeners.add(videoId, MapEntry(identifier, onDownloadComplete));
     onStateChangedListeners.add(
-        video.id, MapEntry(identifier, onDownloadStateChanged));
+        videoId, MapEntry(identifier, onDownloadStateChanged));
     onCanceledListeners.add(
-        video.id, new MapEntry(identifier, onDownloadCanceled));
+        videoId, new MapEntry(identifier, onDownloadCanceled));
   }
 
-  void cancelSubscription(String videoId, int identifier) {
+  void unsubscribe(String videoId, int identifier) {
     logger.fine("Cancel subscribtion on updates for video with id: " + videoId);
-
     _removeValueFromMultimap(onFailedListeners, videoId, identifier);
     _removeValueFromMultimap(onCompleteListeners, videoId, identifier);
     _removeValueFromMultimap(onCanceledListeners, videoId, identifier);
@@ -409,7 +410,6 @@ class DownloadManager {
   _removeValueFromMultimap(Multimap multimap, String videoId, int identifier) {
     String keyToRemove;
     MapEntry valueToRemove;
-
     // cannot break out of for each
     multimap.forEach((id, value) {
       if (videoId == id && value.key == identifier) {
@@ -417,7 +417,6 @@ class DownloadManager {
         valueToRemove = value;
       }
     });
-    //do not modify during iteration
     if (keyToRemove != null && keyToRemove.isNotEmpty) {
       multimap.remove(keyToRemove, valueToRemove);
     }
