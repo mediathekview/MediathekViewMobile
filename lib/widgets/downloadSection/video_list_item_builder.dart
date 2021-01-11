@@ -9,11 +9,12 @@ class VideoListItemBuilder {
 
   List<Video> videos = new List();
 
+  bool previewNotDownloadedVideos;
   bool showDeleteButton;
   bool openDetailPage;
 
-  VideoListItemBuilder.name(
-      this.videos, this.showDeleteButton, this.openDetailPage,
+  VideoListItemBuilder.name(this.videos, this.previewNotDownloadedVideos,
+      this.showDeleteButton, this.openDetailPage,
       {this.onRemoveVideo});
 
   Widget itemBuilder(BuildContext context, int index) {
@@ -46,6 +47,7 @@ class VideoListItemBuilder {
                     color: Colors.white,
                     child: new VideoPreviewAdapter(
                       video,
+                      previewNotDownloadedVideos,
                       true,
                       openDetailPage,
                       defaultImageAssetPath: assetPath,

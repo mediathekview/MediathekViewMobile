@@ -140,8 +140,8 @@ class _OverviewSectionState extends State<OverviewSection> {
             "Hot ratings retrieved. Amount: " + ratings.length.toString());
 
         //request previews
-        ratings.forEach((videoId, rating) => appState.videoPreviewManager
-            .startPreviewGeneration(videoId, rating.title, rating.url_video));
+//        ratings.forEach((videoId, rating) => appState.videoPreviewManager
+//            .startPreviewGeneration(videoId, rating.title, rating.url_video));
 
         appState.setHotVideosToday(ratings);
         if (mounted) {
@@ -156,10 +156,10 @@ class _OverviewSectionState extends State<OverviewSection> {
             "Best ratings retrieved. Amount: " + ratings.length.toString());
 
         //request previews
-        ratings.forEach((videoId, rating) {
-          appState.videoPreviewManager
-              .startPreviewGeneration(videoId, rating.title, rating.url_video);
-        });
+//        ratings.forEach((videoId, rating) {
+//          appState.videoPreviewManager
+//              .startPreviewGeneration(videoId, rating.title, rating.url_video);
+//        });
 
         appState.setBestVideosAllTime(ratings);
 

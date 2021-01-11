@@ -12,6 +12,7 @@ class VideoPreviewAdapter extends StatefulWidget {
   final Logger logger = new Logger('VideoPreviewAdapter');
   final Video video;
   final String defaultImageAssetPath;
+  bool previewNotDownloadedVideos;
   bool isVisible;
   bool openDetailPage;
   // if width not set, set to full width
@@ -23,6 +24,7 @@ class VideoPreviewAdapter extends StatefulWidget {
     // always hand over video. Download section needs to convert to video.
     // Needs to made uniform to be easier
     this.video,
+    this.previewNotDownloadedVideos,
     this.isVisible,
     this.openDetailPage, {
     this.defaultImageAssetPath,
@@ -39,10 +41,6 @@ class _VideoPreviewAdapterState extends State<VideoPreviewAdapter> {
   VideoEntity videoEntity;
   VideoProgressEntity videoProgressEntity;
   AppSharedState appWideState;
-  // Is used to determine whether to generate a preview or not
-  // Updated as soon as the database manager determined that the video has been downloaded
-  // this is to avoid to always request a preview from a web uri
-  bool alreadyCheckedForVideoEntity = false;
   bool isCurrentlyDownloading = false;
 
   @override
@@ -57,8 +55,15 @@ class _VideoPreviewAdapterState extends State<VideoPreviewAdapter> {
     if (appWideState.videoListState != null &&
         appWideState.videoListState.previewImages
             .containsKey(widget.video.id)) {
-      widget.logger.fine("Getting preview image from memory");
+      widget.logger
+          .fine("Getting preview image from memory for: " + widget.video.title);
       previewImage = appWideState.videoListState.previewImages[widget.video.id];
+    }
+
+    if (previewImage != null) {
+      widget.logger.info("Preview for video is set: " + widget.video.title);
+    } else {
+      widget.logger.info("Preview for video is NOT set: " + widget.video.title);
     }
 
     // check if video is currently downloading
@@ -76,42 +81,21 @@ class _VideoPreviewAdapterState extends State<VideoPreviewAdapter> {
       }
     });
 
-    // check if the video is downloaded
-    if (!alreadyCheckedForVideoEntity) {
-      appWideState.appState.databaseManager
-          .getDownloadedVideo(widget.video.id)
-          .then((entity) {
-        alreadyCheckedForVideoEntity = true;
-        if (entity != null) {
-          widget.logger.info("Video is downloaded:" + entity.title);
-          videoEntity = entity;
-        }
-        if (mounted) {
-          setState(() {});
-        }
-      });
-    }
-
-    // request preview (wait until checked if video is already downloaded)
-    if (alreadyCheckedForVideoEntity && previewImage == null) {
-      if (videoEntity == null && widget.video == null) {
-        return new Container();
-      }
-
-      String url =
-          VideoUtil.getVideoPath(appWideState, videoEntity, widget.video);
-
+    if (previewImage == null) {
       appWideState.appState.videoPreviewManager
-          .startPreviewGeneration(widget.video.id, widget.video.title, url)
-          .then((Image image) {
-        if (image == null) {
+          .getImagePreview(widget.video.id)
+          .then((image) {
+        if (image != null) {
+          widget.logger
+              .info("Thumbnail found  for video: " + widget.video.title);
+          previewImage = image;
+          if (mounted) {
+            setState(() {});
+          }
           return;
         }
-        widget.logger.info("Preview received for video: " + widget.video.title);
-        previewImage = image;
-        if (mounted) {
-          setState(() {});
-        }
+        // request preview
+        requestPreview(context);
       });
     }
 
@@ -129,7 +113,6 @@ class _VideoPreviewAdapterState extends State<VideoPreviewAdapter> {
             widget.video,
             isCurrentlyDownloading,
             widget.openDetailPage,
-            entity: videoEntity != null ? videoEntity : null,
             previewImage: previewImage,
             defaultImageAssetPath: widget.defaultImageAssetPath,
             size: widget.size,
@@ -138,5 +121,44 @@ class _VideoPreviewAdapterState extends State<VideoPreviewAdapter> {
         )
       ],
     );
+  }
+
+  void requestPreview(BuildContext context) {
+    appWideState.appState.databaseManager
+        .getDownloadedVideo(widget.video.id)
+        .then((entity) {
+      if (entity == null && !widget.previewNotDownloadedVideos) {
+        return;
+      }
+      requestThumbnailPicture(context, entity, widget.video);
+    });
+  }
+
+  void requestThumbnailPicture(
+      BuildContext context, VideoEntity entity, Video video) {
+    String url = VideoUtil.getVideoPath(appWideState, entity, video);
+
+    appWideState.appState.videoPreviewManager.startPreviewGeneration(
+        context,
+        widget.video.id,
+        widget.video.title,
+        url,
+        triggerStateReloadOnPreviewReceived);
+  }
+
+  void triggerStateReloadOnPreviewReceived(String filepath) {
+    if (filepath == null) {
+      return;
+    }
+    widget.logger.info("Preview received for video: " + widget.video.title);
+    // get preview from file
+    appWideState.appState.videoPreviewManager
+        .getImagePreview(widget.video.id)
+        .then((image) {
+      previewImage = image;
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 }

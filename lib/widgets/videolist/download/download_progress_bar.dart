@@ -5,17 +5,23 @@ import 'package:logging/logging.dart';
 import 'DownloadController.dart';
 import 'DownloadValue.dart';
 
+typedef void TriggerParentStateReload();
+
 class DownloadProgressBar extends StatefulWidget {
   final Logger logger = new Logger('DownloadProgressBar');
   int downloadManagerIdentifier = 1;
   String videoId;
   String videoTitle;
   bool isOnDetailScreen;
-
   DownloadManager downloadManager;
 
+  // this is an optional function that is called by the progress bar
+  // indicating that a download has complete. This is a workaround so that the parent
+  // widget does not have to subscribe video downloads separately
+  TriggerParentStateReload triggerParentStateReload;
+
   DownloadProgressBar(this.videoId, this.videoTitle, this.downloadManager,
-      this.isOnDetailScreen);
+      this.isOnDetailScreen, this.triggerParentStateReload);
 
   @override
   _DownloadProgressBarState createState() => _DownloadProgressBarState();
@@ -108,6 +114,14 @@ class _DownloadProgressBarState extends State<DownloadProgressBar> {
     _latestDownloadValue = downloadController.value;
     widget.logger.info(
         "DownloadProgressBar status " + _latestDownloadValue.status.toString());
+
+    if (widget.triggerParentStateReload != null &&
+        _latestDownloadValue.isComplete) {
+      widget.logger.info("trigger parent state reload");
+      widget.triggerParentStateReload();
+      return;
+    }
+
     if (mounted) {
       setState(() {});
     }

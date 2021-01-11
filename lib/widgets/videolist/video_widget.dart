@@ -18,7 +18,6 @@ import 'channel_thumbnail.dart';
 class VideoWidget extends StatefulWidget {
   final Logger logger = new Logger('VideoWidget');
   AppSharedState appWideState;
-  VideoEntity entity;
   Video video;
   String mimeType;
   String defaultImageAssetPath;
@@ -35,7 +34,6 @@ class VideoWidget extends StatefulWidget {
     this.isDownloading,
     this.openDetailPage, {
     this.previewImage,
-    this.entity,
     this.mimeType,
     this.defaultImageAssetPath,
     this.size,
@@ -49,6 +47,7 @@ class VideoWidget extends StatefulWidget {
 class VideoWidgetState extends State<VideoWidget> {
   String heroUuid;
   VideoProgressEntity videoProgressEntity;
+  VideoEntity entity;
 
   @override
   void dispose() {
@@ -59,6 +58,7 @@ class VideoWidgetState extends State<VideoWidget> {
   void initState() {
     heroUuid = new Uuid().v1().toString();
     checkPlaybackProgress();
+    checkIfAlreadyDownloaded();
   }
 
   @override
@@ -72,10 +72,12 @@ class VideoWidgetState extends State<VideoWidget> {
         widget.previewImage, totalWidth, widget.presetAspectRatio);
 
     Widget downloadProgressBar = new DownloadProgressBar(
-        widget.video.id,
-        widget.video.title,
-        widget.appWideState.appState.downloadManager,
-        false);
+      widget.video.id,
+      widget.video.title,
+      widget.appWideState.appState.downloadManager,
+      false,
+      checkIfAlreadyDownloaded,
+    );
 
     Image placeholderImage = new Image.asset(
         'assets/img/' + widget.defaultImageAssetPath,
@@ -86,8 +88,10 @@ class VideoWidgetState extends State<VideoWidget> {
 
     Hero previewImage;
     if (widget.previewImage != null) {
+      widget.logger.fine("Showing preview image for " + widget.video.title);
       previewImage = Hero(tag: heroUuid, child: widget.previewImage);
     } else {
+      widget.logger.fine("Showing placeholder for " + widget.video.title);
       previewImage = Hero(tag: heroUuid, child: placeholderImage);
     }
 
@@ -152,9 +156,9 @@ class VideoWidgetState extends State<VideoWidget> {
                           ? widget.previewImage
                           : placeholderImage,
                       widget.video,
-                      widget.entity,
+                      entity,
                       widget.isDownloading,
-                      widget.entity != null,
+                      entity != null,
                       heroUuid,
                     );
                   },
@@ -162,12 +166,14 @@ class VideoWidgetState extends State<VideoWidget> {
         } else {
           // play video
           if (mounted) {
-            Util.playVideoHandler(context, widget.appWideState, widget.entity,
+            Util.playVideoHandler(context, widget.appWideState, entity,
                     widget.video, videoProgressEntity)
                 .then((value) {
               // setting state after the video player popped the Navigator context
               // this reloads the video progress entity to show the playback progress
               checkPlaybackProgress();
+              // also check if video is downloaded in the meantime
+              checkIfAlreadyDownloaded();
             });
           }
         }
@@ -212,21 +218,26 @@ class VideoWidgetState extends State<VideoWidget> {
                   playbackProgress.progress, int.tryParse(duration), false)
               : new Container(),
           getVideoMetaInformationListTile(
-              context, duration, title, topic, assetPath),
+              context, duration, title, topic, assetPath, entity != null),
         ],
       ),
     );
   }
 
-  ListTile getVideoMetaInformationListTile(BuildContext context,
-      String duration, String title, String topic, String assetPath) {
+  ListTile getVideoMetaInformationListTile(
+      BuildContext context,
+      String duration,
+      String title,
+      String topic,
+      String assetPath,
+      bool isDownloaded) {
     return new ListTile(
       trailing: new Text(
         duration != null ? Calculator.calculateDuration(duration) : "",
         style: videoMetadataTextStyle.copyWith(color: Colors.white),
       ),
       leading: assetPath.isNotEmpty
-          ? new ChannelThumbnail(assetPath, true)
+          ? new ChannelThumbnail(assetPath, isDownloaded)
           : new Container(),
       title: new Text(
         title,
@@ -244,8 +255,19 @@ class VideoWidgetState extends State<VideoWidget> {
     widget.appWideState.appState.databaseManager
         .getVideoProgressEntity(widget.video.id)
         .then((entity) {
-      widget.logger.info("Video has playback progress: " + widget.video.title);
+      widget.logger.fine("Video has playback progress: " + widget.video.title);
       videoProgressEntity = entity;
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  void checkIfAlreadyDownloaded() async {
+    widget.appWideState.appState.downloadManager
+        .isAlreadyDownloaded(widget.video.id)
+        .then((entity) {
+      this.entity = entity;
       if (mounted) {
         setState(() {});
       }

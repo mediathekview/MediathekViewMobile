@@ -146,7 +146,7 @@ class _FlutterVideoPlayerState extends State<FlutterVideoPlayer> {
         TargetPlatform.android) {
       path = widget.videoEntity.filePath + "/" + widget.videoEntity.fileName;
     } else {
-      path = widget.appSharedState.appState.iOsDocumentsDirectory.path +
+      path = widget.appSharedState.appState.localDirectory.path +
           "/MediathekView" +
           "/" +
           widget.videoEntity.fileName;

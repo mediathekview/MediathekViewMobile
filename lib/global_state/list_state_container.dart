@@ -37,7 +37,7 @@ class AppState {
       this.ratingCache);
 
   TargetPlatform targetPlatform;
-  Directory iOsDocumentsDirectory;
+  Directory localDirectory;
   DownloadManager downloadManager;
   DatabaseManager databaseManager;
   VideoPreviewManager videoPreviewManager;
@@ -77,8 +77,8 @@ class AppState {
     bestVideosAllTime = cache;
   }
 
-  void setIOsDirectory(Directory dir) {
-    iOsDocumentsDirectory = dir;
+  void setDirectory(Directory dir) {
+    localDirectory = dir;
   }
 }
 
@@ -164,10 +164,13 @@ class AppSharedState extends State<AppSharedStateContainer> {
 
         appState.setHasFilesystemPermission(hasPermission);
 
+        Directory directory;
         if (platform == TargetPlatform.iOS) {
-          Directory directory = await getApplicationDocumentsDirectory();
-          appState.setIOsDirectory(directory);
+          directory = await getApplicationDocumentsDirectory();
+        } else {
+          directory = await getExternalStorageDirectory();
         }
+        appState.setDirectory(directory);
       });
 
       initializeDatabase().then((init) {

@@ -10,7 +10,7 @@ class VideoUtil {
       if (appWideState.appState.targetPlatform == TargetPlatform.android) {
         return videoEntity.filePath + "/" + videoEntity.fileName;
       } else {
-        return appWideState.appState.iOsDocumentsDirectory.path +
+        return appWideState.appState.localDirectory.path +
             "/MediathekView" +
             "/" +
             videoEntity.fileName;

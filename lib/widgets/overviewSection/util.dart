@@ -70,14 +70,14 @@ class Util {
           width: width,
           child: Stack(
             children: <Widget>[
-              new VideoPreviewAdapter(
+              /*  new VideoPreviewAdapter(
                 Video.fromMap(videoRating.toMap()),
                 true,
                 false,
                 defaultImageAssetPath: channelPictureImagePath,
                 presetAspectRatio: 16 / 9,
                 //size: new Size.fromWidth(1000),
-              ),
+              ), */
               new Positioned(
                 bottom: 0.0,
                 //left: 70.0,
@@ -116,6 +116,9 @@ class Util {
             children: <Widget>[
               new VideoPreviewAdapter(
                 Video.fromMap(playbackProgress.toMap()),
+                // always show previews for already watched videos
+                // should be already generated
+                true,
                 true,
                 false,
                 defaultImageAssetPath: channelPictureImagePath,

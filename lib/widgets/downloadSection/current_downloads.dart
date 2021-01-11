@@ -64,7 +64,7 @@ class _CurrentDownloadsState extends State<CurrentDownloads> {
     }
 
     var videoListItemBuilder = new VideoListItemBuilder.name(
-        currentDownloads.toList(), true, true,
+        currentDownloads.toList(), true, true, true,
         onRemoveVideo: cancelCurrentDownload);
 
     int crossAxisCount = CrossAxisCount.getCrossAxisCount(context);

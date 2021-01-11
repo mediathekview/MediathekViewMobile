@@ -10,7 +10,6 @@ import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:logging/logging.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:quiver/collection.dart';
 
 typedef void onFailed(String videoId);
@@ -159,7 +158,7 @@ class DownloadManager {
   void handleCompletedDownload(String taskId, VideoEntity entity) {
     FlutterDownloader.loadTasksWithRawQuery(
             query: SQL_GET_SINGEL_TASK + "'" + taskId + "'")
-        .then((List<DownloadTask> list) {
+        .then((List<DownloadTask> list) async {
       if (list.length == 0) {
         return;
       }
@@ -170,16 +169,19 @@ class DownloadManager {
       entity.filePath = task.savedDir;
       entity.fileName = task.filename;
       entity.timestamp_video_saved = new DateTime.now().millisecondsSinceEpoch;
-      databaseManager.updateDownloadingVideoEntity(entity).then((rowsUpdated) {
+      await databaseManager
+          .updateDownloadingVideoEntity(entity)
+          .then((rowsUpdated) {
         logger.fine("Updated " + rowsUpdated.toString() + " relations.");
       });
       //also update cache
       cache.update(entity.id, (oldEntity) => entity);
-    });
 
-    Iterable<MapEntry<int, onComplete>> entries =
-        onCompleteListeners[entity.id];
-    entries.forEach((entry) => {entry.value(entity.id)});
+      // then notify listeners
+      Iterable<MapEntry<int, onComplete>> entries =
+          onCompleteListeners[entity.id];
+      entries.forEach((entry) => {entry.value(entity.id)});
+    });
   }
 
   void handleCanceledDownload(VideoEntity entity) {
@@ -334,7 +336,7 @@ class DownloadManager {
 
     Uri filepath;
     if (appWideState.appState.targetPlatform == TargetPlatform.iOS) {
-      filepath = new Uri.file(appWideState.appState.iOsDocumentsDirectory.path +
+      filepath = new Uri.file(appWideState.appState.localDirectory.path +
           "/MediathekView" +
           "/" +
           entity.fileName);
@@ -510,14 +512,7 @@ class DownloadManager {
   Future<Video> downloadFile(Video video) async {
     Uri videoUrl = Uri.parse(video.url_video);
 
-    Directory directory;
-    var targetPlatform = appWideState.appState.targetPlatform;
-    if (targetPlatform == TargetPlatform.android) {
-      directory = await getExternalStorageDirectory();
-    } else if (targetPlatform == TargetPlatform.iOS) {
-      //TODO exclude files in /Documents from backup
-      directory = appWideState.appState.iOsDocumentsDirectory;
-    }
+    Directory directory = appWideState.appState.localDirectory;
 
     logger.info("External Storage: " + directory.path);
     Directory storageDirectory = Directory(directory.path + "/MediathekView");

@@ -17,6 +17,7 @@ class DownloadValue {
   bool get isDownloading => status == DownloadTaskStatus.running;
   bool get isPaused => status == DownloadTaskStatus.paused;
   bool get isEnqueued => status == DownloadTaskStatus.enqueued;
+  bool get isComplete => status == DownloadTaskStatus.complete;
 
   DownloadValue copyWith({
     String videoId,

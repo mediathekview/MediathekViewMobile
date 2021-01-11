@@ -20,8 +20,8 @@ import 'package:flutter_ws/widgets/bars/playback_progress_bar.dart';
 import 'package:flutter_ws/widgets/videolist/channel_thumbnail.dart';
 import 'package:flutter_ws/widgets/videolist/rating_bar.dart';
 import 'package:flutter_ws/widgets/videolist/star_rating.dart';
+import 'package:flutter_ws/widgets/videolist/util/util.dart';
 import 'package:flutter_ws/widgets/videolist/video_description.dart';
-import 'package:flutter_ws/widgets/videolist/video_preview_adapter.dart';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
@@ -149,8 +149,9 @@ class _ListCardState extends State<ListCard> {
               padding: new EdgeInsets.only(top: 12.0, bottom: 12.0),
               child: Stack(
                 children: <Widget>[
-                  new VideoPreviewAdapter(widget.video, true, true,
+                  /*new VideoPreviewAdapter(widget.video, true, true,
                       defaultImageAssetPath: widget.channelPictureImagePath),
+                 */
                   new Positioned(
                     bottom: 0.0,
                     left: 0.0,

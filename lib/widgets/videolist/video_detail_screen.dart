@@ -59,8 +59,12 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
 
     GestureDetector image = getImageSurface(totalImageWidth, height);
 
-    Widget downloadProgressBar = new DownloadProgressBar(widget.video.id,
-        widget.video.title, widget.appWideState.appState.downloadManager, true);
+    Widget downloadProgressBar = new DownloadProgressBar(
+        widget.video.id,
+        widget.video.title,
+        widget.appWideState.appState.downloadManager,
+        true,
+        null);
 
     Widget layout;
     if (isTablet && orientation == Orientation.landscape) {
@@ -385,7 +389,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
     widget.appWideState.appState.databaseManager
         .getVideoProgressEntity(widget.video.id)
         .then((entity) {
-      widget.logger.info("Video has playback progress: " + widget.video.title);
+      widget.logger.fine("Video has playback progress: " + widget.video.title);
       videoProgressEntity = entity;
       if (mounted) {
         setState(() {});
