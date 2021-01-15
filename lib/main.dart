@@ -1,10 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_ws/enum/ws_event_types.dart';
-import 'package:flutter_ws/exceptions/failed_to_contact_websocket.dart';
+import 'package:flutter_ws/api/api_query.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/indexing_info.dart';
 import 'package:flutter_ws/model/query_result.dart';
@@ -14,10 +14,7 @@ import 'package:flutter_ws/section/download_section.dart';
 import 'package:flutter_ws/section/overview_section.dart';
 import 'package:flutter_ws/util/json_parser.dart';
 import 'package:flutter_ws/util/text_styles.dart';
-import 'package:flutter_ws/websocket/websocket.dart';
-import 'package:flutter_ws/websocket/websocket_manager.dart';
 import 'package:flutter_ws/widgets/bars/gradient_app_bar.dart';
-import 'package:flutter_ws/widgets/bars/indexing_bar.dart';
 import 'package:flutter_ws/widgets/bars/status_bar.dart';
 import 'package:flutter_ws/widgets/filterMenu/filter_menu.dart';
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
@@ -30,7 +27,21 @@ import 'package:uuid/uuid.dart';
 
 import 'global_state/appBar_state_container.dart';
 
-void main() => runApp(new AppSharedStateContainer(child: new MyApp()));
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
+
+void main() {
+  HttpOverrides.global = new MyHttpOverrides();
+  runApp(new AppSharedStateContainer(child: new MyApp()));
+}
+
+//void main() => runApp(new AppSharedStateContainer(child: new MyApp()));
 
 class MyApp extends StatelessWidget {
   final TextEditingController textEditingController =
@@ -112,16 +123,12 @@ class HomePageState extends State<MyHomePage>
   bool filterMenuOpen;
   bool filterMenuChannelFilterIsOpen;
 
-  //Websocket
-  static WebsocketController websocketController;
-  static Timer socketHealthTimer;
-  bool websocketInitError;
+  // API
+  static APIQuery api;
   IndexingInfo indexingInfo;
-  bool indexingError;
   bool refreshOperationRunning;
+  bool apiError;
   Completer<Null> refreshCompleter;
-  static const SHOW_CONNECTION_ISSUES_THRESHOLD = 3;
-  int consecutiveWebsocketUnhealthyChecks;
 
   //Keys
   Key videoListKey;
@@ -162,10 +169,7 @@ class HomePageState extends State<MyHomePage>
 
   @override
   void dispose() {
-    logger.fine("Disposing Home Page & shutting down websocket connection");
-
-    websocketController.stopPing();
-    websocketController.closeWebsocketChannel();
+    logger.fine("Disposing Home Page");
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -176,16 +180,14 @@ class HomePageState extends State<MyHomePage>
     searchFilters = new Map();
     filterMenuOpen = false;
     filterMenuChannelFilterIsOpen = false;
-    websocketInitError = false;
+    apiError = false;
     indexingInfo = null;
-    indexingError = false;
     lastAmountOfVideosRetrieved = -1;
     refreshOperationRunning = false;
     scrolledToEndOfList = false;
     currentUserQueryInput = "";
     var inputListener = () => handleSearchInput();
     searchFieldController.addListener(inputListener);
-    consecutiveWebsocketUnhealthyChecks = 0;
 
     //register Observer to react to android/ios lifecycle events
     WidgetsBinding.instance.addObserver(this);
@@ -203,20 +205,10 @@ class HomePageState extends State<MyHomePage>
     statusBarKey = new Key(uuid.v1());
     indexingBarKey = new Key(uuid.v1());
 
-    websocketController = new WebsocketController(
-        onDataReceived: onWebsocketData,
-        onDone: onWebsocketDone,
-        onError: onWebsocketError,
-        onWebsocketChannelOpenedSuccessfully:
-            onWebsocketChannelOpenedSuccessfully);
-    websocketController.initializeWebsocket().then((Void) {
-      currentUserQueryInput = searchFieldController.text;
+    api = new APIQuery(
+        onDataReceived: onSearchResponse, onError: onAPISearchError);
+    api.search(currentUserQueryInput, searchFilters);
 
-      logger.fine("Firing initial query on home page init");
-      websocketController.queryEntries(currentUserQueryInput, searchFilters);
-    });
-
-    startSocketHealthTimer();
     checkForFirstStart();
   }
 
@@ -344,22 +336,16 @@ class HomePageState extends State<MyHomePage>
                   videos: videos,
                   amountOfVideosFetched: lastAmountOfVideosRetrieved,
                   queryEntries: onQueryEntries,
-                  currentQuerySkip: websocketController.getCurrentSkip(),
+                  currentQuerySkip: api.getCurrentSkip(),
                   totalResultSize: totalQueryResults,
                   mixin: this),
               new SliverToBoxAdapter(
                 child: new StatusBar(
                     key: statusBarKey,
-                    websocketInitError: websocketInitError,
+                    apiError: apiError,
                     videoListIsEmpty: videos.isEmpty,
                     lastAmountOfVideosRetrieved: lastAmountOfVideosRetrieved,
                     firstAppStartup: lastAmountOfVideosRetrieved < 0),
-              ),
-              new SliverToBoxAdapter(
-                child: new IndexingBar(
-                    key: indexingBarKey,
-                    indexingError: indexingError,
-                    info: indexingInfo),
               ),
             ],
           ),
@@ -404,119 +390,95 @@ class HomePageState extends State<MyHomePage>
   }
 
   // ----------CALLBACKS: WebsocketController----------------
-  onWebsocketChannelOpenedSuccessfully() {
-    if (this.websocketInitError) {
+
+  void onAPISearchError(Error error) {
+    logger.info("Received an error from thr API." + error.toString());
+
+    // if http 503 -> indexing
+    // 500 -> internal error
+
+    // if 400 -> invalid query (could not parse JSON)
+
+    // showStatusBar();
+
+    /*
+    IndexingInfo indexingInfo = JSONParser.parseIndexingEvent(data);
+
+    if (!indexingInfo.done && !indexingInfo.error) {
       setState(() {
-        this.websocketInitError = false;
+        this.indexingError = false;
+        this.indexingInfo = indexingInfo;
+      });
+    } else if (indexingInfo.error) {
+      setState(() {
+        this.indexingError = true;
+      });
+    } else {
+      setState(() {
+        this.indexingError = false;
+        this.indexingInfo = null;
       });
     }
+    */
   }
 
-  onWebsocketDone() {
-    logger.info("Received a Done signal from the Websocket");
-  }
-
-  void onWebsocketError(FailedToContactWebsocketError error) {
-    logger.info("Received a ERROR from the Websocket.", {error: error});
-    showStatusBar();
-  }
-
-  void showStatusBar() {
-    logger.fine("Ws Status: Errors retrieved: " +
-        consecutiveWebsocketUnhealthyChecks.toString());
-    consecutiveWebsocketUnhealthyChecks++;
-    if (this.websocketInitError == false &&
-        consecutiveWebsocketUnhealthyChecks ==
-            SHOW_CONNECTION_ISSUES_THRESHOLD) {
-      this.websocketInitError = true;
-      if (mounted) setState(() {});
-    }
-  }
-
-  void onWebsocketData(String data) {
+  void onSearchResponse(String data) {
     if (data == null) {
       logger.fine("Data received is null");
       setState(() {});
       return;
     }
 
-    //determine event type
-    String socketIOEventType =
-        WebsocketHandler.parseSocketIOConnectionType(data);
+    if (refreshOperationRunning) {
+      refreshOperationRunning = false;
+      refreshCompleter.complete();
+      videos.clear();
+      logger.fine("Refresh operation finished.");
+      HapticFeedback.lightImpact();
+    }
 
-    if (socketIOEventType != WebsocketConnectionTypes.UNKNOWN)
-      logger.fine("Websocket: received response type: " + socketIOEventType);
+    QueryResult queryResult = JSONParser.parseQueryResult(data);
 
-    if (socketIOEventType == WebsocketConnectionTypes.RESULT) {
-      if (refreshOperationRunning) {
-        refreshOperationRunning = false;
-        refreshCompleter.complete();
-        videos.clear();
-        logger.fine("Refresh operation finished.");
-        HapticFeedback.lightImpact();
+    List<Video> newVideosFromQuery = queryResult.videos;
+    totalQueryResults = queryResult.queryInfo.totalResults;
+    lastAmountOfVideosRetrieved = newVideosFromQuery.length;
+    logger.info("received videos: " + lastAmountOfVideosRetrieved.toString());
+
+    int videoListLengthOld = videos.length;
+    videos = VideoListUtil.sanitizeVideos(newVideosFromQuery, videos);
+    int newVideosCount = videos.length - videoListLengthOld;
+    logger.info("received new videos: " + newVideosCount.toString());
+
+    if (newVideosCount == 0 && scrolledToEndOfList == false) {
+      logger.info("Scrolled to end of list & mounted: " + mounted.toString());
+      scrolledToEndOfList = true;
+      if (mounted) {
+        setState(() {});
       }
-
-      QueryResult queryResult = JSONParser.parseQueryResult(data);
-
-      List<Video> newVideosFromQuery = queryResult.videos;
-      totalQueryResults = queryResult.queryInfo.totalResults;
-      lastAmountOfVideosRetrieved = newVideosFromQuery.length;
-
-      int videoListLengthOld = videos.length;
-      videos = VideoListUtil.sanitizeVideos(newVideosFromQuery, videos);
+      return;
+    } else if (newVideosCount != 0) {
+      // client side result filtering
+      if (searchFilters["Länge"] != null) {
+        videos =
+            VideoListUtil.applyLengthFilter(videos, searchFilters["Länge"]);
+      }
       int newVideosCount = videos.length - videoListLengthOld;
 
-      if (newVideosCount == 0 && scrolledToEndOfList == false) {
-        logger.fine("Scrolled to end of list & mounted: " + mounted.toString());
-        scrolledToEndOfList = true;
-        if (mounted) {
-          setState(() {});
-        }
-        return;
-      } else if (newVideosCount != 0) {
-        // client side result filtering
-        if (searchFilters["Länge"] != null) {
-          videos =
-              VideoListUtil.applyLengthFilter(videos, searchFilters["Länge"]);
-        }
-        int newVideosCount = videos.length - videoListLengthOld;
+      logger.info('Received ' +
+          newVideosCount.toString() +
+          ' new video(s). Amount of videos in list ' +
+          videos.length.toString());
 
-        logger.info('Received ' +
-            newVideosCount.toString() +
-            ' new video(s). Amount of videos in list ' +
-            videos.length.toString());
-
-        lastAmountOfVideosRetrieved = newVideosCount;
-        scrolledToEndOfList == false;
-        if (mounted) setState(() {});
-      }
-    } else if (socketIOEventType == WebsocketConnectionTypes.INDEX_STATE) {
-      IndexingInfo indexingInfo = JSONParser.parseIndexingEvent(data);
-
-      if (!indexingInfo.done && !indexingInfo.error) {
-        setState(() {
-          this.indexingError = false;
-          this.indexingInfo = indexingInfo;
-        });
-      } else if (indexingInfo.error) {
-        setState(() {
-          this.indexingError = true;
-        });
-      } else {
-        setState(() {
-          this.indexingError = false;
-          this.indexingInfo = null;
-        });
-      }
-    } else {
-      logger.fine("Received pong");
+      lastAmountOfVideosRetrieved = newVideosCount;
+      scrolledToEndOfList == false;
+      if (mounted) setState(() {});
     }
   }
 
   // ----------CALLBACKS: From List View ----------------
 
   onQueryEntries() {
-    websocketController.queryEntries(currentUserQueryInput, searchFilters);
+    api.search(currentUserQueryInput, searchFilters);
   }
 
   // ---------- SEARCH Input ----------------
@@ -534,13 +496,13 @@ class HomePageState extends State<MyHomePage>
   void _createQuery() {
     currentUserQueryInput = searchFieldController.text;
 
-    websocketController.queryEntries(currentUserQueryInput, searchFilters);
+    api.search(currentUserQueryInput, searchFilters);
   }
 
   void _createQueryWithClearedVideoList() {
     logger.fine("Clearing video list");
     videos.clear();
-    websocketController.resetSkip();
+    api.resetSkip();
 
     if (mounted) setState(() {});
     _createQuery();
@@ -589,17 +551,6 @@ class HomePageState extends State<MyHomePage>
   }
 
   // ----------LIFECYCLE----------------
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    logger.fine("Observed Lifecycle change " + state.toString());
-    if (state == AppLifecycleState.paused) {
-      //TODO maybe dispose Tab controller here
-      websocketController.stopPing();
-      websocketController.closeWebsocketChannel();
-    } else if (state == AppLifecycleState.resumed) {
-      websocketController.initializeWebsocket();
-    }
-  }
 
   checkForFirstStart() async {
     prefs = await SharedPreferences.getInstance();
@@ -608,75 +559,6 @@ class HomePageState extends State<MyHomePage>
       print("First start");
       setState(() {
         isFirstStart = true;
-      });
-    }
-  }
-
-  void startSocketHealthTimer() {
-    if (socketHealthTimer == null || !socketHealthTimer.isActive) {
-      Duration duration = new Duration(milliseconds: 5000);
-      Timer.periodic(
-        duration,
-        (Timer t) {
-          ConnectionState connectionState = websocketController.connectionState;
-
-          if (connectionState == ConnectionState.active) {
-            logger.fine("Ws connection is fine");
-            consecutiveWebsocketUnhealthyChecks = 0;
-            if (websocketInitError) {
-              websocketInitError = false;
-              if (mounted) setState(() {});
-            }
-          } else if (connectionState == ConnectionState.done ||
-              connectionState == ConnectionState.none) {
-            showStatusBar();
-
-            logger.fine("Ws connection is " +
-                connectionState.toString() +
-                " and mounted: " +
-                mounted.toString());
-
-            if (mounted)
-              websocketController
-                  .initializeWebsocket()
-                  .then((initializedSuccessfully) {
-                if (initializedSuccessfully) {
-                  consecutiveWebsocketUnhealthyChecks = 0;
-                  logger.fine("WS connection stable again");
-                  if (videos.isEmpty) {
-                    _createQuery();
-                  }
-                } else {
-                  logger.info("WS initialization failed");
-                }
-              });
-          }
-        },
-      );
-    }
-  }
-
-  mockIndexing() {
-    if (mockTimer == null || !mockTimer.isActive) {
-      var one = new Duration(seconds: 1);
-      mockTimer = new Timer.periodic(one, (Timer t) {
-        logger.fine("increase");
-        if (indexingInfo == null) {
-          indexingInfo = new IndexingInfo();
-          indexingInfo.indexerProgress = 0.0;
-        }
-        if (indexingInfo.indexerProgress > 1) {
-          setState(() {
-            //Setting indexingInfo == null to ensure removal of progress indicator
-            this.indexingError = false;
-            this.indexingInfo = null;
-          });
-          mockTimer.cancel();
-          return;
-        }
-        setState(() {
-          indexingInfo.indexerProgress = indexingInfo.indexerProgress + 0.05;
-        });
       });
     }
   }

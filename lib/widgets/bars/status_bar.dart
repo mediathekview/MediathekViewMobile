@@ -7,13 +7,13 @@ import 'package:meta/meta.dart';
 class StatusBar extends StatelessWidget {
   final Logger logger = new Logger('VideoWidget');
   final bool videoListIsEmpty;
-  final bool websocketInitError;
+  final bool apiError;
   final bool firstAppStartup;
   final int lastAmountOfVideosRetrieved;
 
   StatusBar(
       {Key key,
-      @required this.websocketInitError,
+      @required this.apiError,
       @required this.firstAppStartup,
       @required this.videoListIsEmpty,
       @required this.lastAmountOfVideosRetrieved})
@@ -23,14 +23,14 @@ class StatusBar extends StatelessWidget {
   Widget build(BuildContext context) {
     logger.fine("Rendering Status bar. videoListIsEmpty: " +
         videoListIsEmpty.toString() +
-        " websocketInitError: " +
-        websocketInitError.toString() +
+        " api error: " +
+        apiError.toString() +
         " firstAppStartup: " +
         firstAppStartup.toString() +
         " lastAmountOfVideosRetrieved: " +
         lastAmountOfVideosRetrieved.toString());
 
-    if (websocketInitError) {
+    if (apiError) {
       return new CircularProgressWithText(
         new Text("Keine Verbindung", style: connectionLostTextStyle),
         new Color(0xffffbf00),

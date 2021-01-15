@@ -9,16 +9,8 @@ import 'package:flutter_ws/widgets/videolist/loading_list_view.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 
-typedef void ListTileTapped(String id);
-
-class ScrollPositionHolder {
-  double value = 0.0;
-}
-
 class VideoListView extends StatefulWidget {
   final Logger logger = new Logger('VideoListView');
-  final int pageThreshold = 25;
-  // final ScrollPositionHolder offset = new ScrollPositionHolder();
 
   List<Video> videos;
   var queryEntries;
@@ -71,7 +63,11 @@ class _VideoListViewState extends State<VideoListView> {
     bool previewNotDownloadedVideos = !DeviceInformation.isTablet(context);
 
     var videoListItemBuilder = new VideoListItemBuilder.name(
-        widget.videos, previewNotDownloadedVideos, false, true);
+        widget.videos, previewNotDownloadedVideos, false, true,
+        queryEntries: widget.queryEntries,
+        amountOfVideosFetched: widget.amountOfVideosFetched,
+        totalResultSize: widget.totalResultSize,
+        currentQuerySkip: widget.currentQuerySkip);
 
     int crossAxisCount = CrossAxisCount.getCrossAxisCount(context);
 

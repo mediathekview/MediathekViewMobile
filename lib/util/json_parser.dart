@@ -7,8 +7,7 @@ import 'package:flutter_ws/model/video.dart';
 
 class JSONParser {
   static QueryResult parseQueryResult(String rawData) {
-    String data = JSONParser.trimSocketIoResponseBody(rawData);
-    Map parsedMap = jsonDecode(data);
+    Map parsedMap = jsonDecode(rawData);
 
     var resultUnparsed = parsedMap["result"];
     List<dynamic> unparsedResultList = resultUnparsed["results"];
@@ -25,16 +24,8 @@ class JSONParser {
     return result;
   }
 
-  static String trimSocketIoResponseBody(String rawBody) {
-    int startIndex = rawBody.indexOf('{');
-    int endEindex = rawBody.lastIndexOf('}');
-    String cleanedBody = rawBody.substring(startIndex, endEindex + 1);
-    return cleanedBody;
-  }
-
   static IndexingInfo parseIndexingEvent(String rawData) {
-    String data = trimSocketIoResponseBody(rawData);
-    Map parsedBody = jsonDecode(data);
+    Map parsedBody = jsonDecode(rawData);
     IndexingInfo info = new IndexingInfo.fromJson(parsedBody);
 
     info.parsingProgress = (info.parserProgress * 100).round();
