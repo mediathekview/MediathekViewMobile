@@ -255,9 +255,9 @@ class VideoWidgetState extends State<VideoWidget> {
     widget.appWideState.appState.databaseManager
         .getVideoProgressEntity(widget.video.id)
         .then((entity) {
-      widget.logger.fine("Video has playback progress: " + widget.video.title);
-      videoProgressEntity = entity;
-      if (mounted) {
+      widget.logger.info("Video has playback progress: " + widget.video.title);
+      if (this.videoProgressEntity == null && mounted) {
+        this.videoProgressEntity = entity;
         setState(() {});
       }
     });
@@ -267,8 +267,8 @@ class VideoWidgetState extends State<VideoWidget> {
     widget.appWideState.appState.downloadManager
         .isAlreadyDownloaded(widget.video.id)
         .then((entity) {
-      this.entity = entity;
-      if (mounted) {
+      if (this.entity == null && mounted) {
+        this.entity = entity;
         setState(() {});
       }
     });

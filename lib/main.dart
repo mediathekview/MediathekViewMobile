@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -27,21 +26,7 @@ import 'package:uuid/uuid.dart';
 
 import 'global_state/appBar_state_container.dart';
 
-class MyHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback =
-          (X509Certificate cert, String host, int port) => true;
-  }
-}
-
-void main() {
-  HttpOverrides.global = new MyHttpOverrides();
-  runApp(new AppSharedStateContainer(child: new MyApp()));
-}
-
-//void main() => runApp(new AppSharedStateContainer(child: new MyApp()));
+void main() => runApp(new AppSharedStateContainer(child: new MyApp()));
 
 class MyApp extends StatelessWidget {
   final TextEditingController textEditingController =
@@ -394,32 +379,11 @@ class HomePageState extends State<MyHomePage>
   void onAPISearchError(Error error) {
     logger.info("Received an error from thr API." + error.toString());
 
-    // if http 503 -> indexing
-    // 500 -> internal error
+    // TODO show status bar with error
 
-    // if 400 -> invalid query (could not parse JSON)
-
-    // showStatusBar();
-
-    /*
-    IndexingInfo indexingInfo = JSONParser.parseIndexingEvent(data);
-
-    if (!indexingInfo.done && !indexingInfo.error) {
-      setState(() {
-        this.indexingError = false;
-        this.indexingInfo = indexingInfo;
-      });
-    } else if (indexingInfo.error) {
-      setState(() {
-        this.indexingError = true;
-      });
-    } else {
-      setState(() {
-        this.indexingError = false;
-        this.indexingInfo = null;
-      });
-    }
-    */
+    // http 503 -> indexing
+    // http 500 -> internal error
+    // http 400 -> invalid query
   }
 
   void onSearchResponse(String data) {

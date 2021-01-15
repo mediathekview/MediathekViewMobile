@@ -171,6 +171,17 @@ class AppSharedState extends State<AppSharedStateContainer> {
           directory = await getExternalStorageDirectory();
         }
         appState.setDirectory(directory);
+
+        // create thumbnail directory
+        final Directory thumbnailDirectory =
+            Directory('${directory.path}/MediathekView/thumbnails/');
+
+        if (!await thumbnailDirectory.exists()) {
+          //if folder already exists return path
+          await thumbnailDirectory.create(recursive: true).catchError((error) =>
+              logger.info(
+                  "Failed to create thumbnail directory " + error.toString()));
+        }
       });
 
       initializeDatabase().then((init) {

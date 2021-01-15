@@ -78,7 +78,6 @@ class _VideoListViewState extends State<VideoListView> {
         mainAxisSpacing: 1.0,
         crossAxisSpacing: 5.0,
       ),
-      // padding: const EdgeInsets.all(5.0),
       delegate: SliverChildBuilderDelegate(videoListItemBuilder.itemBuilder,
           childCount: widget.videos.length),
     );

@@ -19,6 +19,7 @@ class VideoPreviewAdapter extends StatefulWidget {
   Size size;
   // force to this specific aspect ratio
   double presetAspectRatio;
+  Image previewImage;
 
   VideoPreviewAdapter(
     // always hand over video. Download section needs to convert to video.
@@ -37,7 +38,6 @@ class VideoPreviewAdapter extends StatefulWidget {
 }
 
 class _VideoPreviewAdapterState extends State<VideoPreviewAdapter> {
-  Image previewImage;
   VideoEntity videoEntity;
   VideoProgressEntity videoProgressEntity;
   AppSharedState appWideState;
@@ -56,11 +56,12 @@ class _VideoPreviewAdapterState extends State<VideoPreviewAdapter> {
         appWideState.videoListState.previewImages
             .containsKey(widget.video.id)) {
       widget.logger
-          .fine("Getting preview image from memory for: " + widget.video.title);
-      previewImage = appWideState.videoListState.previewImages[widget.video.id];
+          .info("Getting preview image from memory for: " + widget.video.title);
+      widget.previewImage =
+          appWideState.videoListState.previewImages[widget.video.id];
     }
 
-    if (previewImage != null) {
+    if (widget.previewImage != null) {
       widget.logger.info("Preview for video is set: " + widget.video.title);
     } else {
       widget.logger.info("Preview for video is NOT set: " + widget.video.title);
@@ -71,7 +72,7 @@ class _VideoPreviewAdapterState extends State<VideoPreviewAdapter> {
         .isCurrentlyDownloading(widget.video.id)
         .then((value) {
       if (value != null) {
-        if (!isCurrentlyDownloading) {
+        if (isCurrentlyDownloading) {
           widget.logger.info("Video is downloading:  " + widget.video.title);
           isCurrentlyDownloading = true;
           if (mounted) {
@@ -81,14 +82,14 @@ class _VideoPreviewAdapterState extends State<VideoPreviewAdapter> {
       }
     });
 
-    if (previewImage == null) {
+    if (widget.previewImage == null) {
       appWideState.appState.videoPreviewManager
           .getImagePreview(widget.video.id)
           .then((image) {
         if (image != null) {
           widget.logger
               .info("Thumbnail found  for video: " + widget.video.title);
-          previewImage = image;
+          widget.previewImage = image;
           if (mounted) {
             setState(() {});
           }
@@ -113,7 +114,7 @@ class _VideoPreviewAdapterState extends State<VideoPreviewAdapter> {
             widget.video,
             isCurrentlyDownloading,
             widget.openDetailPage,
-            previewImage: previewImage,
+            previewImage: widget.previewImage,
             defaultImageAssetPath: widget.defaultImageAssetPath,
             size: widget.size,
             presetAspectRatio: widget.presetAspectRatio,
@@ -155,7 +156,7 @@ class _VideoPreviewAdapterState extends State<VideoPreviewAdapter> {
     appWideState.appState.videoPreviewManager
         .getImagePreview(widget.video.id)
         .then((image) {
-      previewImage = image;
+      widget.previewImage = image;
       if (mounted) {
         setState(() {});
       }
