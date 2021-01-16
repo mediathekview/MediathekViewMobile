@@ -11,7 +11,6 @@ import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/util/show_snackbar.dart';
 import 'package:flutter_ws/video_player/custom_chewie_player.dart';
 import 'package:logging/logging.dart';
-import 'package:open_iconic_flutter/open_iconic_flutter.dart';
 import 'package:video_player/video_player.dart';
 import 'package:wakelock/wakelock.dart';
 
@@ -45,7 +44,7 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
   // needed to be able to show a loading spinner if the the video does not
   // progress over a certain amount of time
   DateTime lastVideoPlayerPositionUpdateTime = new DateTime.now();
-  var LAGGING_THRESHOLD_IN_MILLISECONDS = 100;
+  var LAGGING_THRESHOLD_IN_MILLISECONDS = 1000;
   bool isLagging = false;
 
   // Samsung TV cast
@@ -98,7 +97,9 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
       logger.info("Same position detected with lag: " + lag.toString());
       if (lag > LAGGING_THRESHOLD_IN_MILLISECONDS) {
         isLagging = true;
-        logger.info("Detected lag of > 100 ms - showing loading indicator!");
+        logger.info("Detected lag of > " +
+            LAGGING_THRESHOLD_IN_MILLISECONDS.toString() +
+            " ms - showing loading indicator!");
         if (mounted) {
           setState(() {});
         }
@@ -246,7 +247,7 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
             )
           : Center(
               child: Icon(
-                OpenIconicIcons.ban,
+                Icons.error,
                 color: Colors.white,
                 size: 42,
               ),
@@ -348,7 +349,9 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
     return AnimatedOpacity(
       opacity: (isWaitingUntilTVPlaybackStarts || showLoadingIndicator)
           ? 1.0
-          : _hideStuff ? 0.0 : 1.0,
+          : _hideStuff
+              ? 0.0
+              : 1.0,
       duration: Duration(milliseconds: 300),
       child: playerControlsRow,
     );
@@ -366,8 +369,8 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
         (_latestFlutterPlayerValue != null &&
                     _latestFlutterPlayerValue.isPlaying ||
                 tvPlayerController.value.isPlaying)
-            ? OpenIconicIcons.mediaPause
-            : OpenIconicIcons.mediaPlay,
+            ? Icons.pause_circle_filled_outlined
+            : Icons.play_circle_fill_outlined,
         color: Colors.white,
         size: height,
       );
@@ -667,7 +670,7 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
       onTap: _skipBack,
       child: Container(
         child: Icon(
-          OpenIconicIcons.mediaSkipBackward,
+          Icons.skip_previous_outlined,
           color: Colors.white,
           size: height,
         ),
@@ -682,7 +685,7 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
         height: height,
         color: Colors.transparent,
         child: Icon(
-          OpenIconicIcons.mediaSkipForward,
+          Icons.skip_next_outlined,
           color: Colors.white,
           size: height,
         ),

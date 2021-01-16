@@ -21,13 +21,14 @@ class DownloadSwitch extends StatefulWidget {
   AppSharedState appWideState;
 
   final Video video;
-
+  final bool isTablet;
   final DownloadManager downloadManager;
+
   bool isDownloadedAlready;
   bool isCurrentlyDownloading;
 
   DownloadSwitch(this.appWideState, this.video, this.isCurrentlyDownloading,
-      this.isDownloadedAlready, this.downloadManager);
+      this.isDownloadedAlready, this.downloadManager, this.isTablet);
 
   @override
   State<StatefulWidget> createState() {
@@ -89,7 +90,7 @@ class DownloadSwitchState extends State<DownloadSwitch> {
         avatar: getAvatar(),
         label: new Text(
           getVideoDownloadText(widget.isDownloadedAlready),
-          style: TextStyle(fontSize: 25.0),
+          style: TextStyle(fontSize: 20.0),
         ),
         labelStyle: TextStyle(color: Colors.white),
         onPressed: downloadButtonPressed,
@@ -103,7 +104,7 @@ class DownloadSwitchState extends State<DownloadSwitch> {
         ActionChip cancleDownloadChip = ActionChip(
           avatar: new Icon(Icons.cancel, color: Colors.white),
           label: new Text(
-            "Download abbrechen",
+            "Cancel",
             style: TextStyle(fontSize: 20.0),
           ),
           labelStyle: TextStyle(color: Colors.white),
@@ -113,21 +114,22 @@ class DownloadSwitchState extends State<DownloadSwitch> {
         );
         download = new Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              downloadChip,
-              new Container(width: 25),
               cancleDownloadChip,
+              new Container(width: 25),
+              downloadChip,
             ]);
       }
     }
 
     return new Row(
       key: new Key(uuid.v1()),
-      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         new Container(
           key: new Key(uuid.v1()),
-          padding: new EdgeInsets.only(left: 40.0, right: 12.0),
+          //padding: new EdgeInsets.only(left: 40.0, right: 12.0),
           child: download,
         ),
         downloadFailed()
@@ -177,24 +179,22 @@ class DownloadSwitchState extends State<DownloadSwitch> {
     }
     if (isAlreadyDownloaded ||
         _latestDownloadValue.status == DownloadTaskStatus.complete)
-      return "Video löschen";
+      return "Delete Video";
     else if (_latestDownloadValue.status == DownloadTaskStatus.running &&
         _latestDownloadValue.progress.toInt() == -1)
-      return "Download läuft";
+      return "";
     else if (_latestDownloadValue.status == DownloadTaskStatus.running)
-      return "Download läuft (" +
-          _latestDownloadValue.progress.toInt().toString() +
-          "%)";
+      return "" + _latestDownloadValue.progress.toInt().toString() + "%";
     else if (_latestDownloadValue.status == DownloadTaskStatus.paused)
-      return "Download pausiert";
+      return "" + _latestDownloadValue.progress.toInt().toString() + "%";
     else if (_latestDownloadValue.status == DownloadTaskStatus.enqueued)
-      return "Warten auf download";
+      return "Waiting...";
     else if (_latestDownloadValue.status == DownloadTaskStatus.failed)
-      return "Fehler beim download";
+      return "Download failed";
     else if (_latestDownloadValue.status == DownloadTaskStatus.undefined ||
         _latestDownloadValue.status == DownloadTaskStatus.canceled)
-      return "Download starten";
-    return "Unbekannter status";
+      return "Download";
+    return "Unknown status";
   }
 
   Color getChipBackgroundColor() {

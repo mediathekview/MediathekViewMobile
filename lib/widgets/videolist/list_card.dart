@@ -185,7 +185,9 @@ class _ListCardState extends State<ListCard> {
                     .copyWith(color: Colors.black, fontSize: 14.0),
                 DeviceInformation.isTablet(context)
                     ? false
-                    : orientation == Orientation.portrait ? true : false,
+                    : orientation == Orientation.portrait
+                        ? true
+                        : false,
                 true, ratingChanged:
                     (bool needsRemoteSync, VideoRating updatedRating) {
               if (needsRemoteSync) {
@@ -200,7 +202,8 @@ class _ListCardState extends State<ListCard> {
                 widget.video,
                 isCurrentlyDownloading,
                 isDownloadedAlready,
-                appWideState.appState.downloadManager),
+                appWideState.appState.downloadManager,
+                DeviceInformation.isTablet(context)),
           ],
         ),
       ],

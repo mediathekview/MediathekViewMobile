@@ -5,7 +5,6 @@ import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/util/text_styles.dart';
-import 'package:flutter_ws/util/timestamp_calculator.dart';
 import 'package:flutter_ws/widgets/bars/playback_progress_bar.dart';
 import 'package:flutter_ws/widgets/videolist/download/download_progress_bar.dart';
 import 'package:flutter_ws/widgets/videolist/util/util.dart';
@@ -34,6 +33,7 @@ class VideoDetailScreen extends StatefulWidget {
 
 class _VideoDetailScreenState extends State<VideoDetailScreen> {
   VideoProgressEntity videoProgressEntity;
+  bool isTablet;
 
   @override
   void initState() {
@@ -72,7 +72,8 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
           totalImageWidth, height, image, context, downloadProgressBar);
     } else if (!isTablet && orientation == Orientation.landscape) {
       // mobile landscape -> only provide ability to play video. no title nothing
-
+      layout = new Container(color: Colors.grey[900], child: image);
+      // layout = buildMobileLandscapeLayout();
     } else {
       // all portrait:  like youtube:
       // first the title underneath
@@ -101,7 +102,6 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
   Column buildTabletLandscapeLayout(double totalImageWidth, double height,
       GestureDetector image, BuildContext context, Widget downloadProgressBar) {
     Widget description = getDescription();
-    Container metaInformation = getMeta();
 
     double rowPaddingLeft = 10;
     double rowPaddingRight = 5;
@@ -158,32 +158,35 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
               widget.video,
               widget.isDownloading,
               widget.isDownloaded,
-              widget.appWideState.appState.downloadManager),
+              widget.appWideState.appState.downloadManager,
+              isTablet),
         ),
-        metaInformation,
       ],
     );
   }
 
   Column buildVerticalLayout(
       GestureDetector image, Widget downloadProgressBar) {
-    Widget sideBar = new SingleChildScrollView(
-      child: new Container(
-        margin: EdgeInsets.only(left: 35, top: 10),
-        child: new Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            new Text("Beschreibung",
-                style: headerTextStyle.copyWith(fontSize: 30)),
-            new Container(height: 10),
-            new Text(widget.video.description,
-                style: subHeaderTextStyle.copyWith(fontSize: 20)),
-          ],
-        ),
-      ),
-    );
+    Widget sideBar = Container();
 
-    Widget meta = getMeta();
+    if (widget.video.description != null &&
+        widget.video.description.length > 0) {
+      sideBar = new SingleChildScrollView(
+        child: new Container(
+          margin: EdgeInsets.only(left: 35, top: 10),
+          child: new Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              new Text("Description",
+                  style: headerTextStyle.copyWith(fontSize: 30)),
+              new Container(height: 10),
+              new Text(widget.video.description,
+                  style: subHeaderTextStyle.copyWith(fontSize: 20)),
+            ],
+          ),
+        ),
+      );
+    }
 
     return new Column(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -202,118 +205,36 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
                 widget.video,
                 widget.isDownloading,
                 widget.isDownloaded,
-                widget.appWideState.appState.downloadManager),
+                widget.appWideState.appState.downloadManager,
+                isTablet),
           ),
           new Container(
             height: 10,
           ),
-          meta,
           sideBar,
         ]);
   }
 
-  Container getMeta() {
-    return new Container(
-      child: new Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          new Container(
-            margin: EdgeInsets.only(left: 35),
-            child: new Chip(
-              backgroundColor: Colors.grey[700],
-              avatar: CircleAvatar(
-                backgroundColor: Theme.of(context).accentColor,
-                child: new Icon(Icons.info),
-                maxRadius: 25,
-              ),
-              label: new Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: <Widget>[
-                    new Row(
-                      children: <Widget>[
-                        Text(
-                          "Thema: ",
-                          style: new TextStyle(
-                              color: Colors.white,
-                              backgroundColor: Colors.grey[700],
-                              fontSize: 20.0,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          widget.video.topic,
-                          style: new TextStyle(
-                              color: Colors.white,
-                              fontSize: 20.0,
-                              backgroundColor: Colors.grey[700]),
-                        ),
-                      ],
-                    ),
-                    new Row(
-                      children: <Widget>[
-                        Text(
-                          "Länge: ",
-                          style: new TextStyle(
-                              color: Colors.white,
-                              backgroundColor: Colors.grey[700],
-                              fontSize: 20.0,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          widget.video.duration != null
-                              ? Calculator.calculateDuration(
-                                  widget.video.duration.toString())
-                              : "?",
-                          style: new TextStyle(
-                              color: Colors.white,
-                              fontSize: 20.0,
-                              backgroundColor: Colors.grey[700]),
-                        ),
-                      ],
-                    ),
-                    new Row(
-                      children: <Widget>[
-                        Text(
-                          "Ausgestrahlt: ",
-                          style: new TextStyle(
-                              color: Colors.white,
-                              fontSize: 20.0,
-                              backgroundColor: Colors.grey[700],
-                              fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          widget.video.timestamp != null
-                              ? Calculator.calculateTimestamp(
-                                  widget.video.timestamp)
-                              : "?",
-                          style: new TextStyle(
-                              color: Colors.white,
-                              fontSize: 20.0,
-                              backgroundColor: Colors.grey[700]),
-                        ),
-                      ],
-                    )
-                  ]),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   SingleChildScrollView getDescription() {
-    return new SingleChildScrollView(
-      child: new Container(
+    var container = new Container();
+
+    if (widget.video.description != null &&
+        widget.video.description.length > 0) {
+      container = new Container(
         margin: EdgeInsets.only(left: 5),
         child: new Column(
           children: <Widget>[
-            new Text("Beschreibung",
+            new Text("Description",
                 style: headerTextStyle.copyWith(fontSize: 30)),
             new Text(widget.video.description,
                 style: subHeaderTextStyle.copyWith(fontSize: 20)),
           ],
         ),
-      ),
+      );
+    }
+
+    return new SingleChildScrollView(
+      child: container,
     );
   }
 
@@ -396,4 +317,6 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
       }
     });
   }
+
+  Widget buildMobileLandscapeLayout() {}
 }
