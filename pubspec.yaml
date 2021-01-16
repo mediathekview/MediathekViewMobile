@@ -26,7 +26,6 @@ dependencies:
   flutter_launcher_icons: "^0.7.0"
   shared_preferences: "^0.5.3+4"
   intro_slider: "^2.2.9"
-  showcaseview: "^0.1.5"
   connectivity: "^0.4.8+2"
   video_thumbnail: "^0.2.5+1"
 
@@ -72,7 +71,6 @@ flutter:
       - assets/img/rbb.png
       - assets/img/srf.png
       - assets/img/MediathekViewLoading.png
-      - assets/default_live_stream_channels.txt
       - assets/intro/intro_slider_1.png
       - assets/intro/intro_slider_2.png
       - assets/intro/intro_slider_3.png

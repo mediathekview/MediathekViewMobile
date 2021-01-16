@@ -4,6 +4,7 @@
 .vscode/
 .packages
 .pub/
+dev
 build/
 ios/.generated/
 packages
