@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/model/video_rating.dart';
 import 'package:flutter_ws/util/channel_util.dart';
 import 'package:flutter_ws/util/cross_axis_count.dart';
 import 'package:flutter_ws/util/device_information.dart';
@@ -37,7 +36,6 @@ class VideoListView extends StatefulWidget {
 
 class _VideoListViewState extends State<VideoListView> {
   ScrollController scrollController;
-  Map<String, VideoRating> ratingCache;
 
   @override
   void initState() {

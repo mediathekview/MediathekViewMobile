@@ -3,7 +3,7 @@ import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/util/text_styles.dart';
-import 'package:flutter_ws/widgets/overviewSection/util.dart';
+import 'package:flutter_ws/widgets/downloadSection/util.dart';
 import 'package:logging/logging.dart';
 
 class WatchHistory extends StatefulWidget {

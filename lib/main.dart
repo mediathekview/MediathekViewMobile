@@ -10,7 +10,6 @@ import 'package:flutter_ws/model/query_result.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/section/about_section.dart';
 import 'package:flutter_ws/section/download_section.dart';
-import 'package:flutter_ws/section/overview_section.dart';
 import 'package:flutter_ws/util/json_parser.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/widgets/bars/gradient_app_bar.dart';
@@ -219,7 +218,6 @@ class HomePageState extends State<MyHomePage>
       body: new TabBarView(
         controller: _controller,
         children: <Widget>[
-          new OverviewSection(),
           getVideoSearchListWidget(),
           downloadSection,
           aboutSection == null ? new AboutSection() : aboutSection
@@ -240,19 +238,6 @@ class HomePageState extends State<MyHomePage>
           currentIndex: _page,
           onTap: navigationTapped,
           items: [
-            BottomNavigationBarItem(
-                icon: Icon(
-                  Icons.home,
-                  color: Colors.white,
-                ),
-                activeIcon: Icon(
-                  Icons.home,
-                  color: Color(0xffffbf00),
-                ),
-                title: Text(
-                  "Home",
-                  style: new TextStyle(color: Colors.white, fontSize: 15.0),
-                )),
             BottomNavigationBarItem(
                 icon: Icon(
                   Icons.live_tv,

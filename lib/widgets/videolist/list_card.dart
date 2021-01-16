@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:ui';
 
 import 'package:connectivity/connectivity.dart';
@@ -10,16 +9,11 @@ import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/model/video_rating.dart';
-import 'package:flutter_ws/model/video_rating_insert.dart';
 import 'package:flutter_ws/platform_channels/download_manager_flutter.dart';
 import 'package:flutter_ws/util/device_information.dart';
-import 'package:flutter_ws/util/rating_util.dart';
 import 'package:flutter_ws/util/show_snackbar.dart';
 import 'package:flutter_ws/widgets/bars/playback_progress_bar.dart';
 import 'package:flutter_ws/widgets/videolist/channel_thumbnail.dart';
-import 'package:flutter_ws/widgets/videolist/rating_bar.dart';
-import 'package:flutter_ws/widgets/videolist/star_rating.dart';
 import 'package:flutter_ws/widgets/videolist/util/util.dart';
 import 'package:flutter_ws/widgets/videolist/video_description.dart';
 import 'package:http/http.dart' as http;
@@ -57,7 +51,6 @@ class _ListCardState extends State<ListCard> {
   DownloadManager downloadManager;
   DatabaseManager databaseManager;
   GlobalKey _keyListRow;
-  VideoRating rating;
   VideoProgressEntity videoProgressEntity;
 
   @override
@@ -79,7 +72,6 @@ class _ListCardState extends State<ListCard> {
     databaseManager = appWideState.appState.databaseManager;
     VideoListState videoListState = appWideState.videoListState;
     Orientation orientation = MediaQuery.of(context).orientation;
-    rating = appWideState.appState.ratingCache[widget.video.id];
 
     subscribeToProgressChannel();
     loadCurrentStatusFromDatabase(widget.video.id);
@@ -175,28 +167,6 @@ class _ListCardState extends State<ListCard> {
                 ],
               ),
             ),
-            new RatingBar(
-                isExtendet,
-                rating,
-                widget.video,
-                Theme.of(context)
-                    .textTheme
-                    .body1
-                    .copyWith(color: Colors.black, fontSize: 14.0),
-                DeviceInformation.isTablet(context)
-                    ? false
-                    : orientation == Orientation.portrait
-                        ? true
-                        : false,
-                true, ratingChanged:
-                    (bool needsRemoteSync, VideoRating updatedRating) {
-              if (needsRemoteSync) {
-                uploadRating(updatedRating);
-              }
-              if (mounted) {
-                setState(() {});
-              }
-            }),
             new DownloadSwitch(
                 appWideState,
                 widget.video,
@@ -248,26 +218,6 @@ class _ListCardState extends State<ListCard> {
                       widget.channelPictureImagePath, isDownloadedAlready),
                 )
               : new Container(),
-          isExtendet || rating == null
-              ? new Container()
-              : new Positioned(
-                  right: 20.0,
-                  child: new StarRating(
-                    rating,
-                    widget.video,
-                    true,
-                    size: 18.0,
-                    onRatingChanged:
-                        (bool needsRemoteSync, VideoRating updatedRating) {
-                      if (needsRemoteSync) {
-                        uploadRating(updatedRating);
-                      }
-                      if (mounted) {
-                        setState(() {});
-                      }
-                    },
-                  ),
-                )
         ],
       ),
     );
@@ -467,90 +417,5 @@ class _ListCardState extends State<ListCard> {
         setState(() {});
       }
     });
-  }
-
-  void uploadRating(VideoRating rating) async {
-    widget.logger.fine("Persisting rating in the cloud");
-    if (rating == null) {
-      return;
-    }
-
-    if (rating.local_user_rating == null) {
-      widget.logger.info("Local user rating is null");
-      return;
-    }
-
-    if (rating.local_user_rating == rating.local_user_rating_saved_from_db) {
-      return;
-    }
-
-    if (rating.lastRemoteInsertRating != null &&
-        rating.lastRemoteInsertRating == rating.local_user_rating) {
-      widget.logger.info("Stopped duplicate cloud function call");
-      return;
-    }
-
-    rating.lastRemoteInsertRating = rating.local_user_rating;
-
-    String ratingUrl;
-    double ratingValue;
-    if (rating.rating_count == 1 &&
-        rating.local_user_rating_saved_from_db == null) {
-      widget.logger.info(
-          "Add new rating (insert): " + rating.local_user_rating.toString());
-
-      ratingValue = rating.local_user_rating;
-      ratingUrl = await RatingUtil.getInsertRatingUrl();
-    } else if (rating.rating_count > 1 &&
-        rating.local_user_rating_saved_from_db == null) {
-      widget.logger.info(
-          "Add a new rating (update): " + rating.local_user_rating.toString());
-
-      ratingValue = rating.local_user_rating;
-      ratingUrl = await RatingUtil.getUpdateRatingUrl();
-    } else if (rating.local_user_rating_saved_from_db != null) {
-      var diff =
-          rating.local_user_rating - rating.local_user_rating_saved_from_db;
-
-      widget.logger.info("Add a new rating (diff): " + diff.toString());
-
-      ratingValue = diff;
-      ratingUrl = await RatingUtil.getInsertDifRatingUrl();
-    }
-
-    if (ratingUrl == null) {
-      widget.logger.warning("Should not happen when inserting rating");
-      return;
-    }
-
-    VideoRatingInsert userRating = new VideoRatingInsert(
-        rating.video_id,
-        ratingValue,
-        rating.channel,
-        rating.topic,
-        rating.description,
-        rating.title,
-        rating.timestamp,
-        rating.duration,
-        rating.size,
-        rating.url_video);
-    final response =
-        await http.post(ratingUrl, body: json.encode(userRating.toMap()));
-    if (response.statusCode == 200) {
-      appWideState.appState.ratingCache.update(rating.video_id, (old) {
-        old.local_user_rating_saved_from_db = old.local_user_rating;
-        return old;
-      });
-
-      widget.logger.info("Remote rating successful for rating: " +
-          rating.local_user_rating.toString());
-    } else {
-      widget.logger.warning("Failed to Insert rating for video " +
-          rating.video_id +
-          " Response Code: " +
-          response.statusCode.toString() +
-          "Error: " +
-          response.reasonPhrase);
-    }
   }
 }

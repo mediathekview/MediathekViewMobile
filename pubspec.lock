@@ -448,13 +448,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.99"
-  smooth_star_rating:
-    dependency: "direct main"
-    description:
-      name: smooth_star_rating
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.0.1"
   source_span:
     dependency: transitive
     description:
@@ -637,13 +630,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.0+3"
-  web_socket_channel:
-    dependency: "direct main"
-    description:
-      name: web_socket_channel
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.1.0"
   win32:
     dependency: transitive
     description:

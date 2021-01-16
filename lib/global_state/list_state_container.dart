@@ -5,13 +5,11 @@ import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_ws/database/channel_favorite_entity.dart';
 import 'package:flutter_ws/database/database_manager.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/model/video_rating.dart';
 import 'package:flutter_ws/platform_channels/download_manager_flutter.dart';
 import 'package:flutter_ws/platform_channels/filesystem_permission_manager.dart';
 import 'package:flutter_ws/platform_channels/samsung_tv_cast_manager.dart';
 import 'package:flutter_ws/platform_channels/video_preview_manager.dart';
 import 'package:flutter_ws/util/device_information.dart';
-import 'package:flutter_ws/util/rating_util.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
@@ -33,8 +31,7 @@ class AppState {
       this.isCurrentlyPlayingOnTV,
       this.tvCurrentlyPlayingVideo,
       this.availableTvs,
-      this.favoriteChannels,
-      this.ratingCache);
+      this.favoriteChannels);
 
   TargetPlatform targetPlatform;
   Directory localDirectory;
@@ -52,29 +49,12 @@ class AppState {
   Video tvCurrentlyPlayingVideo;
   List<String> availableTvs;
 
-  //videoId -> Rating
-  Map<String, VideoRating> ratingCache;
-  Map<String, VideoRating> bestVideosAllTime;
-  Map<String, VideoRating> hotVideosToday;
-
   void setHasFilesystemPermission(bool permission) {
     hasFilesystemPermission = permission;
   }
 
   void setTargetPlatform(TargetPlatform platform) {
     targetPlatform = platform;
-  }
-
-  void setRatingCache(Map<String, VideoRating> cache) {
-    ratingCache = cache;
-  }
-
-  void setHotVideosToday(Map<String, VideoRating> cache) {
-    hotVideosToday = cache;
-  }
-
-  void setBestVideosAllTime(Map<String, VideoRating> cache) {
-    bestVideosAllTime = cache;
   }
 
   void setDirectory(Directory dir) {
@@ -149,7 +129,6 @@ class AppSharedState extends State<AppSharedStateContainer> {
           false,
           new Video(""),
           new List(),
-          new Map(),
           new Map());
 
       // async execution to concurrently open database
@@ -200,26 +179,6 @@ class AppSharedState extends State<AppSharedStateContainer> {
     if (videoListState == null) {
       _initializeListState();
     }
-
-    //load ratings only once on application start to reduce requests to backend(costly). Operate on cache when doing ratings.
-    int amountOfRatingsRetrieved = await loadRatings();
-    logger.info("Total amount of ratings retrieved is " +
-        amountOfRatingsRetrieved.toString());
-  }
-
-  Future<int> loadRatings() {
-    // All ratings needed for local rating operations
-    return RatingUtil.loadAllRatings().then((ratings) {
-      logger
-          .info("All ratings retrieved. Amount: " + ratings.length.toString());
-
-      if (ratings.length == 0) {
-        return 0;
-      }
-
-      appState.setRatingCache(ratings);
-      return ratings.length;
-    });
   }
 
   void prefillFavoritedChannels() async {

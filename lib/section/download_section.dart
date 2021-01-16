@@ -11,9 +11,9 @@ import 'package:flutter_ws/util/show_snackbar.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/widgets/downloadSection/current_downloads.dart';
 import 'package:flutter_ws/widgets/downloadSection/heading.dart';
+import 'package:flutter_ws/widgets/downloadSection/util.dart';
 import 'package:flutter_ws/widgets/downloadSection/video_list_item_builder.dart';
 import 'package:flutter_ws/widgets/downloadSection/watch_history.dart';
-import 'package:flutter_ws/widgets/overviewSection/util.dart';
 import 'package:flutter_ws/widgets/videolist/circular_progress_with_text.dart';
 import 'package:logging/logging.dart';
 
@@ -137,7 +137,7 @@ class DownloadSectionState extends State<DownloadSection> {
               stateReloadNeeded = true;
             }
           }
-          if (stateReloadNeeded) {
+          if (stateReloadNeeded && mounted) {
             setState(() {});
           }
           // generatePreview(all.take(amount_of_swiper_items))

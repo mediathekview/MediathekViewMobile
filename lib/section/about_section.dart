@@ -39,17 +39,12 @@ class AboutSection extends StatelessWidget {
                     leading: const Icon(Icons.feedback),
                     title: new Text('Feedback', style: aboutSectionTitle),
                     subtitle: new Text(
-                        'Anregungen, Wünsche oder Bugs? Gib Feedback auf Github oder per Mail. Danke für deinen Beitrag!'),
+                        'Anregungen, Wünsche oder Bugs? Gib Feedback auf Github. Danke für deinen Beitrag!'),
                   ),
                   new ButtonTheme.bar(
                     // make buttons use the appropriate styles for cards
                     child: new ButtonBar(
                       children: <Widget>[
-                        new FlatButton(
-                          color: Colors.grey[800],
-                          child: new Text('E-Mail', style: body2TextStyle),
-                          onPressed: () => _launchURL(eMailAddress),
-                        ),
                         new FlatButton(
                           color: Colors.grey[800],
                           child: new Text('Github', style: body2TextStyle),
