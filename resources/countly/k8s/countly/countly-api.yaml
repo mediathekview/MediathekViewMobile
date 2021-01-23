@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: countly-api
+spec:
+  ports:
+  - port: 3001
+    protocol: TCP
+    targetPort: 3001
+  selector:
+    app: countly-api
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: countly-api-deployment
+spec:
+  selector:
+    matchLabels:
+      app: countly-api
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: countly-api
+    spec:
+      priorityClassName: countly
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - countly-api
+                - mongo           # in case you don't use replica set, give your mongodb pod label app=mongo to ensure it's not on the same node with API
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: countly-api
+        image: countly/api:20.04
+        resources:
+          limits:
+            memory: "600Mi"
+            cpu: "500m"
+          requests:
+            memory: "200Mi"
+            cpu: "200m"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3001
+        readinessProbe:
+          httpGet:
+            path: /o/ping
+            port: 3001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 3
+        env:
+          - name: COUNTLY_PLUGINS
+            value: "mobile,plugins,density,locale,browser,sources,views,logger,systemlogs,populator,reports,crashes,push,compare,server-stats,dbviewer,assistant,times-of-day,alerts,onboarding"
+          - name: COUNTLY_CONFIG_API_FILESTORAGE
+            value: "gridfs"
+          - name: COUNTLY_CONFIG_HOSTNAME
+            value: <my-domain>
+          - name: COUNTLY_CONFIG__MONGODB
+            valueFrom:
+              secretKeyRef:
+                name: mongodb-pw
+                key: "connection"

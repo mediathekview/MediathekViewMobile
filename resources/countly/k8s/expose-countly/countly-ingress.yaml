@@ -1,0 +1,36 @@
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: countly-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  tls:
+  - hosts:
+    - "*.mediathekviewmobile.de"
+    secretName: countly-tls # will be filled by cert-manager
+  rules:
+  - http:
+      paths:
+      - path: /i
+        backend:
+          serviceName: countly-api
+          servicePort: 3001
+      - path: /i/*
+        backend:
+          serviceName: countly-api
+          servicePort: 3001
+      - path: /o
+        backend:
+          serviceName: countly-api
+          servicePort: 3001
+      - path: /o/*
+        backend:
+          serviceName: countly-api
+          servicePort: 3001
+      - path: /
+        backend:
+          serviceName: countly-frontend
+          servicePort: 6001

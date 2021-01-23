@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: countly-frontend
+spec:
+  ports:
+  - port: 6001
+    protocol: TCP
+    targetPort: 6001
+  selector:
+    app: countly-frontend
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: countly-frontend-deployment
+spec:
+  selector:
+    matchLabels:
+      app: countly-frontend
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: countly-frontend
+    spec:
+      containers:
+      - name: countly-frontend
+        image: countly/frontend:20.04
+        resources:
+          limits:
+            memory: "300Mi"
+            cpu: "300m"
+          requests:
+            memory: "200Mi"
+            cpu: "100m"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 6001
+        readinessProbe:
+          httpGet:
+            path: /ping
+            port: 6001
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 3
+        env:
+          - name: COUNTLY_PLUGINS
+            value: "mobile,plugins,density,locale,browser,sources,views,logger,systemlogs,populator,reports,crashes,push,compare,server-stats,dbviewer,assistant,times-of-day,alerts,onboarding"
+          - name: COUNTLY_CONFIG_API_FILESTORAGE
+            value: "gridfs"
+          - name: COUNTLY_CONFIG_HOSTNAME
+            value: mediathekviewmobile.de
+          - name: COUNTLY_CONFIG__MONGODB
+            valueFrom:
+              secretKeyRef:
+                name: mongodb-pw
+                key: "connection"

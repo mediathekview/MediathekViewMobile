@@ -1,0 +1,7 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: countly
+value: 1000000
+globalDefault: false
+description: "Making sure that the Countly API and MongoDB are not evicted."

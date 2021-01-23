@@ -1,0 +1,75 @@
+---
+apiVersion: mongodb.com/v1
+kind: MongoDB
+metadata:
+  name: mediathekviewmobile-mongodb
+spec:
+  members: 1
+  type: ReplicaSet
+  version: "4.2.6"
+  security:
+    authentication:
+#      enabled : false
+      modes: ["SCRAM"]
+  users:
+    - name: mediathekviewmobile
+      db: admin
+      passwordSecretRef: # a reference to the secret that will be used to generate the user's password
+        name: mongodb-pw
+      roles:
+        - name: clusterAdmin
+          db: admin
+        - name: root
+          db: admin
+        - name: readWriteAnyDatabase
+          db: admin
+      scramCredentialsSecretName: mongo-db-scram
+  statefulSet:
+    spec:
+      template:
+        spec:
+          priorityClassName: countly
+          tolerations:
+            - key: "app"
+              operator: "Equal"
+              value: "mongodb"
+              effect: "NoSchedule"
+          nodeSelector:
+            pool: mongo
+          containers:
+            - name: "mongodb-agent"
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 500M
+                requests:
+                  cpu: 150m
+                  memory: 200M
+              env:
+                - name: MANAGED_SECURITY_CONTEXT
+                  value: "true"
+            - name: "mongod"
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 500M
+                requests:
+                  cpu: 150m
+                  memory: 200M
+              env:
+                - name: MANAGED_SECURITY_CONTEXT
+                  value: "true"
+
+# the user credentials will be generated from this secret
+# once the credentials are generated, this secret is no longer required
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongodb-pw
+type: Opaque
+stringData:
+  password: secret-secure #replace with real password
+  # adjust for > 1 replica
+  connection: "mongodb://mediathekviewmobile:secret-secure@mediathekviewmobile-mongodb-svc.default.svc.cluster.local:27017/admin"
+

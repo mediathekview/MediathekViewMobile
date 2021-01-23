@@ -1,0 +1,24 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx-controller  # name define in flag --publish-service in nginx
+  labels:
+    k8s-app: nginx-ingress-controller
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 32080
+      protocol: TCP
+      name: http
+    - port: 443
+      targetPort: 443
+      nodePort: 32443
+      protocol: TCP
+      name: https
+  selector:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx

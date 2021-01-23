@@ -1,0 +1,7 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: components
+value: 1000
+globalDefault: false
+description: "Slightly higher priority."

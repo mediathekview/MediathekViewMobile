@@ -4,9 +4,7 @@ import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AboutSection extends StatelessWidget {
-  static final Logger logger = new Logger('AboutSection');
-  static const eMailAddress =
-      'mailto:kontakt.mediathekview.mobile@gmail.com?subject=Feedback zu MediathekView Mobile&body=Hi Daniel,';
+  static final Logger logger = new Logger('SettingsSection');
   static const githubUrl =
       'https://github.com/Mediathekview/MediathekViewMobile';
   static const payPal = 'https://paypal.me/danielfoehr';
