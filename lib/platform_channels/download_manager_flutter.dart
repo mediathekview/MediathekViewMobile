@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
 
+import 'package:countly_flutter/countly_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_ws/database/database_manager.dart';
@@ -156,6 +157,9 @@ class DownloadManager {
   }
 
   void handleCompletedDownload(String taskId, VideoEntity entity) {
+    Map<String, Object> event = {"key": "DOWNLOAD_COMPLETED", "count": 1};
+    Countly.recordEvent(event);
+
     FlutterDownloader.loadTasksWithRawQuery(
             query: SQL_GET_SINGEL_TASK + "'" + taskId + "'")
         .then((List<DownloadTask> list) async {
@@ -194,6 +198,9 @@ class DownloadManager {
   void handleFailedDownload(VideoEntity entity) {
     _deleteVideo(entity);
 
+    Map<String, Object> event = {"key": "DOWNLOAD_FAILED", "count": 1};
+    Countly.recordEvent(event);
+
     //notify listeners
     Iterable<MapEntry<int, onCanceled>> entries = onFailedListeners[entity.id];
     entries.forEach((entry) => {entry.value(entity.id)});
@@ -212,6 +219,7 @@ class DownloadManager {
 
     if (!successfullyAsked) {
       logger.severe("Failed to ask user for Filesystem Permissions");
+      Countly.logException("failed to ask for filesystem permission", true);
     }
 
     // subscribe to event stream to catch update - if granted by user then start download
@@ -229,6 +237,11 @@ class DownloadManager {
           downloadFile(rememberedFailedVideoDownload);
         } else {
           logger.info("Filesystem Permission denied by User");
+          Map<String, Object> event = {
+            "key": "FILESYSTEM_PERMISSION_DENIED",
+            "count": 1
+          };
+          Countly.recordEvent(event);
         }
       },
       onError: (e) {
@@ -380,6 +393,9 @@ class DownloadManager {
   // Remove from task schema and cancel download if running
   Future _cancelDownload(String taskId) {
     logger.fine("Deleting Task with id " + taskId);
+    Map<String, Object> event = {"key": "CANCEL_DOWNLOAD", "count": 1};
+    Countly.recordEvent(event);
+
     return FlutterDownloader.cancel(taskId: taskId).then((_) =>
         FlutterDownloader.remove(taskId: taskId, shouldDeleteContent: false));
   }
@@ -535,6 +551,9 @@ class DownloadManager {
         video.url_video);
 
     DatabaseManager databaseManager = appWideState.appState.databaseManager;
+
+    Map<String, Object> event = {"key": "DOWNLOAD_VIDEO", "count": 1};
+    Countly.recordEvent(event);
 
     /*
     First check if there is already a VideoEntity.

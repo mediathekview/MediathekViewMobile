@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:countly_flutter/countly_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,8 +10,8 @@ import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/indexing_info.dart';
 import 'package:flutter_ws/model/query_result.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/section/about_section.dart';
 import 'package:flutter_ws/section/download_section.dart';
+import 'package:flutter_ws/section/settings_section.dart';
 import 'package:flutter_ws/util/json_parser.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/widgets/bars/gradient_app_bar.dart';
@@ -19,13 +21,19 @@ import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
 import 'package:flutter_ws/widgets/introSlider/intro_slider.dart';
 import 'package:flutter_ws/widgets/videolist/video_list_view.dart';
 import 'package:flutter_ws/widgets/videolist/videolist_util.dart';
+import 'package:giffy_dialog/giffy_dialog.dart';
+import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import 'global_state/appBar_state_container.dart';
 
-void main() => runApp(new AppSharedStateContainer(child: new MyApp()));
+void main() {
+  runZonedGuarded<Future<void>>(() async {
+    runApp(new AppSharedStateContainer(child: new MyApp()));
+  }, Countly.recordDartError);
+}
 
 class MyApp extends StatelessWidget {
   final TextEditingController textEditingController =
@@ -143,11 +151,18 @@ class HomePageState extends State<MyHomePage>
   //Tabs
   Widget videoSearchList;
   static DownloadSection downloadSection;
-  AboutSection aboutSection;
+  SettingsSection aboutSection;
 
   //intro slider
   SharedPreferences prefs;
   bool isFirstStart = false;
+
+  // Cuuntly
+  bool showCountlyGDPRDialog = false;
+  static const COUNTLY_GITHUB =
+      "https://raw.githubusercontent.com/mediathekview/MediathekViewMobile/master/resources/countly/config/endpoint.txt";
+  static const SHARED_PREFERENCE_KEY_COUNTLY_API = "countly_api";
+  static const SHARED_PREFERENCE_KEY_COUNTLY_APP_KEY = "countly_app_key";
 
   HomePageState(this.searchFieldController, this.logger);
 
@@ -155,6 +170,12 @@ class HomePageState extends State<MyHomePage>
   void dispose() {
     logger.fine("Disposing Home Page");
     WidgetsBinding.instance.removeObserver(this);
+    Countly.isInitialized().then((initialized) {
+      if (initialized) {
+        Countly.stop();
+      }
+    });
+
     super.dispose();
   }
 
@@ -176,12 +197,12 @@ class HomePageState extends State<MyHomePage>
     //register Observer to react to android/ios lifecycle events
     WidgetsBinding.instance.addObserver(this);
 
-    _controller = new TabController(length: 4, vsync: this);
+    _controller = new TabController(length: 3, vsync: this);
     _controller.addListener(() => onUISectionChange());
 
     //Init tabs
     //liveTVSection = new LiveTVSection();
-    aboutSection = new AboutSection();
+    aboutSection = new SettingsSection();
 
     //keys
     Uuid uuid = new Uuid();
@@ -194,6 +215,10 @@ class HomePageState extends State<MyHomePage>
     api.search(currentUserQueryInput, searchFilters);
 
     checkForFirstStart();
+
+    setupCountly();
+
+    super.initState();
   }
 
   @override
@@ -209,6 +234,11 @@ class HomePageState extends State<MyHomePage>
       });
     }
 
+    if (showCountlyGDPRDialog) {
+      logger.info("show dialog");
+      return _showGDPRDialog(context);
+    }
+
     if (downloadSection == null) {
       downloadSection = new DownloadSection(appWideState);
     }
@@ -220,7 +250,7 @@ class HomePageState extends State<MyHomePage>
         children: <Widget>[
           getVideoSearchListWidget(),
           downloadSection,
-          aboutSection == null ? new AboutSection() : aboutSection
+          aboutSection == null ? new SettingsSection() : aboutSection
         ],
       ),
       bottomNavigationBar: new Theme(
@@ -266,10 +296,10 @@ class HomePageState extends State<MyHomePage>
                   color: Colors.white,
                 ),
                 activeIcon: Icon(
-                  Icons.info_outline,
+                  Icons.settings_outlined,
                   color: Color(0xffffbf00),
                 ),
-                title: Text("Info",
+                title: Text("Settings",
                     style: new TextStyle(color: Colors.white, fontSize: 15.0)))
           ],
         ),
@@ -330,6 +360,7 @@ class HomePageState extends State<MyHomePage>
     logger.info("New Navigation Tapped: ---> Page " + page.toString());
     _controller.animateTo(page,
         duration: const Duration(milliseconds: 300), curve: Curves.ease);
+
     setState(() {
       this._page = page;
     });
@@ -343,6 +374,24 @@ class HomePageState extends State<MyHomePage>
     if (this._page != _controller.index) {
       logger
           .info("UI Section Change: ---> Page " + _controller.index.toString());
+
+      Countly.isInitialized().then((initialized) {
+        if (initialized) {
+          switch (_controller.index) {
+            case 0:
+              Countly.recordView("Mediathek");
+              break;
+            case 1:
+              Countly.recordView("Downloads");
+              break;
+            case 2:
+              // do something else
+              Countly.recordView("Settings");
+              break;
+          }
+        }
+      });
+
       setState(() {
         this._page = _controller.index;
       });
@@ -510,5 +559,107 @@ class HomePageState extends State<MyHomePage>
         isFirstStart = true;
       });
     }
+  }
+
+  void setupCountly() async {
+    logger.info("setup countly");
+    var sharedPreferences = await SharedPreferences.getInstance();
+    appWideState.appState.setSharedPreferences(sharedPreferences);
+
+    if (appWideState.appState.sharedPreferences
+            .containsKey(SHARED_PREFERENCE_KEY_COUNTLY_API) &&
+        appWideState.appState.sharedPreferences
+            .containsKey(SHARED_PREFERENCE_KEY_COUNTLY_APP_KEY)) {
+      String countlyAPI = appWideState.appState.sharedPreferences
+          .getString(SHARED_PREFERENCE_KEY_COUNTLY_API);
+      String countlyAppKey = appWideState.appState.sharedPreferences
+          .getString(SHARED_PREFERENCE_KEY_COUNTLY_APP_KEY);
+      logger.info("Loaded Countly data from shared preferences");
+      initializeCountly(countlyAPI, countlyAppKey);
+      return;
+    }
+    // countly information not found in shared preferences
+    // request permission from user
+    // need to setState in order to show GDPR dialog
+    setState(() {
+      showCountlyGDPRDialog = true;
+    });
+  }
+
+  Widget _showGDPRDialog(BuildContext context) {
+    return NetworkGiffyDialog(
+      //key: keys[1],
+      image: Image.network(
+        "https://raw.githubusercontent.com/Shashank02051997/FancyGifDialog-Android/master/GIF's/gif14.gif",
+        fit: BoxFit.cover,
+      ),
+      entryAnimation: EntryAnimation.TOP_LEFT,
+      title: Text(
+        'Vielen Dank',
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.w600),
+      ),
+      description: Text(
+        'Darf MediathekView anonymisierte Crash und Nutzungsdaten sammeln? Das hilft uns die App zu verbessern.',
+        textAlign: TextAlign.center,
+      ),
+      onOkButtonPressed: () {
+        loadCountlyInformationFromGithub();
+        setState(() {
+          showCountlyGDPRDialog = false;
+        });
+      },
+      onCancelButtonPressed: () {
+        setState(() {
+          showCountlyGDPRDialog = false;
+        });
+      },
+      buttonCancelText: Text(
+        "Nein",
+        style: new TextStyle(color: Colors.white),
+      ),
+      buttonOkText: Text("Ja"),
+    );
+  }
+
+  Future<void> loadCountlyInformationFromGithub() async {
+    var response = await http.get(COUNTLY_GITHUB);
+    if (response == null || response.statusCode != 200) {
+      logger.warning("failed to setup countly");
+      return;
+    }
+
+    var responseList =
+        new LineSplitter().convert(utf8.decode(response.bodyBytes));
+    // in this simple format it is assumed that the countly API is on line 1,
+    // the APP_KEY on line 2 and the tampering salt und line 3
+    String countlyAPI = responseList.elementAt(0);
+    String countlyAppKey = responseList.elementAt(1);
+
+    logger.info("Loaded Countly data from Github");
+
+    appWideState.appState.sharedPreferences
+        .setString(SHARED_PREFERENCE_KEY_COUNTLY_API, countlyAPI);
+    appWideState.appState.sharedPreferences
+        .setString(SHARED_PREFERENCE_KEY_COUNTLY_APP_KEY, countlyAppKey);
+
+    initializeCountly(countlyAPI, countlyAppKey);
+  }
+
+  void initializeCountly(String countlyAPI, String countlyAppKey) {
+    Countly.isInitialized().then((bool isInitialized) {
+      if (!isInitialized) {
+        Countly.setLoggingEnabled(true);
+        Countly.enableCrashReporting();
+
+        // Countly.enableParameterTamperingProtection(countlyTamperingProtection);
+        // Features which is required before init should be call here
+        Countly.init(countlyAPI, countlyAppKey).then((value) {
+          logger.info("COUNTLY STARTED");
+          //Features dependent on init should be set here, for e.g Push notifications and consent.
+          Countly.start();
+        });
+      }
+    });
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:countly_flutter/countly_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/database/database_manager.dart';
 import 'package:flutter_ws/database/video_entity.dart';
@@ -109,7 +110,10 @@ class _FlutterVideoPlayerState extends State<FlutterVideoPlayer> {
           : new Duration(milliseconds: 0),
     );
 
-    tvVideoController.startTvDiscovery();
+    if (widget.appSharedState.appState.targetPlatform ==
+        TargetPlatform.android) {
+      tvVideoController.startTvDiscovery();
+    }
 
     // replace the currently playing video on TV
     if (widget.appSharedState.appState.isCurrentlyPlayingOnTV &&
@@ -138,6 +142,10 @@ class _FlutterVideoPlayerState extends State<FlutterVideoPlayer> {
       videoController = VideoPlayerController.network(
         videoUrl,
       );
+
+      Map<String, Object> event = {"key": "PLAY_VIDEO_NETWORK", "count": 1};
+      Countly.recordEvent(event);
+
       return;
     }
 
@@ -167,6 +175,9 @@ class _FlutterVideoPlayerState extends State<FlutterVideoPlayer> {
         }
       },
     );
+
+    Map<String, Object> event = {"key": "PLAY_VIDEO_DOWNLOADED", "count": 1};
+    Countly.recordEvent(event);
 
     videoController = VideoPlayerController.file(file);
   }

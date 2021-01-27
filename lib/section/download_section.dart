@@ -1,3 +1,4 @@
+import 'package:countly_flutter/countly_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
 import 'package:flutter_ws/database/video_entity.dart';
@@ -168,6 +169,8 @@ class DownloadSectionState extends State<DownloadSection> {
             },
             settings: RouteSettings(name: "WatchHistory"),
             fullscreenDialog: true));
+
+        Countly.recordView("WatchHistory");
       },
     );
 

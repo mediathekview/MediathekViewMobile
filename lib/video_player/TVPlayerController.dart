@@ -368,7 +368,7 @@ class TvPlayerController extends ValueNotifier<TvVideoPlayerValue> {
             e.toString());
       }, onDone: () {
         logger.info("Samsung TV discovery (lost) event channel is done.");
-      }, cancelOnError: false);
+      }, cancelOnError: true);
 
       if (lostTVsSubscription.isPaused) {
         logger.info("Samsung TV discovery (lost) is paused.");

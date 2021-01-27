@@ -2,6 +2,12 @@ PODS:
   - connectivity (0.0.1):
     - Flutter
     - Reachability
+  - Countly (20.04.2):
+    - Countly/Core (= 20.04.2)
+  - Countly/Core (20.04.2)
+  - countly_flutter (20.04.2):
+    - Countly (= 20.04.2)
+    - Flutter
   - device_info (0.0.1):
     - Flutter
   - Flutter (1.0.0)
@@ -39,6 +45,7 @@ PODS:
 
 DEPENDENCIES:
   - connectivity (from `.symlinks/plugins/connectivity/ios`)
+  - countly_flutter (from `.symlinks/plugins/countly_flutter/ios`)
   - device_info (from `.symlinks/plugins/device_info/ios`)
   - Flutter (from `Flutter`)
   - flutter_downloader (from `.symlinks/plugins/flutter_downloader/ios`)
@@ -54,12 +61,15 @@ SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
     - FMDB
   trunk:
+    - Countly
     - libwebp
     - Reachability
 
 EXTERNAL SOURCES:
   connectivity:
     :path: ".symlinks/plugins/connectivity/ios"
+  countly_flutter:
+    :path: ".symlinks/plugins/countly_flutter/ios"
   device_info:
     :path: ".symlinks/plugins/device_info/ios"
   Flutter:
@@ -83,6 +93,8 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   connectivity: c4130b2985d4ef6fd26f9702e886bd5260681467
+  Countly: 671fafd48d7436e7ddc0c8dc67001ad3cb41ee51
+  countly_flutter: bb83624072efe09b2160b9739b7570136ef8f511
   device_info: cbf09d2ec12aa7110e0b09fabe54b5bd6c8efe74
   Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
   flutter_downloader: 058b9c41564a90500f67f3e432e3524613a7fd83
@@ -97,6 +109,6 @@ SPEC CHECKSUMS:
   video_thumbnail: c4e2a3c539e247d4de13cd545344fd2d26ffafd1
   wakelock: bfc7955c418d0db797614075aabbc58a39ab5107
 
-PODFILE CHECKSUM: aafe91acc616949ddb318b77800a7f51bffa2a4c
+PODFILE CHECKSUM: fe0e1ee7f3d1f7d00b11b474b62dd62134535aea
 
 COCOAPODS: 1.9.1

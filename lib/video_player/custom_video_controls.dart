@@ -5,6 +5,7 @@ import 'dart:ui';
 
 import 'package:chewie/src/chewie_progress_colors.dart';
 import 'package:chewie/src/utils.dart';
+import 'package:countly_flutter/countly_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
@@ -154,6 +155,10 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
         _appWideState.appState.tvCurrentlyPlayingVideo =
             tvPlayerController.video;
         SnackbarActions.showSuccess(context, "Verbunden");
+
+        Map<String, Object> event = {"key": "PLAY_VIDEO_ON_TV", "count": 1};
+        Countly.recordEvent(event);
+
         // show controls for a short time and then hide
         _cancelAndRestartTimer();
       }
@@ -182,6 +187,12 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
           chewieController.tvPlayerController.value.errorDescription != null) {
         _appWideState.appState.isCurrentlyPlayingOnTV = false;
         SnackbarActions.showError(context, "Verbindung nicht möglich.");
+
+        Map<String, Object> event = {
+          "key": "PLAY_VIDEO_ON_TV_FAILED",
+          "count": 1
+        };
+        Countly.recordEvent(event);
       }
 
       if (_latestTvPlayerValue.isCurrentlyCheckingTV) {

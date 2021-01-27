@@ -3,7 +3,7 @@ import 'package:flutter_ws/util/text_styles.dart';
 import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class AboutSection extends StatelessWidget {
+class SettingsSection extends StatelessWidget {
   static final Logger logger = new Logger('SettingsSection');
   static const githubUrl =
       'https://github.com/Mediathekview/MediathekViewMobile';

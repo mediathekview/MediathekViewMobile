@@ -14,6 +14,7 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class VideoListState {
   VideoListState(this.extendetListTiles, this.previewImages);
@@ -39,6 +40,8 @@ class AppState {
   DatabaseManager databaseManager;
   VideoPreviewManager videoPreviewManager;
   FilesystemPermissionManager filesystemPermissionManager;
+  SharedPreferences sharedPreferences;
+
   // only relevant on Android, always true on other platforms
   bool hasFilesystemPermission;
   Map<String, ChannelFavoriteEntity> favoriteChannels;
@@ -59,6 +62,10 @@ class AppState {
 
   void setDirectory(Directory dir) {
     localDirectory = dir;
+  }
+
+  void setSharedPreferences(SharedPreferences preferences) {
+    sharedPreferences = preferences;
   }
 }
 
@@ -111,74 +118,76 @@ class AppSharedState extends State<AppSharedStateContainer> {
   }
 
   void initializeState(BuildContext context) async {
-    if (appState == null) {
-      DownloadManager downloadManager = new DownloadManager(context);
-      WidgetsFlutterBinding.ensureInitialized();
-      FlutterDownloader.initialize();
-
-      DatabaseManager databaseManager = new DatabaseManager();
-      var filesystemPermissionManager =
-          new FilesystemPermissionManager(context);
-
-      appState = new AppState(
-          downloadManager,
-          databaseManager,
-          new VideoPreviewManager(context),
-          filesystemPermissionManager,
-          new SamsungTVCastManager(context),
-          false,
-          new Video(""),
-          new List(),
-          new Map());
-
-      // async execution to concurrently open database
-      DeviceInformation.getTargetPlatform().then((platform) async {
-        appState.setTargetPlatform(platform);
-
-        bool hasPermission = true;
-        if (platform == TargetPlatform.android) {
-          hasPermission =
-              await filesystemPermissionManager.hasFilesystemPermission();
-        }
-
-        appState.setHasFilesystemPermission(hasPermission);
-
-        Directory directory;
-        if (platform == TargetPlatform.iOS) {
-          directory = await getApplicationDocumentsDirectory();
-        } else {
-          directory = await getExternalStorageDirectory();
-        }
-        appState.setDirectory(directory);
-
-        // create thumbnail directory
-        final Directory thumbnailDirectory =
-            Directory('${directory.path}/MediathekView/thumbnails/');
-
-        if (!await thumbnailDirectory.exists()) {
-          //if folder already exists return path
-          await thumbnailDirectory.create(recursive: true).catchError((error) =>
-              logger.info(
-                  "Failed to create thumbnail directory " + error.toString()));
-        }
-      });
-
-      initializeDatabase().then((init) {
-        //start subscription to Flutter Download Manager
-        downloadManager.startListeningToDownloads();
-
-        //check for downloads that have been completed while flutter app was not running
-        downloadManager.syncCompletedDownloads();
-
-        //check for failed DownloadTasks and retry them
-        downloadManager.retryFailedDownloads();
-
-        prefillFavoritedChannels();
-      });
-    }
     if (videoListState == null) {
       _initializeListState();
     }
+
+    if (appState != null) {
+      return;
+    }
+
+    DownloadManager downloadManager = new DownloadManager(context);
+    WidgetsFlutterBinding.ensureInitialized();
+    FlutterDownloader.initialize();
+
+    DatabaseManager databaseManager = new DatabaseManager();
+    var filesystemPermissionManager = new FilesystemPermissionManager(context);
+
+    appState = new AppState(
+        downloadManager,
+        databaseManager,
+        new VideoPreviewManager(context),
+        filesystemPermissionManager,
+        new SamsungTVCastManager(context),
+        false,
+        new Video(""),
+        new List(),
+        new Map());
+
+    // async execution to concurrently open database
+    DeviceInformation.getTargetPlatform().then((platform) async {
+      appState.setTargetPlatform(platform);
+
+      bool hasPermission = true;
+      if (platform == TargetPlatform.android) {
+        hasPermission =
+            await filesystemPermissionManager.hasFilesystemPermission();
+      }
+
+      appState.setHasFilesystemPermission(hasPermission);
+
+      Directory directory;
+      if (platform == TargetPlatform.iOS) {
+        directory = await getApplicationDocumentsDirectory();
+      } else {
+        directory = await getExternalStorageDirectory();
+      }
+      appState.setDirectory(directory);
+
+      // create thumbnail directory
+      final Directory thumbnailDirectory =
+          Directory('${directory.path}/MediathekView/thumbnails/');
+
+      if (!await thumbnailDirectory.exists()) {
+        //if folder already exists return path
+        await thumbnailDirectory.create(recursive: true).catchError((error) =>
+            logger.info(
+                "Failed to create thumbnail directory " + error.toString()));
+      }
+    });
+
+    initializeDatabase().then((init) {
+      //start subscription to Flutter Download Manager
+      downloadManager.startListeningToDownloads();
+
+      //check for downloads that have been completed while flutter app was not running
+      downloadManager.syncCompletedDownloads();
+
+      //check for failed DownloadTasks and retry them
+      downloadManager.retryFailedDownloads();
+
+      prefillFavoritedChannels();
+    });
   }
 
   void prefillFavoritedChannels() async {
