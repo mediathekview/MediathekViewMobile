@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:countly_flutter/countly_flutter.dart';
 import 'package:flutter/foundation.dart';
@@ -12,6 +11,7 @@ import 'package:flutter_ws/model/query_result.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/section/download_section.dart';
 import 'package:flutter_ws/section/settings_section.dart';
+import 'package:flutter_ws/util/countly.dart';
 import 'package:flutter_ws/util/json_parser.dart';
 import 'package:flutter_ws/util/text_styles.dart';
 import 'package:flutter_ws/widgets/bars/gradient_app_bar.dart';
@@ -22,7 +22,6 @@ import 'package:flutter_ws/widgets/introSlider/intro_slider.dart';
 import 'package:flutter_ws/widgets/videolist/video_list_view.dart';
 import 'package:flutter_ws/widgets/videolist/videolist_util.dart';
 import 'package:giffy_dialog/giffy_dialog.dart';
-import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -161,6 +160,7 @@ class HomePageState extends State<MyHomePage>
   bool showCountlyGDPRDialog = false;
   static const COUNTLY_GITHUB =
       "https://raw.githubusercontent.com/mediathekview/MediathekViewMobile/master/resources/countly/config/endpoint.txt";
+  static const SHARED_PREFERENCE_KEY_COUNTLY_CONSENT = "countly_consent";
   static const SHARED_PREFERENCE_KEY_COUNTLY_API = "countly_api";
   static const SHARED_PREFERENCE_KEY_COUNTLY_APP_KEY = "countly_app_key";
 
@@ -292,7 +292,7 @@ class HomePageState extends State<MyHomePage>
                     style: new TextStyle(color: Colors.white, fontSize: 15.0))),
             BottomNavigationBarItem(
                 icon: Icon(
-                  Icons.info_outline,
+                  Icons.settings_outlined,
                   color: Colors.white,
                 ),
                 activeIcon: Icon(
@@ -566,18 +566,34 @@ class HomePageState extends State<MyHomePage>
     var sharedPreferences = await SharedPreferences.getInstance();
     appWideState.appState.setSharedPreferences(sharedPreferences);
 
+    logger.info("setup countly -2");
+
     if (appWideState.appState.sharedPreferences
             .containsKey(SHARED_PREFERENCE_KEY_COUNTLY_API) &&
         appWideState.appState.sharedPreferences
             .containsKey(SHARED_PREFERENCE_KEY_COUNTLY_APP_KEY)) {
+      logger.info("setup countly -4");
+
+      bool countlyConsent = appWideState.appState.sharedPreferences
+          .getBool(SHARED_PREFERENCE_KEY_COUNTLY_CONSENT);
+
+      if (!countlyConsent) {
+        logger.info("Countly - no consent.");
+        return;
+      }
+
       String countlyAPI = appWideState.appState.sharedPreferences
           .getString(SHARED_PREFERENCE_KEY_COUNTLY_API);
       String countlyAppKey = appWideState.appState.sharedPreferences
           .getString(SHARED_PREFERENCE_KEY_COUNTLY_APP_KEY);
+
       logger.info("Loaded Countly data from shared preferences");
-      initializeCountly(countlyAPI, countlyAppKey);
+      CountlyUtil.initializeCountly(logger, countlyAPI, countlyAppKey, true);
       return;
     }
+
+    logger.info("countly -3");
+
     // countly information not found in shared preferences
     // request permission from user
     // need to setState in order to show GDPR dialog
@@ -604,12 +620,15 @@ class HomePageState extends State<MyHomePage>
         textAlign: TextAlign.center,
       ),
       onOkButtonPressed: () {
-        loadCountlyInformationFromGithub();
+        CountlyUtil.loadCountlyInformationFromGithub(
+            logger, appWideState, true);
         setState(() {
           showCountlyGDPRDialog = false;
         });
       },
       onCancelButtonPressed: () {
+        CountlyUtil.loadCountlyInformationFromGithub(
+            logger, appWideState, false);
         setState(() {
           showCountlyGDPRDialog = false;
         });
@@ -620,46 +639,5 @@ class HomePageState extends State<MyHomePage>
       ),
       buttonOkText: Text("Ja"),
     );
-  }
-
-  Future<void> loadCountlyInformationFromGithub() async {
-    var response = await http.get(COUNTLY_GITHUB);
-    if (response == null || response.statusCode != 200) {
-      logger.warning("failed to setup countly");
-      return;
-    }
-
-    var responseList =
-        new LineSplitter().convert(utf8.decode(response.bodyBytes));
-    // in this simple format it is assumed that the countly API is on line 1,
-    // the APP_KEY on line 2 and the tampering salt und line 3
-    String countlyAPI = responseList.elementAt(0);
-    String countlyAppKey = responseList.elementAt(1);
-
-    logger.info("Loaded Countly data from Github");
-
-    appWideState.appState.sharedPreferences
-        .setString(SHARED_PREFERENCE_KEY_COUNTLY_API, countlyAPI);
-    appWideState.appState.sharedPreferences
-        .setString(SHARED_PREFERENCE_KEY_COUNTLY_APP_KEY, countlyAppKey);
-
-    initializeCountly(countlyAPI, countlyAppKey);
-  }
-
-  void initializeCountly(String countlyAPI, String countlyAppKey) {
-    Countly.isInitialized().then((bool isInitialized) {
-      if (!isInitialized) {
-        Countly.setLoggingEnabled(true);
-        Countly.enableCrashReporting();
-
-        // Countly.enableParameterTamperingProtection(countlyTamperingProtection);
-        // Features which is required before init should be call here
-        Countly.init(countlyAPI, countlyAppKey).then((value) {
-          logger.info("COUNTLY STARTED");
-          //Features dependent on init should be set here, for e.g Push notifications and consent.
-          Countly.start();
-        });
-      }
-    });
   }
 }
