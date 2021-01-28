@@ -48,10 +48,10 @@ class _VideoListViewState extends State<VideoListView> {
         widget.videos.length.toString());
 
     if (widget.videos.length == 0 && widget.amountOfVideosFetched == 0) {
-      widget.logger.fine("No Videos found");
-      return buildNoVideosFound();
+      widget.logger.info("No Videos found");
+      return new SliverToBoxAdapter(child: buildNoVideosFound());
     } else if (widget.videos.length == 0) {
-      widget.logger.fine("Searching: video list legth : 0 & amountFetched: " +
+      widget.logger.info("Searching: video list legth : 0 & amountFetched: " +
           widget.amountOfVideosFetched.toString());
       return new SliverToBoxAdapter(child: LoadingListPage());
     }

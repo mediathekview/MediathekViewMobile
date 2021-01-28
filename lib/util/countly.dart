@@ -7,6 +7,8 @@ import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 
 class CountlyUtil {
+  static bool countlySessionStarted = false;
+
   static Future<void> loadCountlyInformationFromGithub(
       Logger logger, AppSharedState appWideState, bool consentGiven) async {
     var response = await http.get(HomePageState.COUNTLY_GITHUB);
@@ -37,34 +39,50 @@ class CountlyUtil {
   static void initializeCountly(Logger logger, String countlyAPI,
       String countlyAppKey, bool consentGiven) {
     Countly.isInitialized().then((bool isInitialized) {
-      //if (!isInitialized) {
       Countly.setLoggingEnabled(true);
       Countly.enableCrashReporting();
       Countly.setRequiresConsent(true);
+
+      if (isInitialized && consentGiven && countlySessionStarted) {
+        logger.info("Countly already running");
+        return;
+      } else if (isInitialized && consentGiven) {
+        startCountly(logger);
+        return;
+      } else if (isInitialized && !consentGiven) {
+        countlyRejected(logger);
+        return;
+      }
+
       // Countly.enableParameterTamperingProtection(countlyTamperingProtection);
       // Features which is required before init should be call here
       Countly.init(countlyAPI, countlyAppKey).then((value) {
         if (!consentGiven) {
-          Countly.giveConsent(["events"]);
-          Map<String, Object> event = {
-            "key": "REPORTING_TURNED_OFF",
-            "count": 1
-          };
-          Countly.recordEvent(event).then((value) {
-            Countly.removeAllConsent();
-            Countly.clearAllTraces();
-            Countly.stop();
-            logger.info("Countly removed consent");
-          });
+          countlyRejected(logger);
           return;
         }
-
-        logger.info("COUNTLY STARTED");
-        //Features dependent on init should be set here, for e.g Push notifications and consent.
-        Countly.giveAllConsent();
-        Countly.start();
+        startCountly(logger);
       });
-      // }
+    });
+  }
+
+  static void startCountly(Logger logger) {
+    //Features dependent on init should be set here, for e.g Push notifications and consent.
+    Countly.giveAllConsent();
+    Countly.start();
+    countlySessionStarted = true;
+    logger.info("COUNTLY STARTED");
+  }
+
+  static void countlyRejected(Logger logger) {
+    Countly.giveConsent(["events"]);
+    Map<String, Object> event = {"key": "REPORTING_TURNED_OFF", "count": 1};
+    Countly.recordEvent(event).then((value) {
+      Countly.removeAllConsent();
+      Countly.clearAllTraces();
+      Countly.stop();
+      logger.info("Countly removed consent");
+      countlySessionStarted = false;
     });
   }
 }
