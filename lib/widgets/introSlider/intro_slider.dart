@@ -44,18 +44,6 @@ class IntroScreenState extends State<IntroScreen> {
         backgroundColor: Color(0xff203152),
       ),
     );
-    slides.add(
-      new Slide(
-        title: "Bewerten",
-        description: "Bewerte deine Lieblingssendungen",
-        //pathImage: "assets/intro/intro_slider_3.png",
-        centerWidget: new Container(
-            padding: EdgeInsets.only(left: 20.0, right: 20.0),
-            child: new Image(
-                image: new AssetImage("assets/intro/intro_slider_3.png"))),
-        backgroundColor: Color(0xff9932CC),
-      ),
-    );
   }
 
   void onDonePress() {

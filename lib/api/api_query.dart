@@ -58,7 +58,7 @@ class APIQuery {
 
     String request = '{"queries":[' +
         queryFilters.join(',') +
-        '],"sortBy":"timestamp","sortOrder":"desc","future":false,"offset":' +
+        '],"future":"true","sortBy":"timestamp","sortOrder":"desc","future":false,"offset":' +
         skip.toString() +
         ',"size":' +
         defaultQueryAmount.toString() +
