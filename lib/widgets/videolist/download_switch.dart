@@ -26,9 +26,16 @@ class DownloadSwitch extends StatefulWidget {
 
   bool isDownloadedAlready;
   bool isCurrentlyDownloading;
+  String filesize;
 
-  DownloadSwitch(this.appWideState, this.video, this.isCurrentlyDownloading,
-      this.isDownloadedAlready, this.downloadManager, this.isTablet);
+  DownloadSwitch(
+      this.appWideState,
+      this.video,
+      this.isCurrentlyDownloading,
+      this.isDownloadedAlready,
+      this.downloadManager,
+      this.filesize,
+      this.isTablet);
 
   @override
   State<StatefulWidget> createState() {
@@ -177,9 +184,12 @@ class DownloadSwitchState extends State<DownloadSwitch> {
     if (_latestDownloadValue == null) {
       return "";
     }
+
     if (isAlreadyDownloaded ||
         _latestDownloadValue.status == DownloadTaskStatus.complete)
-      return "Delete Video";
+      return widget.filesize != null && widget.filesize.length > 0
+          ? "Löschen (" + widget.filesize + ")"
+          : "Löschen";
     else if (_latestDownloadValue.status == DownloadTaskStatus.running &&
         _latestDownloadValue.progress.toInt() == -1)
       return "";
@@ -193,7 +203,9 @@ class DownloadSwitchState extends State<DownloadSwitch> {
       return "Download failed";
     else if (_latestDownloadValue.status == DownloadTaskStatus.undefined ||
         _latestDownloadValue.status == DownloadTaskStatus.canceled)
-      return "Download";
+      return widget.filesize != null && widget.filesize.length > 0
+          ? "Download (" + widget.filesize + ")"
+          : "Download";
     return "Unknown status";
   }
 

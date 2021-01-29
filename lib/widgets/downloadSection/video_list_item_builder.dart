@@ -1,3 +1,4 @@
+import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/enum/channels.dart';
 import 'package:flutter_ws/model/video.dart';
@@ -65,8 +66,8 @@ class VideoListItemBuilder {
     if (showDeleteButton) {
       deleteButton = new Positioned(
         top: 12.0,
-        left: 0.0,
-        child: getRemoveButton(index, context, video.id),
+        left: 5.0,
+        child: getRemoveButton(index, context, video.id, filesize(video.size)),
       );
     }
 
@@ -99,8 +100,28 @@ class VideoListItemBuilder {
     return listRow;
   }
 
-  Center getRemoveButton(int index, BuildContext context, String id) {
-    return new Center(
+  ActionChip getRemoveButton(
+      int index, BuildContext context, String id, String filesize) {
+    return new ActionChip(
+      avatar: new Icon(Icons.delete_forever, color: Colors.white),
+      label: new Text(
+        filesize != null && filesize.length > 0
+            ? "Löschen (" + filesize + ")"
+            : "Löschen",
+        style: TextStyle(fontSize: 20.0),
+      ),
+      labelStyle: TextStyle(color: Colors.white),
+      onPressed: () {
+        if (showDeleteButton) {
+          onRemoveVideo(context, id);
+        }
+      },
+      backgroundColor: Colors.green,
+      elevation: 20,
+      padding: EdgeInsets.all(10),
+    );
+
+    new Center(
       child: new FloatingActionButton(
         heroTag: null, // explicitly set to null
         mini: true,

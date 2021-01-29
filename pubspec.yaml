@@ -30,6 +30,7 @@ dependencies:
   video_thumbnail: "^0.2.5+1"
   countly_flutter: "^20.4.2"
   giffy_dialog: "^1.8.0"
+  filesize: "^1.0.4"
 
   flutter:
     sdk: flutter

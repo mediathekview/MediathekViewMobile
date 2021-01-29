@@ -12,7 +12,7 @@ class VideoLengthSlider extends StatefulWidget {
     this.searchFilter = lengthFilter;
     if (lengthFilter.filterValue == null || lengthFilter.filterValue.isEmpty) {
       initialStart = 0.0;
-      initialEnd = 160.0;
+      initialEnd = 60.0;
     } else {
       List<String> split = searchFilter.filterValue.split("-");
       initialStart = double.parse(split.elementAt(0));
@@ -44,10 +44,10 @@ class _RangeSliderState extends State<VideoLengthSlider> {
       activeColor: Colors.black,
       inactiveColor: Colors.grey,
       labels: RangeLabels(_values.start.round().toString() + " min",
-          _values.end < 160 ? _values.end.round().toString() + " min" : "max"),
-      max: 160.0,
+          _values.end < 60 ? _values.end.round().toString() + " min" : "max"),
+      max: 60.0,
       min: 0.0,
-      divisions: 50,
+      divisions: 10,
       onChangeEnd: (values) {
         widget.searchFilter.filterValue = _values.start.round().toString() +
             "-" +

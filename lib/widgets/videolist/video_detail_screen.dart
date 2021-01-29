@@ -1,3 +1,4 @@
+import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/database/video_progress_entity.dart';
@@ -170,6 +171,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
               widget.isDownloading,
               widget.isDownloaded,
               widget.appWideState.appState.downloadManager,
+              filesize(widget.video.size),
               isTablet),
         ),
       ],
@@ -232,46 +234,14 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
                     right: 0.0,
                     child: downloadProgressBar)
               ]),
-          sideBar,
-        ]);
-    return new Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          new Container(color: Colors.grey[900], child: image),
-          downloadProgressBar,
-          new Positioned(
-            bottom: 0,
-            left: 0.0,
-            right: 0.0,
-            child: new Opacity(
-              opacity: 0.7,
-              child: MetaInfoListTile.getVideoMetaInformationListTile(
-                  context,
-                  widget.video.duration.toString(),
-                  widget.video.title,
-                  widget.video.timestamp,
-                  widget.defaultImageAssetPath,
-                  widget.entity != null),
-            ),
-          ),
-          new Container(
-            height: 10,
-          ),
-          new Padding(
-            padding: new EdgeInsets.only(left: 10.0),
-            child: new DownloadSwitch(
-                widget.appWideState,
-                widget.video,
-                widget.isDownloading,
-                widget.isDownloaded,
-                widget.appWideState.appState.downloadManager,
-                isTablet),
-          ),
-          new Container(
-            height: 10,
-          ),
+          new DownloadSwitch(
+              widget.appWideState,
+              widget.video,
+              widget.isDownloading,
+              widget.isDownloaded,
+              widget.appWideState.appState.downloadManager,
+              filesize(widget.video.size),
+              isTablet),
           sideBar,
         ]);
   }

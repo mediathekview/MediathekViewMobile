@@ -457,8 +457,13 @@ class HomePageState extends State<MyHomePage>
     } else if (newVideosCount != 0) {
       // client side result filtering
       if (searchFilters["Länge"] != null) {
-        videos =
-            VideoListUtil.applyLengthFilter(videos, searchFilters["Länge"]);
+        // do not filter length if maximum range is set
+        List<String> split = searchFilters["Länge"].filterValue.split("-");
+        double end = double.parse(split.elementAt(1));
+        if (end.toInt() != 60) {
+          videos =
+              VideoListUtil.applyLengthFilter(videos, searchFilters["Länge"]);
+        }
       }
       int newVideosCount = videos.length - videoListLengthOld;
 

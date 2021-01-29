@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:connectivity/connectivity.dart';
+import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
@@ -173,6 +174,7 @@ class _ListCardState extends State<ListCard> {
                 isCurrentlyDownloading,
                 isDownloadedAlready,
                 appWideState.appState.downloadManager,
+                filesize(widget.video.size),
                 DeviceInformation.isTablet(context)),
           ],
         ),
