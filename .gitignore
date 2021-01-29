@@ -103,6 +103,7 @@ unlinked_spec.ds
 **/ios/Flutter/flutter_export_environment.sh
 ios/Flutter/.last_build_id
 ios/Runner.xcodeproj/project.pbxproj
+ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme
 
 # Coverage
 coverage/

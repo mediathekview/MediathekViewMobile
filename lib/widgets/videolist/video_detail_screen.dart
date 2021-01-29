@@ -5,13 +5,16 @@ import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/util/text_styles.dart';
+import 'package:flutter_ws/util/timestamp_calculator.dart';
 import 'package:flutter_ws/widgets/bars/playback_progress_bar.dart';
 import 'package:flutter_ws/widgets/videolist/download/download_progress_bar.dart';
 import 'package:flutter_ws/widgets/videolist/util/util.dart';
 import 'package:flutter_ws/widgets/videolist/video_widget.dart';
 import 'package:logging/logging.dart';
 
+import 'channel_thumbnail.dart';
 import 'download_switch.dart';
+import 'meta_info_list_tile.dart';
 
 class VideoDetailScreen extends StatefulWidget {
   final Logger logger = new Logger('VideoDetailScreen');
@@ -23,9 +26,17 @@ class VideoDetailScreen extends StatefulWidget {
   bool isDownloading;
   bool isDownloaded;
   String heroUuid;
+  String defaultImageAssetPath;
 
-  VideoDetailScreen(this.appWideState, this.image, this.video, this.entity,
-      this.isDownloading, this.isDownloaded, this.heroUuid);
+  VideoDetailScreen(
+      this.appWideState,
+      this.image,
+      this.video,
+      this.entity,
+      this.isDownloading,
+      this.isDownloaded,
+      this.heroUuid,
+      this.defaultImageAssetPath);
 
   @override
   _VideoDetailScreenState createState() => _VideoDetailScreenState();
@@ -187,7 +198,42 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
         ),
       );
     }
-
+    return new Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          new Stack(
+              alignment: Alignment.center,
+              fit: StackFit.passthrough,
+              children: <Widget>[
+                new Container(color: Colors.grey[900], child: image),
+                new Positioned(
+                  bottom: 0,
+                  left: 0.0,
+                  right: 0.0,
+                  child: new Opacity(
+                    opacity: 0.7,
+                    child: new Container(
+                      color: Colors.grey[800],
+                      child: MetaInfoListTile.getVideoMetaInformationListTile(
+                          context,
+                          widget.video.duration.toString(),
+                          widget.video.title,
+                          widget.video.timestamp,
+                          widget.defaultImageAssetPath,
+                          widget.entity != null),
+                    ),
+                  ),
+                ),
+                new Positioned(
+                    bottom: 0.0,
+                    left: 0.0,
+                    right: 0.0,
+                    child: downloadProgressBar)
+              ]),
+          sideBar,
+        ]);
     return new Column(
         mainAxisAlignment: MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -195,6 +241,21 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
         children: <Widget>[
           new Container(color: Colors.grey[900], child: image),
           downloadProgressBar,
+          new Positioned(
+            bottom: 0,
+            left: 0.0,
+            right: 0.0,
+            child: new Opacity(
+              opacity: 0.7,
+              child: MetaInfoListTile.getVideoMetaInformationListTile(
+                  context,
+                  widget.video.duration.toString(),
+                  widget.video.title,
+                  widget.video.timestamp,
+                  widget.defaultImageAssetPath,
+                  widget.entity != null),
+            ),
+          ),
           new Container(
             height: 10,
           ),
@@ -290,20 +351,22 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
 
   AppBar getAppBar() {
     return new AppBar(
-      title: new Text(
-        widget.video.title,
-        style: sectionHeadingTextStyle,
-        overflow: TextOverflow.ellipsis,
-      ),
-      backgroundColor: new Color(0xffffbf00),
-      leading: new IconButton(
-        icon: new Icon(Icons.arrow_back, size: 30.0, color: Colors.white),
-        onPressed: () {
-          //return channels when user pressed back
-          return Navigator.pop(context);
-        },
-      ),
-    );
+        backgroundColor: new Color(0xffffbf00),
+        titleSpacing: 0.0,
+        centerTitle: false,
+        title: new Text(
+          "Zurück",
+          style: sectionHeadingTextStyle,
+        ),
+        leading: new Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+          new IconButton(
+            icon: new Icon(Icons.arrow_back, size: 30.0, color: Colors.white),
+            onPressed: () {
+              //return channels when user pressed back
+              return Navigator.pop(context);
+            },
+          ),
+        ]));
   }
 
   void checkPlaybackProgress() async {
@@ -318,5 +381,25 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
     });
   }
 
-  Widget buildMobileLandscapeLayout() {}
+  ListTile getBottomBar(BuildContext context, String assetPath, String title,
+      String lenght, int timestamp, bool isDownloaded) {
+    return new ListTile(
+      trailing: new Text(
+        lenght != null ? Calculator.calculateDuration(lenght) : "",
+        style: videoMetadataTextStyle.copyWith(color: Colors.white),
+      ),
+      leading: assetPath.isNotEmpty
+          ? new ChannelThumbnail(assetPath, isDownloaded)
+          : new Container(),
+      title: new Text(
+        title,
+        style:
+            Theme.of(context).textTheme.subhead.copyWith(color: Colors.white),
+      ),
+      subtitle: new Text(
+        timestamp != null ? Calculator.calculateTimestamp(timestamp) : "",
+        style: Theme.of(context).textTheme.title.copyWith(color: Colors.white),
+      ),
+    );
+  }
 }

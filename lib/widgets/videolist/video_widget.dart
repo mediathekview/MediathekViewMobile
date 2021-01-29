@@ -4,8 +4,6 @@ import 'package:flutter_ws/database/video_entity.dart';
 import 'package:flutter_ws/database/video_progress_entity.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
 import 'package:flutter_ws/model/video.dart';
-import 'package:flutter_ws/util/text_styles.dart';
-import 'package:flutter_ws/util/timestamp_calculator.dart';
 import 'package:flutter_ws/widgets/bars/playback_progress_bar.dart';
 import 'package:flutter_ws/widgets/videolist/download/download_progress_bar.dart';
 import 'package:flutter_ws/widgets/videolist/util/util.dart';
@@ -13,7 +11,7 @@ import 'package:flutter_ws/widgets/videolist/video_detail_screen.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 
-import 'channel_thumbnail.dart';
+import 'meta_info_list_tile.dart';
 
 class VideoWidget extends StatefulWidget {
   final Logger logger = new Logger('VideoWidget');
@@ -130,7 +128,7 @@ class VideoWidgetState extends State<VideoWidget> {
                       widget.video.id,
                       widget.video.duration.toString(),
                       widget.video.title,
-                      widget.video.topic,
+                      widget.video.timestamp,
                       widget.defaultImageAssetPath),
                 ),
               ),
@@ -160,6 +158,7 @@ class VideoWidgetState extends State<VideoWidget> {
                       widget.isDownloading,
                       entity != null,
                       heroUuid,
+                      widget.defaultImageAssetPath,
                     );
                   },
                   fullscreenDialog: true));
@@ -207,7 +206,7 @@ class VideoWidgetState extends State<VideoWidget> {
       String id,
       String duration,
       String title,
-      String topic,
+      int timestamp,
       String assetPath) {
     return new Container(
       color: Colors.grey[800],
@@ -217,36 +216,9 @@ class VideoWidgetState extends State<VideoWidget> {
               ? PlaybackProgressBar(
                   playbackProgress.progress, int.tryParse(duration), false)
               : new Container(),
-          getVideoMetaInformationListTile(
-              context, duration, title, topic, assetPath, entity != null),
+          MetaInfoListTile.getVideoMetaInformationListTile(
+              context, duration, title, timestamp, assetPath, entity != null),
         ],
-      ),
-    );
-  }
-
-  ListTile getVideoMetaInformationListTile(
-      BuildContext context,
-      String duration,
-      String title,
-      String topic,
-      String assetPath,
-      bool isDownloaded) {
-    return new ListTile(
-      trailing: new Text(
-        duration != null ? Calculator.calculateDuration(duration) : "",
-        style: videoMetadataTextStyle.copyWith(color: Colors.white),
-      ),
-      leading: assetPath.isNotEmpty
-          ? new ChannelThumbnail(assetPath, isDownloaded)
-          : new Container(),
-      title: new Text(
-        title,
-        style:
-            Theme.of(context).textTheme.subhead.copyWith(color: Colors.white),
-      ),
-      subtitle: new Text(
-        topic != null ? topic : "",
-        style: Theme.of(context).textTheme.title.copyWith(color: Colors.white),
       ),
     );
   }
