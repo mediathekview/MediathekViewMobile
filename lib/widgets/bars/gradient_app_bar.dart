@@ -67,12 +67,6 @@ class GradientAppBar extends StatelessWidget {
                           fontWeight: FontWeight.w700),
                       controller: controller,
                       decoration: new InputDecoration(
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white),
-                        ),
                         hintStyle: TextStyle(
                             fontSize: 18.0,
                             color: Colors.white,
@@ -105,15 +99,10 @@ class GradientAppBar extends StatelessWidget {
                     ),
                   ),
                 ),
-                DeviceInformation.isTablet(context)
-                    ? new Text(
-                        "Videos: " +
-                            currentAmountOfVideosInList.toString() +
-                            " / " +
-                            totalAmountOfVideosForSelection.toString(),
-                        style: new TextStyle(color: Colors.white),
-                      )
-                    : new Container(),
+                new Text(
+                  totalAmountOfVideosForSelection.toString(),
+                  style: new TextStyle(color: Colors.white),
+                )
               ],
             ),
           ),
