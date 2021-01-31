@@ -171,7 +171,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
               widget.isDownloading,
               widget.isDownloaded,
               widget.appWideState.appState.downloadManager,
-              filesize(widget.video.size),
+              widget.video.size != null ? filesize(widget.video.size) : "",
               isTablet),
         ),
       ],
@@ -240,7 +240,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen> {
               widget.isDownloading,
               widget.isDownloaded,
               widget.appWideState.appState.downloadManager,
-              filesize(widget.video.size),
+              widget.video.size != null ? filesize(widget.video.size) : "",
               isTablet),
           sideBar,
         ]);

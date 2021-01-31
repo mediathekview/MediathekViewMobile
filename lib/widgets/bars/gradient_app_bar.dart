@@ -49,14 +49,6 @@ class GradientAppBar extends StatelessWidget {
             child: new Row(
               mainAxisSize: MainAxisSize.max,
               children: [
-                new IconButton(
-                  color: isFilterMenuOpen ? Colors.red : Colors.white,
-                  icon: new Icon(Icons.menu),
-                  iconSize: 30.0,
-                  onPressed: () {
-                    state.updateAppBarState();
-                  },
-                ),
                 new Expanded(
                   child: new Container(
                     padding: new EdgeInsets.only(right: 20.0),
@@ -84,7 +76,7 @@ class GradientAppBar extends StatelessWidget {
                             )),
                         labelStyle: hintTextStyle.copyWith(color: Colors.white),
                         icon: new IconButton(
-                          color: Colors.black,
+                          color: isFilterMenuOpen ? Colors.red : Colors.black,
                           icon: new Icon(Icons.search),
                           iconSize: 30.0,
                           onPressed: () {
@@ -92,9 +84,6 @@ class GradientAppBar extends StatelessWidget {
                           },
                         ),
                         isDense: true,
-                        hintText: DeviceInformation.isTablet(context)
-                            ? 'Suche ...'
-                            : '',
                       ),
                     ),
                   ),

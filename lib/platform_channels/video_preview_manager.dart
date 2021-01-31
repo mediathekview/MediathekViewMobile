@@ -6,7 +6,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_ws/global_state/list_state_container.dart';
-import 'package:flutter_ws/util/device_information.dart';
 import 'package:logging/logging.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
@@ -97,9 +96,8 @@ class VideoPreviewManager {
     try {
       uint8list = await VideoThumbnail.thumbnailData(
         video: url,
-        //thumbnailPath: (await getTemporaryDirectory()).path,
         imageFormat: ImageFormat.JPEG,
-        quality: DeviceInformation.isTablet(context) ? 5 : 3,
+        quality: 10,
       );
     } on PlatformException catch (e) {
       logger.severe("Create preview failed. Reason " + e.toString());

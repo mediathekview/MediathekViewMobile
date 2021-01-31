@@ -2,8 +2,6 @@ package com.mediathekview.mobile.samsung_cast;
 
 import android.util.Log;
 
-import com.google.android.exoplayer2.ExoPlaybackException;
-
 import java.util.HashMap;
 import java.util.Map;
 

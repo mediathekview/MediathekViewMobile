@@ -1,22 +1,56 @@
-MediathekViewMobile ist eine mobile Android und iOs Anwendung für den Zugriff auf die Filmliste des [MediathekView Projekts](https://mediathekview.de/) mithilfe der API von [MediathekViewWeb](https://mediathekviewweb.de/)
+![logo](assets/launcher/ic_launcher.png)
 
-# Download
- - [Android](https://github.com/mediathekview/MediathekViewMobile/releases/download/v1.0/MediathekViewMobileApp.apk)  
- - iOs (kommt demnächst)
+MediathekViewMobile is an Android and iOS application written with Flutter that allows searching through and downloading videos from
+a wide range of public German TV providers (ARD, ZDF, Arte, 3Sat, SWR, BR, MDR, NDR, WDR, HR, RBB, ORF, SRF).
+It uses the API of [MediathekViewWeb](https://mediathekviewweb.de/).
 
+[Hier gibts die READ.ME in deutscher Sprache]().
 
-## Tablet
-<img src="https://user-images.githubusercontent.com/33809186/62579900-3f24c600-b8a5-11e9-88b8-069d8a08cce9.png" width="640" height="400"/>
+Optimized for both Phones and Tablets.
 
-## Mobil
-<img src="https://user-images.githubusercontent.com/33809186/62579173-5d89c200-b8a3-11e9-84b1-d60b15e3026e.PNG" width="250" height="444"/> <img src="https://user-images.githubusercontent.com/33809186/62580100-bce8d180-b8a5-11e9-9893-d3f30d64124f.PNG" width="250" height="444"/> <img src="https://user-images.githubusercontent.com/33809186/62580644-0128a180-b8a7-11e9-8285-9483f5ef75e2.PNG" width="250" height="444"/>
+![demo GIF](assets/gif/Mobile.gif)
+![demo GIF](assets/gif/Tablet.png)
 
+# Highlights
 
-
-# Funktionen
-
-- Durchsuchen und Downloaden von den Mediatheken der öffentlich-rechtlichen Sender
-- Filtern nach Thema, Titel, Sender und Länge
-- Bewertung von Videos und Übersicht über beliebte Sendungen
-- Komfortabeler Videoplayer (merkt sich die Wiedergabeposition)
+- Quick and comfortable search (including filters) over all videos from supported German public TV channels.
+- Download Videos for offline viewing.
+- Videoplayer that remembers last viewing positions
+- Stream videos to supported TVs (currently Samsung) and use your device for remote control.
 - View History
+
+# Installation
+ 
+**Android**
+ - FDroid (coming soon)
+ - [Github Releases](https://github.com/mediathekview/MediathekViewMobile/releases/)  
+ 
+**iOS**
+  - See the [iOS installation instructions](docs/install-ios.md)
+
+## Installation from Source for Android
+
+First [install Flutter](https://flutter.dev/docs/get-started/install).
+Then, clone this repository.
+
+```
+git clone https://github.com/mediathekview/MediathekViewMobile
+```
+
+Connect your Android or iOS device to your computer.
+Make sure that your device is detected via
+```
+flutter doctor
+```
+
+Then install MediathekViewMobile by executing `flutter run --release` from the repository root.
+
+## Installation from Source for iOS
+
+In addition to the steps for iOS, you need to setup XCode and configure the project to use your Apple ID.
+Please check the [Flutter iOS platform setup Guide](https://flutter.dev/docs/get-started/install/macos#platform-setup).
+
+To install MediathekViewMobile, make sure you have [setup XCode properly](https://flutter.dev/docs/get-started/install/macos#platform-setup).
+You can install the application via XCode or by executing `flutter run --release` from the repository root.
+ 
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/danielfoehr)

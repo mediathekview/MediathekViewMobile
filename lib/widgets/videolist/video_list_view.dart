@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/util/channel_util.dart';
 import 'package:flutter_ws/util/cross_axis_count.dart';
-import 'package:flutter_ws/util/device_information.dart';
 import 'package:flutter_ws/widgets/downloadSection/video_list_item_builder.dart';
 import 'package:flutter_ws/widgets/videolist/loading_list_view.dart';
 import 'package:logging/logging.dart';
@@ -58,10 +57,10 @@ class _VideoListViewState extends State<VideoListView> {
 
     // do not request previews in the main download section if it is a tablet
     // do not overload CPU
-    bool previewNotDownloadedVideos = !DeviceInformation.isTablet(context);
+    //bool previewNotDownloadedVideos = !DeviceInformation.isTablet(context);
 
     var videoListItemBuilder = new VideoListItemBuilder.name(
-        widget.videos, previewNotDownloadedVideos, false, true,
+        widget.videos, true, false, true,
         queryEntries: widget.queryEntries,
         amountOfVideosFetched: widget.amountOfVideosFetched,
         totalResultSize: widget.totalResultSize,

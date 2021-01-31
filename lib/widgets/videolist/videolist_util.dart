@@ -1,5 +1,6 @@
 import 'package:flutter_ws/model/video.dart';
 import 'package:flutter_ws/widgets/filterMenu/search_filter.dart';
+import 'package:flutter_ws/widgets/filterMenu/video_length_slider.dart';
 import 'package:logging/logging.dart';
 
 class VideoListUtil {
@@ -15,10 +16,8 @@ class VideoListUtil {
   static List<Video> sanitizeVideos(
       List<Video> newVideos, List<Video> currentVideos) {
     if (currentVideos.isEmpty) {
-      List<Video> videos = newVideos
-          .map((video) =>
-              httpUrlToHttps(_sanitizeLifestreamM3u8ByMappingToMp4(video)))
-          .toList();
+      List<Video> videos =
+          newVideos.map((video) => httpUrlToHttps(video)).toList();
       return videos;
     }
 
@@ -36,10 +35,7 @@ class VideoListUtil {
       bool hasDuplicate =
           _hasDuplicate(i, newVideos, currentVideos, currentVideo);
       if (hasDuplicate == false) {
-        //TODO exclude ORF atm
-        // if (currentVideo.channel == "ORF") continue;
-        currentVideos.add(httpUrlToHttps(
-            _sanitizeLifestreamM3u8ByMappingToMp4(currentVideo)));
+        currentVideos.add(httpUrlToHttps(currentVideo));
       }
     }
     return currentVideos;
@@ -75,19 +71,17 @@ class VideoListUtil {
     return video;
   }
 
-  static Video _sanitizeLifestreamM3u8ByMappingToMp4(Video video) {
-    if (video.url_video.endsWith(".m3u8")) {
-      logger.fine("Found m3u8");
-    }
-
-    return video;
-  }
-
   static List<Video> applyLengthFilter(
       List<Video> videos, SearchFilter searchFilter) {
     List<String> split = searchFilter.filterValue.split("-");
     double minLength = double.parse(split.elementAt(0));
     double maxLength = double.parse(split.elementAt(1));
+
+    bool discardMaxLength = false;
+    if (maxLength == VideoLengthSlider.MAXIMUM_FILTER_LENGTH) {
+      discardMaxLength = true;
+    }
+
     int videoLengthBeforeRemoval = videos.length;
     videos.removeWhere((video) {
       if (video.duration == null || video.duration.toString().isEmpty) {
@@ -95,6 +89,11 @@ class VideoListUtil {
       }
       int sekunden = int.parse(video.duration.toString());
       int videoLengthInMinutes = (sekunden / 60).floor();
+
+      if (discardMaxLength) {
+        return videoLengthInMinutes < minLength;
+      }
+
       return videoLengthInMinutes < minLength ||
           videoLengthInMinutes > maxLength;
     });

@@ -76,7 +76,6 @@ flutter:
       - assets/img/MediathekViewLoading.png
       - assets/intro/intro_slider_1.png
       - assets/intro/intro_slider_2.png
-      - assets/intro/intro_slider_3.png
       - assets/launcher/ic_launcher.png
       - assets/cast/ic_cast0_white.png
       - assets/cast/ic_cast1_white.png

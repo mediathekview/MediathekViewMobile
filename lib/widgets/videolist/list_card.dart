@@ -174,7 +174,7 @@ class _ListCardState extends State<ListCard> {
                 isCurrentlyDownloading,
                 isDownloadedAlready,
                 appWideState.appState.downloadManager,
-                filesize(widget.video.size),
+                widget.video.size != null ? filesize(widget.video.size) : "",
                 DeviceInformation.isTablet(context)),
           ],
         ),

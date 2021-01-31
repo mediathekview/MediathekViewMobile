@@ -23,7 +23,6 @@ class IntroScreenState extends State<IntroScreen> {
         maxLineTitle: 2,
         marginTitle: new EdgeInsets.only(top: 20.0, bottom: 20.0),
         description: "Durchsuchen von öffentlich-rechtlichen Mediatheken.",
-        //pathImage: "assets/intro/intro_slider_1.png",
         centerWidget: new Container(
             padding: EdgeInsets.only(left: 20.0, right: 20.0),
             child: new Image(
@@ -35,12 +34,10 @@ class IntroScreenState extends State<IntroScreen> {
       new Slide(
         title: "Filtern",
         description: "Filtern nach Thema, Titel, Länge und Fernsehsender",
-        //pathImage: "assets/intro/intro_slider_2.png",
         centerWidget: new Container(
             padding: EdgeInsets.only(left: 20.0, right: 20.0),
             child: new Image(
                 image: new AssetImage("assets/intro/intro_slider_2.png"))),
-
         backgroundColor: Color(0xff203152),
       ),
     );
