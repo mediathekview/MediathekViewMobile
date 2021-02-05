@@ -6,10 +6,7 @@ It uses the API of [MediathekViewWeb](https://mediathekviewweb.de/).
 
 [Hier gibts die READ.ME in deutscher Sprache]().
 
-Optimized for both Phones and Tablets.
-
-![demo GIF](assets/gif/Mobile.gif)
-![demo GIF](assets/gif/Tablet.png)
+![demo GIF](assets/read.me/combination.png)
 
 # Highlights
 
