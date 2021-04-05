@@ -1,0 +1,4 @@
+* Stability improvements
+* Remove ratings
+* Overhaul of the internal code structure
+* Using REST API instead of Websockets
